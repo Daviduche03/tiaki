@@ -78,7 +78,7 @@ pub(crate) fn agent_command(
             },
             Some(id) => {
                 RuntimeRegistry::write_default(&home.join("runtimes"), id)
-                    .map_err(|error| format!("{error}"))?;
+                    .map_err(|error| error.to_string())?;
                 println!("default agent: {id}");
             }
         },

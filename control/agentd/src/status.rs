@@ -88,7 +88,7 @@ pub(crate) fn print_grants(engine: &Ledger) {
     }
     for grant in engine.authority().grants() {
         println!(
-            "{}  {}  {}  {}{}{}",
+            "{}  {}  {}  {}{}granted by {}",
             grant.principal,
             grant.action.as_str(),
             grant.resource.raw,
@@ -101,7 +101,7 @@ pub(crate) fn print_grants(engine: &Ledger) {
                 .max_per_minute
                 .map(|limit| format!("max {limit}/min "))
                 .unwrap_or_default(),
-            format!("granted by {}", grant.granted_by)
+            grant.granted_by
         );
     }
 }

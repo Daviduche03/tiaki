@@ -6,7 +6,6 @@ use agentic_core_log::{Impact, Status, Summary};
 use agentic_json::Json;
 use agentic_transaction::{Operation, SandboxClass, Severity, StateStore};
 use agentic_ui_tree::{apply as apply_ui_op, Keymap, UiOp, UiTree};
-use agentic_widgets;
 use std::io::{Read, Write};
 use std::net::{TcpListener, TcpStream};
 
@@ -506,7 +505,6 @@ pub(crate) fn effective_principal(principal: &str) -> String {
 }
 
 /// Scope a resource path for the acting principal.
-
 pub(crate) fn ui_scope(global: &Global, suffix: &str) -> String {
     let effective = Principal::parse(&global.principal)
         .map(|principal| principal.effective().clone())

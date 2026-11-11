@@ -32,8 +32,8 @@ pub(crate) fn inference(
                 };
                 if !found {
                     println!(
-                        "{:<18} {:<8} {:<11} {:<7} {:<7} {}",
-                        "id", "version", "architecture", "context", "loaded", "digest"
+                        "{:<18} {:<8} {:<11} {:<7} {:<7} digest",
+                        "id", "version", "architecture", "context", "loaded"
                     );
                     found = true;
                 }

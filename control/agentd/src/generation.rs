@@ -14,8 +14,8 @@ pub(crate) fn generation_list(home: &Path) -> Result<(), Box<dyn std::error::Err
         return Ok(());
     }
     println!(
-        "{:<10} {:<12} {:<9} {:<8} {:<16} {}",
-        "id", "label", "status", "attempts", "digest", "image"
+        "{:<10} {:<12} {:<9} {:<8} {:<16} image",
+        "id", "label", "status", "attempts", "digest"
     );
     for generation in table.history() {
         let digest: String = generation.digest.chars().take(15).collect();
