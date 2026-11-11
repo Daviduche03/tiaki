@@ -369,9 +369,7 @@ fn user_home(principal: &str) -> Option<String> {
         return None;
     }
     let tail = principal.rsplit("user:").next()?;
-    let id = tail
-        .split(['@', '/'])
-        .next()?;
+    let id = tail.split(['@', '/']).next()?;
     if id.is_empty() {
         None
     } else {
