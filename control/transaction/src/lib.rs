@@ -223,18 +223,16 @@ impl HealthCheck for SchemaHealth {
     fn check(&self, store: &dyn StateStore) -> Health {
         for (path, value) in store.values() {
             match schema_key(path) {
-                "desktop/clock/position" => {
+                "desktop/clock/position"
                     if !matches!(
                         value.as_str(),
                         "left" | "center" | "right" | "top-left" | "top-right"
-                    ) {
-                        return Health::fail(format!("{path} has unsupported value '{value}'"));
-                    }
+                    ) =>
+                {
+                    return Health::fail(format!("{path} has unsupported value '{value}'"));
                 }
-                "theme/mode" => {
-                    if !matches!(value.as_str(), "light" | "dark") {
-                        return Health::fail(format!("{path} has unsupported value '{value}'"));
-                    }
+                "theme/mode" if !matches!(value.as_str(), "light" | "dark") => {
+                    return Health::fail(format!("{path} has unsupported value '{value}'"));
                 }
                 _ => {}
             }
@@ -482,6 +480,7 @@ pub trait Validator {
 
 /// Runs several validators in order. Used by the daemon to combine the core
 /// schema checks with UI-tree and keymap validators.
+#[derive(Default)]
 pub struct CompositeValidator {
     validators: Vec<Box<dyn Validator>>,
 }
@@ -489,14 +488,6 @@ pub struct CompositeValidator {
 impl CompositeValidator {
     pub fn new(validators: Vec<Box<dyn Validator>>) -> Self {
         Self { validators }
-    }
-}
-
-impl Default for CompositeValidator {
-    fn default() -> Self {
-        Self {
-            validators: Vec::new(),
-        }
     }
 }
 
@@ -743,6 +734,10 @@ impl<S: StateStore, H: HealthCheck, M: Summarizer, V: Validator, A: Authorizer>
 
     /// Record an attributable event that is not a state mutation, such as a
     /// plugin lifecycle action. It still goes through the same hash chain.
+    ///
+    /// Ten arguments because a ledger entry is ten fields; grouping them
+    /// would just move the width into a struct literal at every call site.
+    #[allow(clippy::too_many_arguments)]
     pub fn record(
         &mut self,
         principal: &str,
@@ -836,6 +831,9 @@ impl<S: StateStore, H: HealthCheck, M: Summarizer, V: Validator, A: Authorizer>
         }
     }
 
+    /// ApplyError carries the rejected transaction so the caller can ledger
+    /// it; that makes the Err variant large by design, not by accident.
+    #[allow(clippy::result_large_err)]
     pub fn apply(
         &mut self,
         id: &str,
@@ -1016,6 +1014,9 @@ impl<S: StateStore, H: HealthCheck, M: Summarizer, V: Validator, A: Authorizer>
         }
     }
 
+    /// Same large-Err-by-design as [`Engine::apply`]: the error is the
+    /// transaction that failed to revert.
+    #[allow(clippy::result_large_err)]
     pub fn revert(
         &mut self,
         txn_id: &str,
@@ -1242,6 +1243,9 @@ impl<S: StateStore, H: HealthCheck, M: Summarizer, V: Validator, A: Authorizer>
     }
 }
 
+/// Eight arguments because a Transaction is eight fields; this constructor
+/// mirrors the struct so every commit path builds it the same way.
+#[allow(clippy::too_many_arguments)]
 fn pending(
     id: &str,
     principal: &str,

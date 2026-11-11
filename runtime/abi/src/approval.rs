@@ -24,6 +24,9 @@ pub struct ApprovalRequest {
 }
 
 impl ApprovalRequest {
+    /// Eight fields, eight parameters; callers use struct-update syntax when
+    /// they only set a few.
+    #[allow(clippy::too_many_arguments)]
     pub fn new(
         principal: impl Into<String>,
         runtime: impl Into<String>,
