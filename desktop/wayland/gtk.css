@@ -1,31 +1,320 @@
-menubar,
-menubar > menuitem {
-  background-color: #1a1b26;
-  color: #c0caf5;
+/* Tiaki GTK theme for third-party apps (Mousepad, Thunar, …).
+   Ink windows, paper text, hairlines, 3px — the same material as the shell.
+   Conservative GTK3: one bad property voids the whole sheet, so only
+   long-stable selectors and properties are used here. */
+
+* {
+  font-family: "IBM Plex Sans", "DejaVu Sans", sans-serif;
+}
+
+window, window.background, dialog, dialog.background,
+assistant, assistant.background {
+  background-color: #151413;
+  color: #e6e0d4;
+}
+
+paned, paned > separator {
+  background-color: #151413;
+}
+
+headerbar, .titlebar {
+  background-color: #151413;
+  background-image: none;
+  border-bottom: 1px solid rgba(230, 224, 212, 0.14);
+  border-radius: 0;
+  box-shadow: none;
+  color: #e6e0d4;
+  min-height: 36px;
+  padding: 0 8px;
+}
+
+headerbar title, .titlebar label.title {
+  color: #e6e0d4;
+  font-size: 12.5px;
+  font-weight: 600;
+}
+
+headerbar subtitle, .titlebar label.subtitle {
+  color: rgba(230, 224, 212, 0.55);
+  font-size: 11px;
+}
+
+headerbar button, .titlebar button {
+  background-color: transparent;
+  background-image: none;
+  border: 1px solid transparent;
+  border-radius: 3px;
+  box-shadow: none;
+  color: #e6e0d4;
+  min-height: 24px;
+  min-width: 24px;
+  padding: 2px 6px;
+}
+
+headerbar button:hover, .titlebar button:hover {
+  background-color: rgba(230, 224, 212, 0.07);
+  border-color: rgba(230, 224, 212, 0.18);
+}
+
+menubar, menubar > menuitem {
+  background-color: #151413;
+  background-image: none;
+  border: none;
+  box-shadow: none;
+  color: rgba(230, 224, 212, 0.78);
 }
 
 menubar > menuitem:hover {
-  background-color: #24283b;
-  color: #c0caf5;
+  background-color: rgba(230, 224, 212, 0.07);
+  color: #e6e0d4;
 }
 
-menu,
+menu, menu > menuitem, .menu, popover, popover.background {
+  background-color: #151413;
+  background-image: none;
+  border: 1px solid rgba(230, 224, 212, 0.14);
+  border-radius: 3px;
+  box-shadow: 0 18px 42px rgba(0, 0, 0, 0.55);
+  color: #e6e0d4;
+  padding: 6px;
+}
+
 menu > menuitem {
-  background-color: #1a1b26;
-  color: #c0caf5;
+  border: none;
+  border-radius: 3px;
+  box-shadow: none;
+  padding: 6px 10px;
 }
 
 menu > menuitem:hover {
-  background-color: #7aa2f7;
-  color: #1a1b26;
+  background-color: rgba(230, 224, 212, 0.14);
+}
+
+menu separator {
+  background-color: rgba(230, 224, 212, 0.10);
+  min-height: 1px;
+  margin: 5px 8px;
+}
+
+toolbar, .toolbar {
+  background-color: #151413;
+  background-image: none;
+  border-bottom: 1px solid rgba(230, 224, 212, 0.10);
+  padding: 4px;
+}
+
+button {
+  background-color: transparent;
+  background-image: none;
+  border: 1px solid rgba(230, 224, 212, 0.18);
+  border-radius: 3px;
+  box-shadow: none;
+  color: #e6e0d4;
+  padding: 6px 14px;
+}
+
+button:hover {
+  background-color: rgba(230, 224, 212, 0.07);
+  border-color: rgba(230, 224, 212, 0.28);
+}
+
+button:active, button:checked {
+  background-color: rgba(230, 224, 212, 0.11);
+}
+
+button.suggested-action {
+  background-color: #d08a2c;
+  background-image: none;
+  border-color: #d08a2c;
+  color: #151413;
+  font-weight: 600;
+}
+
+button.destructive-action {
+  background-color: transparent;
+  border-color: #a23b2a;
+  color: #e6e0d4;
+}
+
+button.flat {
+  border-color: transparent;
+}
+
+entry, textview, textview text {
+  background-color: #1b1917;
+  border: 1px solid rgba(230, 224, 212, 0.14);
+  border-radius: 3px;
+  caret-color: #d08a2c;
+  color: #e6e0d4;
+  padding: 6px 8px;
+}
+
+entry:focus {
+  border-color: rgba(208, 138, 44, 0.55);
+}
+
+entry selection, textview text selection {
+  background-color: rgba(208, 138, 44, 0.35);
+  color: #e6e0d4;
+}
+
+treeview, treeview.view, iconview, iconview.view {
+  background-color: #151413;
+  color: #e6e0d4;
+}
+
+treeview:selected, iconview:selected {
+  background-color: rgba(230, 224, 212, 0.14);
+  color: #e6e0d4;
+}
+
+treeview header button {
+  background-color: #151413;
+  background-image: none;
+  border: none;
+  border-bottom: 1px solid rgba(230, 224, 212, 0.10);
+  border-radius: 0;
+  color: rgba(230, 224, 212, 0.62);
+}
+
+notebook, notebook stack {
+  background-color: #151413;
+}
+
+notebook header {
+  background-color: #151413;
+  border-bottom: 1px solid rgba(230, 224, 212, 0.10);
+}
+
+notebook tab {
+  background-color: transparent;
+  border: none;
+  border-radius: 3px 3px 0 0;
+  color: rgba(230, 224, 212, 0.62);
+  padding: 6px 12px;
+}
+
+notebook tab:checked {
+  background-color: #1b1917;
+  color: #e6e0d4;
 }
 
 scrollbar {
-  background-color: #1a1b26;
+  background-color: transparent;
+  border: none;
 }
 
 scrollbar slider {
-  background-color: #2a2e42;
-  border-radius: 6px;
+  background-color: rgba(230, 224, 212, 0.28);
+  border: none;
+  border-radius: 3px;
   min-width: 6px;
+  min-height: 32px;
+}
+
+scrollbar slider:hover {
+  background-color: rgba(230, 224, 212, 0.45);
+}
+
+statusbar, statusbar frame {
+  background-color: #151413;
+  background-image: none;
+  border-top: 1px solid rgba(230, 224, 212, 0.10);
+  color: rgba(230, 224, 212, 0.62);
+}
+
+tooltip, tooltip.background {
+  background-color: #1b1917;
+  border: 1px solid rgba(230, 224, 212, 0.14);
+  border-radius: 3px;
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.55);
+  color: #e6e0d4;
+}
+
+check, radio {
+  background-color: transparent;
+  border: 1px solid rgba(230, 224, 212, 0.28);
+  color: #e6e0d4;
+}
+
+check:checked, radio:checked {
+  background-color: #d08a2c;
+  border-color: #d08a2c;
+  color: #151413;
+}
+
+switch {
+  background-color: transparent;
+  background-image: none;
+  border: 1px solid rgba(230, 224, 212, 0.28);
+  border-radius: 10px;
+  min-height: 18px;
+  min-width: 38px;
+}
+
+switch:checked {
+  background-color: #d08a2c;
+  border-color: #d08a2c;
+}
+
+switch slider {
+  background-color: rgba(230, 224, 212, 0.62);
+  border: none;
+  border-radius: 50%;
+  min-height: 12px;
+  min-width: 12px;
+}
+
+switch:checked slider {
+  background-color: #151413;
+}
+
+scale trough {
+  background-color: #232324;
+  border: none;
+  border-radius: 2px;
+  min-height: 4px;
+}
+
+scale highlight {
+  background-color: #e6e0d4;
+  border-radius: 2px;
+}
+
+scale slider {
+  background-color: #e6e0d4;
+  background-image: none;
+  border: none;
+  border-radius: 7px;
+  min-height: 13px;
+  min-width: 13px;
+}
+
+progressbar trough {
+  background-color: #232324;
+  border: none;
+  border-radius: 2px;
+  min-height: 4px;
+}
+
+progressbar progress {
+  background-color: #d08a2c;
+  border: none;
+  border-radius: 2px;
+}
+
+separator {
+  background-color: rgba(230, 224, 212, 0.10);
+}
+
+label {
+  color: #e6e0d4;
+}
+
+label:disabled {
+  color: rgba(230, 224, 212, 0.40);
+}
+
+*:disabled {
+  color: rgba(230, 224, 212, 0.40);
 }

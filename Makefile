@@ -66,3 +66,6 @@ payload:
 	cp desktop/systemd/tiaki-firstboot.sh payload/tiaki-firstboot
 	mkdir -p payload/etc-tiaki
 	cp desktop/wayland/sway.conf desktop/wayland/wayvnc.conf desktop/wayland/foot.ini payload/etc-tiaki/
+	mkdir -p payload/gtk
+	cp desktop/wayland/gtk.css payload/gtk/gtk.css
+	cp desktop/wayland/gtk-settings.ini payload/gtk/settings.ini

@@ -29,5 +29,4 @@
 | [sandbox-profiles.md](specs/sandbox-profiles.md) | Sandbox profiles and provisioner ABI |
 | [ui-tree.md](specs/ui-tree.md) | UI tree schema, edit ops, keymap, renderer |
 | [inference.md](specs/inference.md) | Inference broker, backend ABI, scheduling, isolation |
-| [runtime-abi.md](specs/runtime-abi.md) | Runtime protocol, app trees, trusted input, computer use |
 | [generations.md](specs/generations.md) | Generation table, watchdog, kexec, health probes, session restore |

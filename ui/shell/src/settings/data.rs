@@ -15,8 +15,8 @@ pub(crate) fn set_theme(mode: &str) {
 // ----------------------------------------------------------------- system
 
 pub(crate) fn wallpaper_dir() -> PathBuf {
-    // Rigs installed before the rename keep wallpapers under /usr/share/agentic.
-    for prefix in ["tiaki", "agentic"] {
+    // Rigs installed before the rename keep wallpapers under /usr/share/tiaki.
+    for prefix in ["tiaki"] {
         let dir = PathBuf::from(format!("/usr/share/{prefix}/wallpapers"));
         if dir.is_dir() {
             return dir;

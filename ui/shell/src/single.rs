@@ -45,9 +45,9 @@ impl Instance {
         };
         let exe = command.split('\0').next().unwrap_or_default();
         let is_shell = exe.ends_with("tiaki-shell")
-            || exe.ends_with("agentic-shell")
+            || exe.ends_with("tiaki-shell")
             || exe.ends_with("tiaki-shell (deleted)")
-            || exe.ends_with("agentic-shell (deleted)");
+            || exe.ends_with("tiaki-shell (deleted)");
         is_shell && command.split('\0').any(|arg| arg == marker)
     }
 
