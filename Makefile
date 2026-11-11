@@ -69,3 +69,5 @@ payload:
 	mkdir -p payload/gtk
 	cp desktop/wayland/gtk.css payload/gtk/gtk.css
 	cp desktop/wayland/gtk-settings.ini payload/gtk/settings.ini
+	mkdir -p payload/gtksourceview
+	cp desktop/sourceview/tiaki-classic.xml payload/gtksourceview/classic.xml

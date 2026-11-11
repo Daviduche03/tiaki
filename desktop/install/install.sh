@@ -166,6 +166,8 @@ for gen in "$MNT" /tmp/tiaki-b; do
   cp payload/gtk/settings.ini "$gen/home/desktop/.config/gtk-3.0/settings.ini"
   cp payload/gtk/settings.ini "$gen/home/desktop/.config/gtk-4.0/settings.ini"
   chroot "$gen" chown -R desktop:desktop /home/desktop/.config/gtk-3.0 /home/desktop/.config/gtk-4.0 || true
+  # Tiaki's default source-view scheme is dark: replace upstream classic.
+  cp payload/gtksourceview/classic.xml "$gen/usr/share/gtksourceview-4/styles/classic.xml"
   cp payload/*.service "$gen/etc/systemd/system/"
   # Enable units with explicit symlinks, never `systemctl enable`: one
   # missing file must not void the rest, and no daemon is reachable here.

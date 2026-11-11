@@ -232,6 +232,7 @@ fn ensure_server(home: &Path, principal: &str) -> Result<String, Box<dyn std::er
         .current_dir(&workdir)
         .env("OPENCODE_SERVER_PASSWORD", &password)
         .env("TIAKI_HOME", home)
+        .env("TIAKI_PRINCIPAL", principal)
         .stdin(Stdio::null())
         .stdout(Stdio::null())
         .stderr(Stdio::null())
@@ -414,6 +415,7 @@ fn run_opencode_in(
         .env("OPENCODE_SERVER_PASSWORD", server_password(home).unwrap_or_default())
         .env("OPENCODE_PASSWORD", server_password(home).unwrap_or_default())
         .env("TIAKI_HOME", home)
+        .env("TIAKI_PRINCIPAL", principal)
         .env(
             "TIAKI_WORKSPACE",
             workspace(home).display().to_string(),

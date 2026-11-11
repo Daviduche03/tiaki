@@ -230,7 +230,13 @@ pub(crate) fn handle_http(
             let tree = load_tree(engine, &tree_path, &principal);
             let theme = theme_of(engine, &theme_path);
             let fragment = agentic_widgets::render_screen(&tree, &theme);
-            respond(stream, 200, "text/html; charset=utf-8", &fragment)
+            respond(stream, 200, "application/json", &fragment)
+        }
+        "/page.css" => {
+            respond(stream, 200, "text/css; charset=utf-8", agentic_widgets::CSS)
+        }
+        "/page.js" => {
+            respond(stream, 200, "text/javascript; charset=utf-8", agentic_widgets::SCRIPT)
         }
         "/state" => {
             let theme = theme_of(engine, &theme_path);

@@ -123,7 +123,7 @@ pub fn run(root: &Node) {
     search.set_placeholder_text(Some("Find an assistant"));
     theme::class(&search, "agents-search-entry");
     search_box.pack_start(&search, true, true, 0);
-    search_box.pack_end(&glyphs::fluent_icon("search", 15), false, false, 0);
+    search_box.pack_end(&glyphs::status_icon_tinted(glyphs::settings_icon("search"), 15, (0.56, 0.54, 0.51)), false, false, 0);
     sidebar.pack_start(&search_box, false, false, 0);
 
     let nav_box = gtk::Box::new(gtk::Orientation::Vertical, 2);
@@ -196,7 +196,7 @@ pub fn run(root: &Node) {
         let line = gtk::Box::new(gtk::Orientation::Horizontal, 12);
         line.set_margin_start(14);
         line.set_margin_end(12);
-        line.pack_start(&glyphs::fluent_icon(&assistant.icon, 20), false, false, 0);
+        line.pack_start(&glyphs::status_icon_tinted(glyphs::settings_icon(&assistant.icon), 20, (0.902, 0.878, 0.831)), false, false, 0);
         let text = gtk::Box::new(gtk::Orientation::Vertical, 1);
         text.set_hexpand(true);
         let label = gtk::Label::new(Some(&assistant.label));
