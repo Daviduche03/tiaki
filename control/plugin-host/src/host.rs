@@ -75,17 +75,9 @@ impl InstalledPlugin {
     }
 }
 
-#[derive(Clone, Debug, PartialEq, Eq)]
+#[derive(Clone, Debug, Default, PartialEq, Eq)]
 pub struct InstallOptions {
     pub allow_unverified: bool,
-}
-
-impl Default for InstallOptions {
-    fn default() -> Self {
-        Self {
-            allow_unverified: false,
-        }
-    }
 }
 
 #[derive(Clone, Debug)]
@@ -621,7 +613,7 @@ impl PluginHost {
             .plugins
             .get(id)
             .ok_or_else(|| HostError::NotFound(id.to_string()))?;
-        Ok(read_config(&self.root.join(&plugin.id()))?.1)
+        Ok(read_config(&self.root.join(plugin.id()))?.1)
     }
 
     pub fn set_config(

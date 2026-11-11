@@ -222,7 +222,7 @@ impl AgentEvent {
                         "Inference burst started; agents yield to {SESSION_YIELD_FLOOR_TOTAL} shares."
                     )
                 } else {
-                    format!("Inference burst cleared; agents resume their pool.")
+                    "Inference burst cleared; agents resume their pool.".to_string()
                 }
             }
             AgentEvent::Shares { allocation } => {
