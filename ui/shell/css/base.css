@@ -1,0 +1,15 @@
+/* Shared shell foundation: window transparency, the app font,
+   and the click-catcher scrim every overlay uses. */
+window, window.background {
+  background-color: transparent;
+  color: #e6e0d4;
+  font-family: "IBM Plex Sans", "DejaVu Sans", sans-serif;
+}
+
+.dock-window, .launcher-window {
+  background-color: transparent;
+}
+
+.menu-scrim {
+  background-color: rgba(0,0,0,0.001);
+}

@@ -1,0 +1,14 @@
+#!/bin/sh
+set -e
+
+id -u agentic >/dev/null 2>&1 || useradd --system --home /var/lib/agentic --shell /usr/sbin/nologin agentic
+mkdir -p /var/lib/agentic
+chown -R agentic:agentic /var/lib/agentic
+
+if [ -x /usr/local/bin/agentd ] && [ -f /usr/share/agentic/desktop.json ]; then
+  su -s /bin/sh agentic -c 'AGENTIC_HOME=/var/lib/agentic /usr/local/bin/agentd --principal user:local ui set /usr/share/agentic/desktop.json' || true
+fi
+
+if command -v systemctl >/dev/null 2>&1; then
+  systemctl daemon-reload || true
+fi

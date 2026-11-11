@@ -1,0 +1,55 @@
+#!/bin/sh
+# Tiaki's graphical session.
+#
+# One compositor runs in the foreground so systemd tracks the session by it.
+# The wallpaper, the remote server and the sign-in screen wait in the
+# background for the Wayland socket, then start in that order.
+#
+# ShojiWM drives DRM/KMS directly (`--tty`). A machine without a DRM device —
+# the QEMU harness, a container — cannot host it, so the same session falls
+# back to Sway's headless backend. That is a capability check, not a second
+# product: the fallback exists so the image boots everywhere it is tested.
+set -eu
+
+runtime="${XDG_RUNTIME_DIR:-/run/tiaki}"
+export XDG_RUNTIME_DIR="$runtime"
+
+start_inside() {
+    socket=""
+    tries=0
+    while [ -z "$socket" ] && [ "$tries" -lt 200 ]; do
+        for candidate in "$runtime"/wayland-*; do
+            case "$candidate" in
+                *.lock) continue ;;
+            esac
+            if [ -S "$candidate" ]; then
+                socket="${candidate##*/}"
+                break
+            fi
+        done
+        [ -n "$socket" ] || sleep 0.1
+        tries=$((tries + 1))
+    done
+    if [ -z "$socket" ]; then
+        echo "tiaki-session: no Wayland socket appeared" >&2
+        return 1
+    fi
+    export WAYLAND_DISPLAY="$socket"
+
+    # Background helpers are throttled first; the sign-in screen is
+    # foreground so the UI stays responsive while the session starts.
+    /usr/local/bin/sched-launch --class background -- \
+        /usr/local/bin/tiaki-wallpaper init || true
+    /usr/local/bin/sched-launch --class background -- \
+        wayvnc -C /etc/tiaki/wayvnc.conf || true
+    /usr/local/bin/sched-launch --class foreground -- \
+        /usr/local/bin/tiaki-shell greet || true
+}
+
+start_inside &
+
+if [ -e /dev/dri/card0 ]; then
+    exec /usr/local/bin/tiaki-wm --tty
+fi
+
+exec sway -c /etc/tiaki/sway.conf

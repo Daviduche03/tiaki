@@ -1,0 +1,11 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "Clock Panel Config",
+  "type": "object",
+  "properties": {
+    "position": { "enum": ["left", "center", "right"] },
+    "format": { "enum": ["12h", "24h"] },
+    "show_seconds": { "type": "boolean", "default": false }
+  },
+  "additionalProperties": false
+}

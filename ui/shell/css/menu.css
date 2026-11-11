@@ -1,0 +1,42 @@
+/* Drop-down menus: same material as Control Center and
+   Notifications. Ink panel, paper text, hairline. */
+.menu-popover {
+  background-color: #151413;
+  background-image: none;
+  border: 1px solid rgba(230, 224, 212, 0.14);
+  border-radius: 3px;
+  padding: 6px;
+  box-shadow: 0 18px 42px rgba(0, 0, 0, 0.55);
+}
+.menu-list {
+  padding: 0;
+}
+.menu-entry {
+  background: transparent;
+  background-image: none;
+  border: none;
+  box-shadow: none;
+  padding: 6px 10px;
+  border-radius: 3px;
+}
+.menu-entry:hover {
+  background-color: rgba(230, 224, 212, 0.07);
+}
+.menu-entry:active {
+  background-color: rgba(230, 224, 212, 0.11);
+}
+.menu-label {
+  font-size: 12.5px;
+  font-weight: 500;
+  color: #e6e0d4;
+}
+.menu-sep {
+  background-color: rgba(230, 224, 212, 0.10);
+  min-height: 1px;
+  margin: 5px 8px;
+}
+.menu-shortcut {
+  font-family: "IBM Plex Mono", monospace;
+  font-size: 10.5px;
+  color: rgba(230, 224, 212, 0.62);
+}

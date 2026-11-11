@@ -1,0 +1,4 @@
+Placeholder kernel image for the base generation.
+
+A real build replaces this with the Linux kernel and initramfs for the
+generation. The control plane verifies the directory digest before boot.

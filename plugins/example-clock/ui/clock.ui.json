@@ -1,0 +1,10 @@
+{
+  "id": "panel.top",
+  "type": "panel",
+  "layout": "row",
+  "children": [
+    { "id": "clock", "type": "clock", "props": { "position": "left", "format": "24h" } },
+    { "id": "spacer", "type": "spacer", "props": { "flex": 1 } },
+    { "id": "status", "type": "status", "props": { "items": ["network", "battery", "audio"] } }
+  ]
+}

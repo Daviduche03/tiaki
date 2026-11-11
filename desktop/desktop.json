@@ -1,0 +1,1829 @@
+{
+  "id": "desktop",
+  "kind": "workspace",
+  "props": {
+    "title": "Tiaki"
+  },
+  "children": [
+    {
+      "id": "bar",
+      "kind": "panel",
+      "props": {
+        "layout": "row",
+        "role": "bar"
+      },
+      "children": [
+        {
+          "id": "bar.logo",
+          "kind": "button",
+          "props": {
+            "label": "Tiaki",
+            "action": "palette.open",
+            "icon": "beacon",
+            "variant": "logo"
+          }
+        },
+        {
+          "id": "bar.menus",
+          "kind": "panel",
+          "props": {
+            "layout": "row",
+            "role": "menubar"
+          },
+          "children": [
+            {
+              "id": "menu.file",
+              "kind": "menu",
+              "props": {
+                "label": "File"
+              },
+              "children": [
+                {
+                  "id": "menu.file.window",
+                  "kind": "menuitem",
+                  "props": {
+                    "label": "New Window",
+                    "action": "terminal.new",
+                    "shortcut": "⌘N"
+                  }
+                },
+                {
+                  "id": "menu.file.term",
+                  "kind": "menuitem",
+                  "props": {
+                    "label": "New Terminal",
+                    "action": "terminal.new",
+                    "shortcut": "⌘T"
+                  }
+                },
+                {
+                  "id": "menu.file.sep1",
+                  "kind": "separator",
+                  "props": {
+                    "orientation": "horizontal"
+                  }
+                },
+                {
+                  "id": "menu.file.close",
+                  "kind": "menuitem",
+                  "props": {
+                    "label": "Close Window",
+                    "action": "window.close",
+                    "shortcut": "⌘W"
+                  }
+                },
+                {
+                  "id": "menu.file.sep2",
+                  "kind": "separator",
+                  "props": {
+                    "orientation": "horizontal"
+                  }
+                },
+                {
+                  "id": "menu.file.quit",
+                  "kind": "menuitem",
+                  "props": {
+                    "label": "Quit",
+                    "action": "session.exit",
+                    "shortcut": "⌘Q"
+                  }
+                }
+              ]
+            },
+            {
+              "id": "menu.edit",
+              "kind": "menu",
+              "props": {
+                "label": "Edit"
+              },
+              "children": [
+                {
+                  "id": "menu.edit.undo",
+                  "kind": "menuitem",
+                  "props": {
+                    "label": "Undo",
+                    "action": "edit.undo",
+                    "shortcut": "⌘Z"
+                  }
+                },
+                {
+                  "id": "menu.edit.redo",
+                  "kind": "menuitem",
+                  "props": {
+                    "label": "Redo",
+                    "action": "edit.redo",
+                    "shortcut": "⇧⌘Z"
+                  }
+                },
+                {
+                  "id": "menu.edit.sep1",
+                  "kind": "separator",
+                  "props": {
+                    "orientation": "horizontal"
+                  }
+                },
+                {
+                  "id": "menu.edit.copy",
+                  "kind": "menuitem",
+                  "props": {
+                    "label": "Copy",
+                    "action": "edit.copy",
+                    "shortcut": "⌘C"
+                  }
+                },
+                {
+                  "id": "menu.edit.paste",
+                  "kind": "menuitem",
+                  "props": {
+                    "label": "Paste",
+                    "action": "edit.paste",
+                    "shortcut": "⌘V"
+                  }
+                }
+              ]
+            },
+            {
+              "id": "menu.view",
+              "kind": "menu",
+              "props": {
+                "label": "View"
+              },
+              "children": [
+                {
+                  "id": "menu.view.theme",
+                  "kind": "menuitem",
+                  "props": {
+                    "label": "Theme",
+                    "action": "theme.toggle",
+                    "shortcut": "⌘⇧T"
+                  }
+                },
+                {
+                  "id": "menu.view.sep1",
+                  "kind": "separator",
+                  "props": {
+                    "orientation": "horizontal"
+                  }
+                },
+                {
+                  "id": "menu.view.reload",
+                  "kind": "menuitem",
+                  "props": {
+                    "label": "Reload UI",
+                    "action": "ui.reload",
+                    "shortcut": "⌘R"
+                  }
+                },
+                {
+                  "id": "menu.view.clock",
+                  "kind": "menuitem",
+                  "props": {
+                    "label": "Clock Format",
+                    "action": "clock.toggle_format"
+                  }
+                },
+                {
+                  "id": "menu.view.full",
+                  "kind": "menuitem",
+                  "props": {
+                    "label": "Toggle Fullscreen",
+                    "action": "view.fullscreen",
+                    "shortcut": "⌃⌘F"
+                  }
+                }
+              ]
+            },
+            {
+              "id": "menu.window",
+              "kind": "menu",
+              "props": {
+                "label": "Window"
+              },
+              "children": [
+                {
+                  "id": "menu.window.all",
+                  "kind": "menuitem",
+                  "props": {
+                    "label": "All Windows…",
+                    "action": "windows.list",
+                    "shortcut": "⌘`"
+                  }
+                },
+                {
+                  "id": "menu.window.cycle",
+                  "kind": "menuitem",
+                  "props": {
+                    "label": "Cycle This App",
+                    "action": "windows.cycle",
+                    "shortcut": "⌃`"
+                  }
+                },
+                {
+                  "id": "menu.window.zoom",
+                  "kind": "menuitem",
+                  "props": {
+                    "label": "Zoom",
+                    "action": "window.zoom"
+                  }
+                },
+                {
+                  "id": "menu.window.sep0",
+                  "kind": "separator",
+                  "props": {
+                    "orientation": "horizontal"
+                  }
+                },
+                {
+                  "id": "menu.window.term",
+                  "kind": "menuitem",
+                  "props": {
+                    "label": "Terminal",
+                    "action": "terminal.new"
+                  }
+                },
+                {
+                  "id": "menu.window.files",
+                  "kind": "menuitem",
+                  "props": {
+                    "label": "Files",
+                    "action": "files.open"
+                  }
+                },
+                {
+                  "id": "menu.window.editor",
+                  "kind": "menuitem",
+                  "props": {
+                    "label": "Editor",
+                    "action": "editor.open"
+                  }
+                },
+                {
+                  "id": "menu.window.monitor",
+                  "kind": "menuitem",
+                  "props": {
+                    "label": "Monitor",
+                    "action": "monitor.open"
+                  }
+                },
+                {
+                  "id": "menu.window.restore",
+                  "kind": "menuitem",
+                  "props": {
+                    "label": "Show Minimized",
+                    "action": "window.restore"
+                  }
+                },
+                {
+                  "id": "menu.window.sep1",
+                  "kind": "separator",
+                  "props": {
+                    "orientation": "horizontal"
+                  }
+                },
+                {
+                  "id": "menu.window.splith",
+                  "kind": "menuitem",
+                  "props": {
+                    "label": "Tile Side by Side",
+                    "action": "layout.splith"
+                  }
+                },
+                {
+                  "id": "menu.window.splitv",
+                  "kind": "menuitem",
+                  "props": {
+                    "label": "Tile Stacked",
+                    "action": "layout.splitv"
+                  }
+                },
+                {
+                  "id": "menu.window.tabbed",
+                  "kind": "menuitem",
+                  "props": {
+                    "label": "Tabbed",
+                    "action": "layout.tabbed"
+                  }
+                },
+                {
+                  "id": "menu.window.stacking",
+                  "kind": "menuitem",
+                  "props": {
+                    "label": "Stacked",
+                    "action": "layout.stacking"
+                  }
+                },
+                {
+                  "id": "menu.window.floating",
+                  "kind": "menuitem",
+                  "props": {
+                    "label": "Toggle Floating",
+                    "action": "window.floating",
+                    "shortcut": "⇧⌘Space"
+                  }
+                }
+              ]
+            },
+            {
+              "id": "menu.agent",
+              "kind": "menu",
+              "props": {
+                "label": "Assistant"
+              },
+              "children": [
+                {
+                  "id": "menu.agent.ask",
+                  "kind": "menuitem",
+                  "props": {
+                    "label": "Ask the Agent",
+                    "action": "palette.open",
+                    "shortcut": "⌘Space"
+                  }
+                },
+                {
+                  "id": "menu.agent.sep1",
+                  "kind": "separator",
+                  "props": {
+                    "orientation": "horizontal"
+                  }
+                },
+                {
+                  "id": "menu.agent.txn",
+                  "kind": "menuitem",
+                  "props": {
+                    "label": "Transactions",
+                    "action": "transactions.open"
+                  }
+                },
+                {
+                  "id": "menu.agent.sep2",
+                  "kind": "separator",
+                  "props": {
+                    "orientation": "horizontal"
+                  }
+                },
+                {
+                  "id": "menu.agent.rollback",
+                  "kind": "menuitem",
+                  "props": {
+                    "label": "Roll Back Last Change",
+                    "action": "tiaki:rollback",
+                    "shortcut": "⌘⇧Z"
+                  }
+                },
+                {
+                  "id": "menu.agent.guard",
+                  "kind": "menuitem",
+                  "props": {
+                    "label": "Guarded Mode",
+                    "action": "tiaki:mode.guarded"
+                  }
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "id": "bar.spacer",
+          "kind": "spacer",
+          "props": {
+            "flex": 1
+          }
+        },
+        {
+          "id": "bar.status",
+          "kind": "status",
+          "props": {
+            "items": [
+              "wifi",
+              "battery"
+            ]
+          }
+        },
+        {
+          "id": "bar.generation",
+          "kind": "text",
+          "props": {
+            "value": "gen a"
+          }
+        },
+        {
+          "id": "bar.notifications",
+          "kind": "button",
+          "props": {
+            "label": "",
+            "action": "notifications.open",
+            "icon": "notifications",
+            "variant": "status"
+          }
+        },
+        {
+          "id": "bar.control",
+          "kind": "button",
+          "props": {
+            "label": "",
+            "action": "control.open",
+            "icon": "preferences-system-symbolic",
+            "variant": "status"
+          }
+        },
+        {
+          "id": "bar.clock",
+          "kind": "clock",
+          "props": {
+            "format": "24h",
+            "show_date": false
+          }
+        }
+      ]
+    },
+    {
+      "id": "desk",
+      "kind": "panel",
+      "props": {
+        "layout": "column",
+        "title": "Your machine, as a transaction"
+      },
+      "children": [
+        {
+          "id": "hero",
+          "kind": "text",
+          "props": {
+            "value": "Every change is reversible, attributable, and yours. Rebuild the panel, revert the theme, boot a new generation — the session comes back.",
+            "size": "title"
+          }
+        },
+        {
+          "id": "cards",
+          "kind": "panel",
+          "props": {
+            "layout": "row"
+          },
+          "children": [
+            {
+              "id": "card.ui",
+              "kind": "card",
+              "props": {
+                "title": "Rebuild the panel",
+                "body": "The UI is a tree. Edit it, validate it, revert it.",
+                "action": "ui.reload"
+              }
+            },
+            {
+              "id": "card.palette",
+              "kind": "card",
+              "props": {
+                "title": "Command palette",
+                "body": "Drive the desktop from the keyboard. Super+Space.",
+                "action": "palette.open"
+              }
+            },
+            {
+              "id": "card.theme",
+              "kind": "card",
+              "props": {
+                "title": "Toggle theme",
+                "body": "A transaction on the ledger, reversible in one step.",
+                "action": "theme.toggle"
+              }
+            }
+          ]
+        },
+        {
+          "id": "hint",
+          "kind": "text",
+          "props": {
+            "value": "Super+Space launcher · Super+Return terminal · Super+T theme · Super+K clock",
+            "size": "small"
+          }
+        },
+        {
+          "id": "gen",
+          "kind": "text",
+          "props": {
+            "value": "Generation base · boot registered · session restored after reboot",
+            "size": "small"
+          }
+        }
+      ]
+    },
+    {
+      "id": "activity",
+      "kind": "panel",
+      "props": {
+        "layout": "column",
+        "title": "Activity"
+      },
+      "children": [
+        {
+          "id": "act.1",
+          "kind": "text",
+          "props": {
+            "value": "Rebuilt the UI tree · user:ada · committed",
+            "size": "small"
+          }
+        },
+        {
+          "id": "act.2",
+          "kind": "text",
+          "props": {
+            "value": "Updated the keymap · user:ada · committed",
+            "size": "small"
+          }
+        },
+        {
+          "id": "act.3",
+          "kind": "text",
+          "props": {
+            "value": "Booted generation base · system · 188ms",
+            "size": "small"
+          }
+        },
+        {
+          "id": "act.4",
+          "kind": "text",
+          "props": {
+            "value": "Session restored · tree ok · keymap ok · theme ok",
+            "size": "small"
+          }
+        }
+      ]
+    },
+    {
+      "id": "dock",
+      "kind": "panel",
+      "props": {
+        "layout": "row",
+        "role": "dock"
+      },
+      "children": [
+        {
+          "id": "dock.terminal",
+          "kind": "app",
+          "props": {
+            "label": "Terminal",
+            "icon": "utilities-terminal-symbolic",
+            "art": "terminal",
+            "command": "foot -c /etc/tiaki/foot.ini",
+            "category": "System",
+            "description": "A Wayland terminal with the Tiaki prompt, JetBrains Mono, and Tokyo Night.",
+            "color": "green",
+            "running": true,
+            "pinned": true
+          }
+        },
+        {
+          "id": "dock.files",
+          "kind": "app",
+          "props": {
+            "label": "Files",
+            "icon": "system-file-manager-symbolic",
+            "art": "files",
+            "command": "thunar",
+            "category": "System",
+            "description": "Browse the filesystem. Every write goes through the authority layer.",
+            "color": "blue",
+            "running": false,
+            "pinned": true
+          }
+        },
+        {
+          "id": "dock.editor",
+          "kind": "app",
+          "props": {
+            "label": "Editor",
+            "icon": "accessories-text-editor-symbolic",
+            "art": "editor",
+            "command": "mousepad /home/desktop/demo.rs",
+            "category": "Create",
+            "description": "A text editor with the desktop tree open, ready to edit.",
+            "color": "orange",
+            "running": true,
+            "pinned": true
+          }
+        },
+        {
+          "id": "dock.browser",
+          "kind": "app",
+          "props": {
+            "label": "Browser",
+            "icon": "web-browser-symbolic",
+            "art": "browser",
+            "command": "epiphany",
+            "category": "Internet",
+            "description": "Browse the web in a sandboxed session.",
+            "color": "cyan",
+            "running": false,
+            "pinned": true
+          }
+        },
+        {
+          "id": "dock.monitor",
+          "kind": "app",
+          "props": {
+            "label": "Monitor",
+            "icon": "computer-symbolic",
+            "art": "monitor",
+            "command": "foot -c /etc/tiaki/foot.ini -a btop -w 940x560 -e btop",
+            "category": "System",
+            "description": "CPU, memory, disks, and processes in a tiled terminal.",
+            "color": "purple",
+            "running": false,
+            "pinned": true
+          }
+        },
+        {
+          "id": "dock.agents",
+          "kind": "app",
+          "props": {
+            "label": "Agents",
+            "icon": "system-run-symbolic",
+            "art": "agents",
+            "command": "foot -c /etc/tiaki/foot.ini -e /usr/local/bin/agentd state",
+            "category": "Tiaki",
+            "description": "Inspect what the agent can do and how a change would be explained.",
+            "color": "pink",
+            "running": false,
+            "pinned": true
+          }
+        },
+        {
+          "id": "dock.sep",
+          "kind": "separator",
+          "props": {
+            "orientation": "vertical"
+          }
+        },
+        {
+          "id": "dock.trash",
+          "kind": "app",
+          "props": {
+            "label": "Trash",
+            "icon": "user-trash-symbolic",
+            "art": "trash",
+            "command": "thunar trash://",
+            "category": "System",
+            "description": "Deleted files, restorable until the transaction is committed.",
+            "color": "slate",
+            "running": false,
+            "pinned": true
+          }
+        }
+      ]
+    },
+    {
+      "id": "launcher",
+      "kind": "panel",
+      "props": {
+        "layout": "column",
+        "role": "launcher"
+      },
+      "children": [
+        {
+          "id": "launch.terminal",
+          "kind": "app",
+          "props": {
+            "label": "Terminal",
+            "icon": "utilities-terminal-symbolic",
+            "art": "terminal",
+            "command": "foot -c /etc/tiaki/foot.ini",
+            "category": "System",
+            "description": "Open a new terminal window in the tiling session.",
+            "color": "green"
+          }
+        },
+        {
+          "id": "launch.files",
+          "kind": "app",
+          "props": {
+            "label": "Files",
+            "icon": "system-file-manager-symbolic",
+            "art": "files",
+            "command": "thunar",
+            "category": "System",
+            "description": "Browse home, media, and mounted generations.",
+            "color": "blue"
+          }
+        },
+        {
+          "id": "launch.editor",
+          "kind": "app",
+          "props": {
+            "label": "Editor",
+            "icon": "accessories-text-editor-symbolic",
+            "art": "editor",
+            "command": "mousepad /home/desktop/demo.rs",
+            "category": "Create",
+            "description": "Edit text and source files with a dark GTK theme.",
+            "color": "orange"
+          }
+        },
+        {
+          "id": "launch.browser",
+          "kind": "app",
+          "props": {
+            "label": "Browser",
+            "icon": "web-browser-symbolic",
+            "art": "browser",
+            "command": "epiphany",
+            "category": "Internet",
+            "description": "A sandboxed web browser for documentation and research.",
+            "color": "cyan"
+          }
+        },
+        {
+          "id": "launch.monitor",
+          "kind": "app",
+          "props": {
+            "label": "Monitor",
+            "icon": "computer-symbolic",
+            "art": "monitor",
+            "command": "foot -c /etc/tiaki/foot.ini -a btop -w 940x560 -e btop",
+            "category": "System",
+            "description": "Live CPU, memory, network, and process view.",
+            "color": "purple"
+          }
+        },
+        {
+          "id": "launch.agents",
+          "kind": "app",
+          "props": {
+            "label": "Agents",
+            "icon": "system-run-symbolic",
+            "art": "agents",
+            "command": "foot -c /etc/tiaki/foot.ini -e /usr/local/bin/agentd state",
+            "category": "Tiaki",
+            "description": "See the runtime, capabilities, and transaction explanations.",
+            "color": "pink"
+          }
+        },
+        {
+          "id": "launch.transactions",
+          "kind": "app",
+          "props": {
+            "label": "Transactions",
+            "icon": "document-properties-symbolic",
+            "art": "transactions",
+            "command": "foot -c /etc/tiaki/foot.ini -e /usr/local/bin/agentd log",
+            "category": "Tiaki",
+            "description": "The ledger: every change, who made it, and how to undo it.",
+            "color": "blue"
+          }
+        },
+        {
+          "id": "launch.theme",
+          "kind": "app",
+          "props": {
+            "label": "Theme",
+            "icon": "weather-clear-night-symbolic",
+            "art": "theme",
+            "command": "tiaki:theme.toggle",
+            "category": "Settings",
+            "description": "Flip dark and light as a reversible transaction.",
+            "color": "purple"
+          }
+        },
+        {
+          "id": "launch.reload",
+          "kind": "app",
+          "props": {
+            "label": "Reload UI",
+            "icon": "view-refresh-symbolic",
+            "art": "reload",
+            "command": "tiaki:ui.reload",
+            "category": "Settings",
+            "description": "Re-read the shell tree without restarting the session.",
+            "color": "green"
+          }
+        },
+        {
+          "id": "launch.clock",
+          "kind": "app",
+          "props": {
+            "label": "Clock Format",
+            "icon": "preferences-system-time-symbolic",
+            "art": "clock",
+            "command": "tiaki:clock.toggle_format",
+            "category": "Settings",
+            "description": "Switch the menu bar clock between 12h and 24h.",
+            "color": "cyan"
+          }
+        },
+        {
+          "id": "launch.wallpaper",
+          "kind": "app",
+          "props": {
+            "label": "Wallpaper",
+            "icon": "preferences-desktop-wallpaper",
+            "art": "wallpaper",
+            "command": "wallpaper.next",
+            "category": "Settings",
+            "description": "Cycle the desktop wallpaper. The choice is remembered."
+          }
+        },
+        {
+          "id": "launch.settings",
+          "kind": "app",
+          "props": {
+            "label": "Settings",
+            "icon": "preferences-system",
+            "art": "settings",
+            "command": "settings.open",
+            "category": "Settings",
+            "description": "Wallpaper, appearance, sound, display, power, and about."
+          }
+        },
+        {
+          "id": "launch.exit",
+          "kind": "app",
+          "props": {
+            "label": "Quit",
+            "icon": "application-exit-symbolic",
+            "art": "exit",
+            "command": "session.exit",
+            "category": "System",
+            "description": "End the Sway session. The next boot restores it.",
+            "color": "red"
+          }
+        }
+      ]
+    },
+    {
+      "id": "agents",
+      "kind": "panel",
+      "props": {
+        "layout": "column",
+        "role": "agents"
+      },
+      "children": [
+        {
+          "id": "agents.pair",
+          "kind": "button",
+          "props": {
+            "label": "Pair Programmer",
+            "action": "agents.thread.pair",
+            "icon": "monitor",
+            "variant": "list",
+            "detail": "Code, diffs, worktrees. Speaks in patches."
+          }
+        },
+        {
+          "id": "agents.research",
+          "kind": "button",
+          "props": {
+            "label": "Researcher",
+            "action": "agents.thread.research",
+            "icon": "search",
+            "variant": "list",
+            "detail": "Web research with sources. Summaries you can cite."
+          }
+        },
+        {
+          "id": "agents.writer",
+          "kind": "button",
+          "props": {
+            "label": "Writer",
+            "action": "agents.thread.writer",
+            "icon": "brush",
+            "variant": "list",
+            "detail": "Docs, emails, drafts. Tone on request."
+          }
+        },
+        {
+          "id": "agents.planner",
+          "kind": "button",
+          "props": {
+            "label": "Planner",
+            "action": "agents.thread.planner",
+            "icon": "time",
+            "variant": "list",
+            "detail": "Plans, schedules, reminders. Never drops a task."
+          }
+        },
+        {
+          "id": "agents.helper",
+          "kind": "button",
+          "props": {
+            "label": "Helper",
+            "action": "agents.thread.helper",
+            "icon": "agents",
+            "variant": "list",
+            "detail": "General tasks, file chores, first stop for anything."
+          }
+        }
+      ]
+    },
+    {
+      "id": "settings",
+      "kind": "panel",
+      "props": {
+        "layout": "column",
+        "role": "settings"
+      },
+      "children": [
+        {
+          "id": "settings.home",
+          "kind": "button",
+          "props": {
+            "label": "Home",
+            "action": "settings.page.home",
+            "icon": "home",
+            "variant": "list"
+          }
+        },
+        {
+          "id": "settings.system",
+          "kind": "button",
+          "props": {
+            "label": "System",
+            "action": "settings.page.system",
+            "icon": "system",
+            "variant": "list"
+          }
+        },
+        {
+          "id": "settings.bluetooth",
+          "kind": "button",
+          "props": {
+            "label": "Bluetooth & devices",
+            "action": "settings.page.bluetooth",
+            "icon": "bluetooth",
+            "variant": "list"
+          }
+        },
+        {
+          "id": "settings.network",
+          "kind": "button",
+          "props": {
+            "label": "Network & internet",
+            "action": "settings.page.network",
+            "icon": "network",
+            "variant": "list"
+          }
+        },
+        {
+          "id": "settings.personalization",
+          "kind": "button",
+          "props": {
+            "label": "Personalization",
+            "action": "settings.page.personalization",
+            "icon": "personalization",
+            "variant": "list"
+          }
+        },
+        {
+          "id": "settings.apps",
+          "kind": "button",
+          "props": {
+            "label": "Apps",
+            "action": "settings.page.apps",
+            "icon": "apps",
+            "variant": "list"
+          }
+        },
+        {
+          "id": "settings.accounts",
+          "kind": "button",
+          "props": {
+            "label": "Accounts",
+            "action": "settings.page.accounts",
+            "icon": "accounts",
+            "variant": "list"
+          }
+        },
+        {
+          "id": "settings.time",
+          "kind": "button",
+          "props": {
+            "label": "Time & language",
+            "action": "settings.page.time",
+            "icon": "time",
+            "variant": "list"
+          }
+        },
+        {
+          "id": "settings.gaming",
+          "kind": "button",
+          "props": {
+            "label": "Gaming",
+            "action": "settings.page.gaming",
+            "icon": "gaming",
+            "variant": "list"
+          }
+        },
+        {
+          "id": "settings.accessibility",
+          "kind": "button",
+          "props": {
+            "label": "Accessibility",
+            "action": "settings.page.accessibility",
+            "icon": "accessibility",
+            "variant": "list"
+          }
+        },
+        {
+          "id": "settings.privacy",
+          "kind": "button",
+          "props": {
+            "label": "Privacy & security",
+            "action": "settings.page.privacy",
+            "icon": "privacy",
+            "variant": "list"
+          }
+        },
+        {
+          "id": "settings.update",
+          "kind": "button",
+          "props": {
+            "label": "System update",
+            "action": "settings.page.update",
+            "icon": "update",
+            "variant": "list"
+          }
+        },
+        {
+          "id": "settings.display",
+          "kind": "button",
+          "props": {
+            "label": "Display",
+            "action": "settings.page.display",
+            "icon": "system",
+            "variant": "list"
+          }
+        },
+        {
+          "id": "settings.sound",
+          "kind": "button",
+          "props": {
+            "label": "Sound",
+            "action": "settings.page.sound",
+            "icon": "sound",
+            "variant": "list"
+          }
+        },
+        {
+          "id": "settings.power",
+          "kind": "button",
+          "props": {
+            "label": "Power",
+            "action": "settings.page.power",
+            "icon": "power",
+            "variant": "list"
+          }
+        },
+        {
+          "id": "settings.storage",
+          "kind": "button",
+          "props": {
+            "label": "Storage",
+            "action": "settings.page.storage",
+            "icon": "storage",
+            "variant": "list"
+          }
+        },
+        {
+          "id": "settings.about",
+          "kind": "button",
+          "props": {
+            "label": "About",
+            "action": "settings.page.about",
+            "icon": "info",
+            "variant": "list"
+          }
+        },
+        {
+          "id": "settings.page.time.content",
+          "kind": "panel",
+          "props": {
+            "title": "Time"
+          },
+          "children": [
+            {
+              "id": "settings.page.time.section.datetime",
+              "kind": "section",
+              "props": {
+                "title": "Date & time"
+              },
+              "children": [
+                {
+                  "id": "settings.page.time.row.now",
+                  "kind": "row",
+                  "props": {
+                    "title": "Current time"
+                  },
+                  "children": [
+                    {
+                      "id": "settings.page.time.row.now.value",
+                      "kind": "value",
+                      "props": {
+                        "source": "time.now"
+                      }
+                    }
+                  ]
+                },
+                {
+                  "id": "settings.page.time.row.zone",
+                  "kind": "row",
+                  "props": {
+                    "title": "Time zone"
+                  },
+                  "children": [
+                    {
+                      "id": "settings.page.time.row.zone.value",
+                      "kind": "value",
+                      "props": {
+                        "source": "time.zone"
+                      }
+                    }
+                  ]
+                },
+                {
+                  "id": "settings.page.time.row.format",
+                  "kind": "row",
+                  "props": {
+                    "title": "Clock format",
+                    "subtitle": "12-hour or 24-hour time in the menu bar",
+                    "icon": "clock"
+                  },
+                  "children": [
+                    {
+                      "id": "settings.page.time.row.format.control",
+                      "kind": "dropdown",
+                      "props": {
+                        "source": "time.clock_format",
+                        "options": "12-hour|24-hour",
+                        "action": "clock.toggle_format"
+                      }
+                    }
+                  ]
+                },
+                {
+                  "id": "settings.page.time.row.auto",
+                  "kind": "row",
+                  "props": {
+                    "title": "Set time automatically",
+                    "subtitle": "Keep the clock right with systemd-timesyncd",
+                    "icon": "update"
+                  },
+                  "children": [
+                    {
+                      "id": "settings.page.time.row.auto.value",
+                      "kind": "value",
+                      "props": {
+                        "source": "time.timesyncd"
+                      }
+                    }
+                  ]
+                }
+              ]
+            },
+            {
+              "id": "settings.page.time.section.locale",
+              "kind": "section",
+              "props": {
+                "title": "Language & region"
+              },
+              "children": [
+                {
+                  "id": "settings.page.time.row.language",
+                  "kind": "row",
+                  "props": {
+                    "title": "Display language"
+                  },
+                  "children": [
+                    {
+                      "id": "settings.page.time.row.language.value",
+                      "kind": "value",
+                      "props": {
+                        "source": "locale.language"
+                      }
+                    }
+                  ]
+                },
+                {
+                  "id": "settings.page.time.row.region",
+                  "kind": "row",
+                  "props": {
+                    "title": "Region"
+                  },
+                  "children": [
+                    {
+                      "id": "settings.page.time.row.region.value",
+                      "kind": "value",
+                      "props": {
+                        "source": "locale.region"
+                      }
+                    }
+                  ]
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "id": "settings.page.system.content",
+          "kind": "panel",
+          "props": {
+            "title": "System"
+          },
+          "children": [
+            {
+              "id": "settings.page.system.section.system",
+              "kind": "section",
+              "props": {
+                "title": "System"
+              },
+              "children": [
+                {
+                  "id": "settings.page.system.row.display",
+                  "kind": "row",
+                  "props": {
+                    "title": "Display",
+                    "subtitle": "Monitors, brightness, night light",
+                    "icon": "monitor",
+                    "link": "settings.page.display"
+                  },
+                  "children": [
+                    {
+                      "id": "settings.page.system.row.display.value",
+                      "kind": "value",
+                      "props": {
+                        "source": "display.summary"
+                      }
+                    }
+                  ]
+                },
+                {
+                  "id": "settings.page.system.row.sound",
+                  "kind": "row",
+                  "props": {
+                    "title": "Sound",
+                    "subtitle": "Volume, output, input",
+                    "icon": "audio",
+                    "link": "settings.page.sound"
+                  },
+                  "children": [
+                    {
+                      "id": "settings.page.system.row.sound.value",
+                      "kind": "value",
+                      "props": {
+                        "value": "PipeWire"
+                      }
+                    }
+                  ]
+                },
+                {
+                  "id": "settings.page.system.row.power",
+                  "kind": "row",
+                  "props": {
+                    "title": "Power",
+                    "subtitle": "Battery, sleep, screen",
+                    "icon": "power",
+                    "link": "settings.page.power"
+                  },
+                  "children": [
+                    {
+                      "id": "settings.page.system.row.power.value",
+                      "kind": "value",
+                      "props": {
+                        "source": "power.summary"
+                      }
+                    }
+                  ]
+                },
+                {
+                  "id": "settings.page.system.row.storage",
+                  "kind": "row",
+                  "props": {
+                    "title": "Storage",
+                    "subtitle": "Apps, files, generations",
+                    "icon": "image",
+                    "link": "settings.page.storage"
+                  },
+                  "children": [
+                    {
+                      "id": "settings.page.system.row.storage.value",
+                      "kind": "value",
+                      "props": {
+                        "source": "storage.summary"
+                      }
+                    }
+                  ]
+                },
+                {
+                  "id": "settings.page.system.row.about",
+                  "kind": "row",
+                  "props": {
+                    "title": "About",
+                    "subtitle": "Device name, hardware, OS",
+                    "icon": "info",
+                    "link": "settings.page.about"
+                  },
+                  "children": [
+                    {
+                      "id": "settings.page.system.row.about.value",
+                      "kind": "value",
+                      "props": {
+                        "value": "Tiaki"
+                      }
+                    }
+                  ]
+                }
+              ]
+            },
+            {
+              "id": "settings.page.system.section.related",
+              "kind": "section",
+              "props": {
+                "title": "Related"
+              },
+              "children": [
+                {
+                  "id": "settings.page.system.row.agents",
+                  "kind": "row",
+                  "props": {
+                    "title": "Agents",
+                    "subtitle": "Inspect capabilities and the transaction ledger",
+                    "icon": "spark",
+                    "command": "foot -c /etc/tiaki/foot.ini -e /usr/local/bin/agentd state"
+                  },
+                  "children": []
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "id": "settings.page.about.content",
+          "kind": "panel",
+          "props": {
+            "title": "About"
+          },
+          "children": [
+            {
+              "id": "settings.page.about.section.device",
+              "kind": "section",
+              "props": {
+                "title": "Device specifications"
+              },
+              "children": [
+                {
+                  "id": "settings.page.about.row.device_name",
+                  "kind": "row",
+                  "props": {
+                    "title": "Device name"
+                  },
+                  "children": [
+                    {
+                      "id": "settings.page.about.row.device_name.value",
+                      "kind": "value",
+                      "props": {
+                        "source": "system.hostname"
+                      }
+                    }
+                  ]
+                },
+                {
+                  "id": "settings.page.about.row.processor",
+                  "kind": "row",
+                  "props": {
+                    "title": "Processor"
+                  },
+                  "children": [
+                    {
+                      "id": "settings.page.about.row.processor.value",
+                      "kind": "value",
+                      "props": {
+                        "source": "system.cpu"
+                      }
+                    }
+                  ]
+                },
+                {
+                  "id": "settings.page.about.row.installed_ram",
+                  "kind": "row",
+                  "props": {
+                    "title": "Installed RAM"
+                  },
+                  "children": [
+                    {
+                      "id": "settings.page.about.row.installed_ram.value",
+                      "kind": "value",
+                      "props": {
+                        "source": "system.memory"
+                      }
+                    }
+                  ]
+                },
+                {
+                  "id": "settings.page.about.row.system_type",
+                  "kind": "row",
+                  "props": {
+                    "title": "System type"
+                  },
+                  "children": [
+                    {
+                      "id": "settings.page.about.row.system_type.value",
+                      "kind": "value",
+                      "props": {
+                        "source": "system.bits"
+                      }
+                    }
+                  ]
+                },
+                {
+                  "id": "settings.page.about.row.os",
+                  "kind": "row",
+                  "props": {
+                    "title": "OS"
+                  },
+                  "children": [
+                    {
+                      "id": "settings.page.about.row.os.value",
+                      "kind": "value",
+                      "props": {
+                        "source": "system.os"
+                      }
+                    }
+                  ]
+                },
+                {
+                  "id": "settings.page.about.row.kernel",
+                  "kind": "row",
+                  "props": {
+                    "title": "Kernel"
+                  },
+                  "children": [
+                    {
+                      "id": "settings.page.about.row.kernel.value",
+                      "kind": "value",
+                      "props": {
+                        "source": "system.kernel"
+                      }
+                    }
+                  ]
+                }
+              ]
+            },
+            {
+              "id": "settings.page.about.section.tiaki",
+              "kind": "section",
+              "props": {
+                "title": "Tiaki"
+              },
+              "children": [
+                {
+                  "id": "settings.page.about.row.principal",
+                  "kind": "row",
+                  "props": {
+                    "title": "Principal"
+                  },
+                  "children": [
+                    {
+                      "id": "settings.page.about.row.principal.value",
+                      "kind": "value",
+                      "props": {
+                        "value": "user:ada"
+                      }
+                    }
+                  ]
+                },
+                {
+                  "id": "settings.page.about.row.mode",
+                  "kind": "row",
+                  "props": {
+                    "title": "Mode"
+                  },
+                  "children": [
+                    {
+                      "id": "settings.page.about.row.mode.value",
+                      "kind": "value",
+                      "props": {
+                        "value": "Guarded"
+                      }
+                    }
+                  ]
+                },
+                {
+                  "id": "settings.page.about.row.ledger",
+                  "kind": "row",
+                  "props": {
+                    "title": "Ledger"
+                  },
+                  "children": [
+                    {
+                      "id": "settings.page.about.row.ledger.value",
+                      "kind": "value",
+                      "props": {
+                        "value": "Every change recorded"
+                      }
+                    }
+                  ]
+                },
+                {
+                  "id": "settings.page.about.row.shell",
+                  "kind": "row",
+                  "props": {
+                    "title": "Shell"
+                  },
+                  "children": [
+                    {
+                      "id": "settings.page.about.row.shell.value",
+                      "kind": "value",
+                      "props": {
+                        "value": "tiaki-shell"
+                      }
+                    }
+                  ]
+                },
+                {
+                  "id": "settings.page.about.row.compositor",
+                  "kind": "row",
+                  "props": {
+                    "title": "Compositor"
+                  },
+                  "children": [
+                    {
+                      "id": "settings.page.about.row.compositor.value",
+                      "kind": "value",
+                      "props": {
+                        "value": "Sway 1.10 · Wayland"
+                      }
+                    }
+                  ]
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "id": "settings.page.gaming.content",
+          "kind": "panel",
+          "props": {
+            "title": "Gaming"
+          },
+          "children": [
+            {
+              "id": "settings.page.gaming.section.gaming",
+              "kind": "section",
+              "props": {
+                "title": "Gaming"
+              },
+              "children": [
+                {
+                  "id": "settings.page.gaming.row.mode",
+                  "kind": "row",
+                  "props": {
+                    "title": "Game Mode",
+                    "subtitle": "Prioritise the foreground game",
+                    "icon": "spark"
+                  },
+                  "children": [
+                    {
+                      "id": "settings.page.gaming.row.mode.value",
+                      "kind": "value",
+                      "props": {
+                        "value": "Not available"
+                      }
+                    }
+                  ]
+                },
+                {
+                  "id": "settings.page.gaming.row.captures",
+                  "kind": "row",
+                  "props": {
+                    "title": "Captures",
+                    "subtitle": "Screen capture and the game bar",
+                    "icon": "monitor"
+                  },
+                  "children": [
+                    {
+                      "id": "settings.page.gaming.row.captures.value",
+                      "kind": "value",
+                      "props": {
+                        "value": "Not available"
+                      }
+                    }
+                  ]
+                },
+                {
+                  "id": "settings.page.gaming.note",
+                  "kind": "note",
+                  "props": {
+                    "value": "This build ships no gaming overlay. The compositor runs native Wayland clients directly, with no injected layer between the game and the display."
+                  }
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "id": "settings.page.bluetooth.content",
+          "kind": "panel",
+          "props": {
+            "title": "Bluetooth & devices"
+          },
+          "children": [
+            {
+              "id": "settings.page.bluetooth.section.devices",
+              "kind": "section",
+              "props": {
+                "title": "Devices"
+              },
+              "children": [
+                {
+                  "id": "settings.page.bluetooth.list.devices",
+                  "kind": "list",
+                  "props": {
+                    "source": "hardware.usb"
+                  }
+                }
+              ]
+            },
+            {
+              "id": "settings.page.bluetooth.section.bluetooth",
+              "kind": "section",
+              "props": {
+                "title": "Bluetooth"
+              },
+              "children": [
+                {
+                  "id": "settings.page.bluetooth.list.adapter",
+                  "kind": "list",
+                  "props": {
+                    "source": "bluetooth.adapter"
+                  }
+                }
+              ]
+            },
+            {
+              "id": "settings.page.bluetooth.section.input",
+              "kind": "section",
+              "props": {
+                "title": "Mouse, keyboard & pen"
+              },
+              "children": [
+                {
+                  "id": "settings.page.bluetooth.list.input",
+                  "kind": "list",
+                  "props": {
+                    "source": "hardware.input"
+                  }
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "id": "settings.page.network.content",
+          "kind": "panel",
+          "props": {
+            "title": "Network & internet"
+          },
+          "children": [
+            {
+              "id": "settings.page.network.section.network",
+              "kind": "section",
+              "props": {
+                "title": "Network"
+              },
+              "children": [
+                {
+                  "id": "settings.page.network.list.interfaces",
+                  "kind": "list",
+                  "props": {
+                    "source": "network.interfaces"
+                  }
+                }
+              ]
+            },
+            {
+              "id": "settings.page.network.section.properties",
+              "kind": "section",
+              "props": {
+                "title": "Properties"
+              },
+              "children": [
+                {
+                  "id": "settings.page.network.list.properties",
+                  "kind": "list",
+                  "props": {
+                    "source": "network.properties"
+                  }
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "id": "settings.page.update.content",
+          "kind": "panel",
+          "props": {
+            "title": "System update"
+          },
+          "children": [
+            {
+              "id": "settings.page.update.section.status",
+              "kind": "section",
+              "props": {
+                "title": "Update status"
+              },
+              "children": [
+                {
+                  "id": "settings.page.update.hero",
+                  "kind": "hero",
+                  "props": {
+                    "icon": "update",
+                    "title": "You're up to date",
+                    "subtitle": "Last checked: just now",
+                    "button": "Check for updates",
+                    "action": "update.check"
+                  }
+                }
+              ]
+            },
+            {
+              "id": "settings.page.update.section.build",
+              "kind": "section",
+              "props": {
+                "title": "Build"
+              },
+              "children": [
+                {
+                  "id": "settings.page.update.row.version",
+                  "kind": "row",
+                  "props": {
+                    "title": "Version"
+                  },
+                  "children": [
+                    {
+                      "id": "settings.page.update.row.version.value",
+                      "kind": "value",
+                      "props": {
+                        "source": "system.os"
+                      }
+                    }
+                  ]
+                },
+                {
+                  "id": "settings.page.update.row.kernel",
+                  "kind": "row",
+                  "props": {
+                    "title": "Kernel"
+                  },
+                  "children": [
+                    {
+                      "id": "settings.page.update.row.kernel.value",
+                      "kind": "value",
+                      "props": {
+                        "source": "system.kernel"
+                      }
+                    }
+                  ]
+                },
+                {
+                  "id": "settings.page.update.row.channel",
+                  "kind": "row",
+                  "props": {
+                    "title": "Channel"
+                  },
+                  "children": [
+                    {
+                      "id": "settings.page.update.row.channel.value",
+                      "kind": "value",
+                      "props": {
+                        "value": "dev"
+                      }
+                    }
+                  ]
+                },
+                {
+                  "id": "settings.page.update.row.generation",
+                  "kind": "row",
+                  "props": {
+                    "title": "Generation"
+                  },
+                  "children": [
+                    {
+                      "id": "settings.page.update.row.generation.value",
+                      "kind": "value",
+                      "props": {
+                        "value": "base"
+                      }
+                    }
+                  ]
+                }
+              ]
+            },
+            {
+              "id": "settings.page.update.note",
+              "kind": "note",
+              "props": {
+                "value": "The system image is immutable. An update is a new generation, booted beside this one, so you can always come back."
+              }
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}

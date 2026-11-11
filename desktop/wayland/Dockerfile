@@ -1,0 +1,107 @@
+# syntax=docker/dockerfile:1
+
+# NOTE: rust-toolchain.toml pins stable + rustfmt/clippy, so the builder must
+# track stable too. A versioned image (e.g. rust:1.85) would make rustup
+# download the entire current stable toolchain on first build. Reproducibility
+# comes from Cargo.lock, not the compiler patch version.
+FROM rust:slim-bookworm AS builder
+RUN apt-get update \
+    && apt-get install -y --no-install-recommends \
+        pkg-config libgtk-3-dev libgtk-layer-shell-dev libglib2.0-dev libcairo2-dev \
+        libpango1.0-dev libgdk-pixbuf-2.0-dev libatk1.0-dev \
+    && rm -rf /var/lib/apt/lists/*
+WORKDIR /src
+COPY . .
+RUN cargo build --release -p agentd
+RUN cargo build --release --manifest-path ui/native/Cargo.toml
+RUN cargo build --release --manifest-path ui/shell/Cargo.toml
+RUN cargo build --release -p agentic-agents
+RUN cargo build --release -p agentic-runtime-acp
+
+FROM debian:trixie-slim
+RUN apt-get update \
+    && apt-get install -y --no-install-recommends \
+        sway swaybg foot mousepad btop thunar epiphany-browser swaylock \
+        fonts-ibm-plex fonts-jetbrains-mono fonts-font-awesome adwaita-icon-theme \
+        grim curl wayvnc libgtk-3-0 libgtk-layer-shell0 ca-certificates wtype wl-clipboard brightnessctl pamixer \
+        fastfetch imagemagick dbus adduser librsvg2-common python3 \
+    && rm -rf /var/lib/apt/lists/*
+
+RUN adduser --disabled-password --gecos "" desktop
+
+# Toolchain the hand-install used to be: Node 26 (Debian trixie's node is too
+# old for T3 Code), pnpm, and a pinned opencode. Arch-aware: amd64 and arm64.
+ARG NODE_VERSION=26.12.1
+ARG PNPM_VERSION=12.14.0
+ARG OPENCODE_VERSION=2.2.5
+RUN set -eu; \
+    arch="$(dpkg --print-architecture)"; \
+    case "$arch" in \
+        amd64) node_arch=x64; oc_arch=x64;; \
+        arm64) node_arch=arm64; oc_arch=arm64;; \
+        *) echo "unsupported architecture: $arch" >&2; exit 1;; \
+    esac; \
+    node_dir="/opt/node-v${NODE_VERSION}-linux-${node_arch}"; \
+    curl -fsSL "https://nodejs.org/dist/v${NODE_VERSION}/node-v${NODE_VERSION}-linux-${node_arch}.tar.xz" -o /tmp/node.tar.xz; \
+    tar -xJf /tmp/node.tar.xz -C /opt/; rm /tmp/node.tar.xz; \
+    ln -s "$node_dir/bin/node" /usr/local/bin/node; \
+    ln -s "$node_dir/bin/npm" /usr/local/bin/npm; \
+    ln -s "$node_dir/bin/npx" /usr/local/bin/npx; \
+    "$node_dir/bin/npm" i -g --no-audit --no-fund "pnpm@${PNPM_VERSION}"; \
+    ln -s "$node_dir/bin/pnpm" /usr/local/bin/pnpm; \
+    node --version; pnpm --version; \
+    curl -fsSL "https://github.com/anomalyco/opencode/releases/download/v${OPENCODE_VERSION}/opencode-linux-${oc_arch}.tar.gz" -o /tmp/opencode.tgz; \
+    tar -xzf /tmp/opencode.tgz -C /usr/local/bin/ opencode; rm /tmp/opencode.tgz; \
+    chmod 755 /usr/local/bin/opencode; \
+    opencode --version
+
+# T3 Code fork (branch tiaki/extra-mcp-servers): source plus installed
+# dependencies, owned by the user that runs it. pnpm install needs network
+# at build time, like apt above.
+COPY t3code-upstream /opt/t3code-upstream
+RUN cd /opt/t3code-upstream && pnpm install --prefer-offline \
+    && find /opt/t3code-upstream -name "._*" -not -path "*/node_modules/*" -delete \
+    && chown -R desktop:desktop /opt/t3code-upstream
+
+COPY --from=builder /src/target/release/agentd /usr/local/bin/agentd
+COPY --from=builder /src/ui/native/target/release/tiaki-ui-native /usr/local/bin/tiaki-ui-native
+COPY --from=builder /src/ui/shell/target/release/tiaki-shell /usr/local/bin/tiaki-shell
+COPY --from=builder /src/target/release/sched-launch /usr/local/bin/sched-launch
+COPY --from=builder /src/target/release/acp-run /usr/local/bin/acp-run
+COPY runtime/skills /usr/share/tiaki/skills
+COPY desktop/desktop.json /usr/share/tiaki/desktop.json
+COPY desktop/icons /usr/share/tiaki/icons
+COPY desktop/wallpapers /usr/share/tiaki/wallpapers
+COPY desktop/wayland/tiaki-wallpaper.sh /usr/local/bin/tiaki-wallpaper
+COPY desktop/wayland/sway.conf /etc/tiaki/sway.conf
+COPY desktop/wayland/wayvnc.conf /etc/tiaki/wayvnc.conf
+COPY desktop/wayland/btop/btop.conf /home/desktop/.config/btop/btop.conf
+COPY desktop/wayland/gtk-settings.ini /home/desktop/.config/gtk-3.0/settings.ini
+COPY desktop/wayland/gtk-settings.ini /home/desktop/.config/gtk-4.0/settings.ini
+COPY desktop/wayland/gtk.css /home/desktop/.config/gtk-3.0/gtk.css
+COPY desktop/wayland/foot.ini /etc/tiaki/foot.ini
+COPY desktop/wayland/terminal-demo.sh /usr/share/tiaki/terminal-demo.sh
+COPY desktop/wayland/demo.rs /home/desktop/demo.rs
+COPY desktop/wayland/bashrc /home/desktop/.bashrc
+COPY desktop/wayland/run-wayland.sh /usr/local/bin/run-wayland
+COPY desktop/systemd/tiaki-firstboot.sh /usr/local/bin/tiaki-firstboot
+COPY desktop/systemd/tiaki-t3.sh /usr/local/bin/tiaki-t3
+COPY desktop/systemd/tiaki-firstboot.service desktop/systemd/tiaki-ui-serve.service desktop/systemd/tiaki-session.service desktop/systemd/tiaki-t3.service /etc/systemd/system/
+COPY models /usr/share/tiaki/models
+COPY plugins /usr/share/tiaki/plugins
+COPY image/examples /usr/share/tiaki/image-examples
+
+RUN chown -R desktop:desktop /home/desktop \
+    && chmod 0755 /usr/local/bin/agentd /usr/local/bin/tiaki-ui-native \
+        /usr/local/bin/tiaki-shell /usr/local/bin/run-wayland /usr/local/bin/tiaki-wallpaper \
+        /usr/local/bin/tiaki-firstboot /usr/local/bin/tiaki-t3 /usr/share/tiaki/terminal-demo.sh \
+    && mkdir -p /var/lib/tiaki \
+    && systemctl enable tiaki-firstboot.service tiaki-ui-serve.service tiaki-session.service tiaki-t3.service
+
+ENV TIAKI_HOME=/var/lib/tiaki
+EXPOSE 5900 5733
+# PID 1 is systemd: firstboot seeds state and delegates cgroups, ui-serve
+# answers the tree API, and the session unit runs Sway as the desktop user.
+# run-wayland.sh remains for legacy direct launches.
+STOPSIGNAL SIGRTMIN+3
+ENTRYPOINT ["/sbin/init"]

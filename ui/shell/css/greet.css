@@ -1,0 +1,45 @@
+/* Sign-in screen. Full wallpaper, paper type, no panels or buttons.
+   Only proven GTK3 properties: one invalid property drops the whole sheet. */
+
+.greet-veil {
+  background-color: rgba(21, 20, 19, 0.44);
+}
+
+.greet-clock {
+  color: #e6e0d4;
+  font-size: 76px;
+  font-weight: 500;
+}
+
+.greet-date {
+  color: rgba(230, 224, 212, 0.55);
+  font-family: "IBM Plex Mono", monospace;
+  font-size: 11px;
+}
+
+.greet-name {
+  color: #e6e0d4;
+  font-size: 30px;
+  font-weight: 500;
+}
+
+.greet-kbd {
+  color: rgba(230, 224, 212, 0.45);
+  font-family: "IBM Plex Mono", monospace;
+  font-size: 10.5px;
+  border: 1px solid rgba(230, 224, 212, 0.16);
+  border-radius: 2px;
+  padding: 3px 7px;
+}
+
+.greet-mode {
+  color: rgba(230, 224, 212, 0.55);
+  font-family: "IBM Plex Mono", monospace;
+  font-size: 11px;
+}
+
+.greet-foot {
+  color: rgba(230, 224, 212, 0.42);
+  font-family: "IBM Plex Mono", monospace;
+  font-size: 10.5px;
+}

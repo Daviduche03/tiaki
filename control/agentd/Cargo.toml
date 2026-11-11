@@ -1,0 +1,30 @@
+[package]
+name = "agentd"
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+rust-version.workspace = true
+
+[[bin]]
+name = "agentd"
+path = "src/main.rs"
+
+[dependencies]
+agentic-core-log = { path = "../../core/log" }
+agentic-transaction = { path = "../transaction" }
+agentic-explain = { path = "../explain" }
+agentic-capability = { path = "../capability" }
+agentic-sandbox = { path = "../sandbox" }
+agentic-plugin-host = { path = "../plugin-host" }
+agentic-json = { path = "../../core/json" }
+agentic-ui-tree = { path = "../../ui/tree" }
+agentic-widgets = { path = "../../ui/widgets" }
+agentic-inference = { path = "../inference" }
+agentic-runtime-abi = { path = "../../runtime/abi" }
+agentic-runtime-opencode = { path = "../../runtime/opencode" }
+agentic-runtime-codex = { path = "../../runtime/codex" }
+agentic-runtime-acp = { path = "../../runtime/acp" }
+agentic-agents = { path = "../agents" }
+agentic-core-rollback = { path = "../../core/rollback" }
+agentic-core-boot = { path = "../../core/boot" }
+agentic-core-init = { path = "../../core/init" }

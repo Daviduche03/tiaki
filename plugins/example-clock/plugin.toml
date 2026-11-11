@@ -1,0 +1,27 @@
+[plugin]
+id = "org.tiaki.panel.clock"
+name = "Clock Panel"
+version = "1.2.0"
+api = "1"
+kind = "ui"
+entry = "libclock.so"
+
+[capabilities]
+requires = ["ui.surface.create", "time.read"]
+optional = ["notifications.post"]
+
+[resources]
+cpu_weight = 100
+memory_max = "64M"
+
+[ui]
+tree = "ui/clock.ui.json"
+schema = "schema/clock.schema.json"
+
+[config]
+schema = "schema/clock.config.schema.json"
+migrations = "migrations/"
+
+[update]
+channel = "stable"
+signature = "sha256:80dbc90397064bbe7ff057e0ec588bf01b48686d10997d02b75f08c0893da0d1"

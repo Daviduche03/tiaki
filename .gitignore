@@ -1,0 +1,31 @@
+# Rust
+/target/
+**/target/
+**/*.rs.bk
+.DS_Store
+
+# Tiaki local state (ledger, snapshots, workspaces, opencode.pass)
+/.tiaki/
+.tmp/
+
+# Build artifacts for images / bare-metal installs
+/payload/
+/opt/t3code-upstream/
+*.qcow2
+*.raw
+*.iso
+
+# T3 Code fork — the agent console, built in-image from its own repo
+# (fork of pingdotgg/t3code at Daviduche03/t3code, branch
+# agentic/extra-mcp-servers). Not vendored here;
+# the image build expects t3code-upstream/ present (see docs/developing.md).
+t3code-upstream/
+t3code-upstream/node_modules/
+t3code-upstream/.t3/
+
+# Backups from log repair
+*.corrupt-*
+
+
+# Generated UI preview (ui/widgets) — reference screenshot artifact
+tiaki-ui-preview.html

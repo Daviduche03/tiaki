@@ -1,0 +1,9 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100" role="img" aria-label="tiaki — the beacon">
+  <path fill="currentColor" d="M50 7l14 15H36z"/>
+  <rect x="40" y="22" width="20" height="11" fill="currentColor"/>
+  <rect x="33.5" y="33" width="33" height="6" rx="1" fill="currentColor"/>
+  <path fill="currentColor" d="M38 39h24l1.61 11.7H35.61z"/>
+  <path fill="currentColor" d="M34.18 57.7h31.64l1.81 11.6H31.81z"/>
+  <path fill="currentColor" d="M30.39 76.3h39.22L72 88H28z"/>
+  <rect x="21" y="88" width="58" height="8" rx="1" fill="currentColor"/>
+</svg>

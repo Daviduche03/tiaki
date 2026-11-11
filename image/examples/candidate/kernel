@@ -1,0 +1,3 @@
+Placeholder kernel image for the candidate generation.
+
+It differs from `base` so the demo produces a distinct generation digest.

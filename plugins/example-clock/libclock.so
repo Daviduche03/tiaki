@@ -1,0 +1,5 @@
+Placeholder for the compiled Clock Panel shared object.
+
+The real build pipeline replaces this file with `libclock.so`. The control
+plane never executes it on a host without a Linux provisioner; it only plans a
+sandbox spec and records the install on the ledger.

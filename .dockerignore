@@ -1,0 +1,8 @@
+target
+.git
+.tiaki
+payload
+t3code-upstream
+tiaki-ui-preview.html
+*.qcow2
+*.raw

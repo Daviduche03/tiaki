@@ -1,0 +1,41 @@
+/* Tiaki — brand tokens.
+   Fixed values. Do not add tints, do not sample new colours from a mockup.
+   Spec: docs/design/brand/color.md */
+
+:root {
+  /* core */
+  --paper:        #E6E0D4;
+  --ink:          #151413;
+  --lamp:         #B36A15;  /* on paper */
+  --lamp-on-ink:  #D08A2C;  /* on ink */
+
+  /* neutrals */
+  --paper-raised: #F1ECE3;
+  --paper-sunken: #D8D1C2;
+  --ink-raised:   #1B1917;
+  --ink-2:        #5A544A;
+  --ink-3:        #665F54;
+
+  /* state */
+  --kept:         #2E6B4E;
+  --refused:      #A23B2A;
+  --lamp-text:    #8A4E12;
+
+  /* structure — hairlines are ink/paper at low alpha, never a grey */
+  --rule-on-paper: rgba(21, 20, 19, 0.12);
+  --rule-on-ink:   rgba(230, 224, 212, 0.14);
+  --disabled:      rgba(21, 20, 19, 0.40);
+
+  /* light/dark pairs, so a surface switch is two variables, not a rewrite */
+  --surface:      var(--paper);
+  --on-surface:   var(--ink);
+  --surface-2:    var(--paper-raised);
+  --rule:         var(--rule-on-paper);
+}
+
+[data-theme="ink"] {
+  --surface:      #121110;
+  --on-surface:   var(--paper);
+  --surface-2:    var(--ink-raised);
+  --rule:         var(--rule-on-ink);
+}

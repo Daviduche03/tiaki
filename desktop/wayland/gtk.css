@@ -1,0 +1,31 @@
+menubar,
+menubar > menuitem {
+  background-color: #1a1b26;
+  color: #c0caf5;
+}
+
+menubar > menuitem:hover {
+  background-color: #24283b;
+  color: #c0caf5;
+}
+
+menu,
+menu > menuitem {
+  background-color: #1a1b26;
+  color: #c0caf5;
+}
+
+menu > menuitem:hover {
+  background-color: #7aa2f7;
+  color: #1a1b26;
+}
+
+scrollbar {
+  background-color: #1a1b26;
+}
+
+scrollbar slider {
+  background-color: #2a2e42;
+  border-radius: 6px;
+  min-width: 6px;
+}

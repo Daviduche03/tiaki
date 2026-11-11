@@ -1,0 +1,17 @@
+[Unit]
+Description=T3 Code fork (agent app)
+After=network-online.target tiaki-firstboot.service
+Wants=network-online.target
+Requires=tiaki-firstboot.service
+
+[Service]
+User=desktop
+Environment=HOME=/home/desktop
+Environment=PATH=/usr/local/bin:/usr/bin:/bin
+WorkingDirectory=/opt/t3code-upstream
+ExecStart=/usr/local/bin/tiaki-t3
+Restart=always
+RestartSec=5
+
+[Install]
+WantedBy=multi-user.target

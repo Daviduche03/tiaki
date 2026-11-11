@@ -1,0 +1,16 @@
+#cloud-config
+# NoCloud seed: one admin user, password + key login, no first-boot stalls.
+users:
+  - name: agentic
+    sudo: ALL=(ALL) NOPASSWD:ALL
+    shell: /bin/bash
+    lock_passwd: true
+    ssh_authorized_keys:
+      - __SSH_PUBKEY__
+ssh_pwauth: true
+disable_root: false
+# Boot fast and predictably under test: no apt updates, no phone-home.
+package_update: false
+package_upgrade: false
+growpart:
+  mode: auto

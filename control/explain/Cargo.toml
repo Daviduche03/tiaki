@@ -1,0 +1,11 @@
+[package]
+name = "agentic-explain"
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+rust-version.workspace = true
+
+[dependencies]
+agentic-core-log = { path = "../../core/log" }
+agentic-transaction = { path = "../transaction" }
+agentic-inference = { path = "../inference" }

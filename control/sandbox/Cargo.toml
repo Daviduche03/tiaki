@@ -1,0 +1,9 @@
+[package]
+name = "agentic-sandbox"
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+rust-version.workspace = true
+
+[dependencies]
+agentic-transaction = { path = "../transaction" }

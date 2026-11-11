@@ -1,0 +1,30 @@
+[Unit]
+Description=Tiaki graphical session
+After=tiaki-ui-serve.service
+Requires=tiaki-ui-serve.service
+
+[Service]
+User=desktop
+# No PAMName: logind would override XDG_RUNTIME_DIR with /run/user/$UID and
+# split the session sockets away from /run/tiaki where every client looks.
+Environment=XDG_RUNTIME_DIR=/run/tiaki
+Environment=HOME=/home/desktop
+Environment=WLR_BACKENDS=headless
+Environment=WLR_LIBINPUT_NO_DEVICES=1
+Environment=WLR_RENDERER=pixman
+Environment=GDK_BACKEND=wayland
+Environment=LANG=C.UTF-8
+Environment=LC_ALL=C.UTF-8
+Environment=XDG_CURRENT_DESKTOP=Tiaki
+Environment=XDG_SESSION_TYPE=wayland
+Environment=TIAKI_CGROUP_ROOT=/sys/fs/cgroup/tiaki
+Environment=GTK_THEME=Adwaita:dark
+Environment=XCURSOR_THEME=Adwaita
+Environment=XCURSOR_SIZE=24
+RuntimeDirectory=tiaki
+ExecStart=/usr/bin/dbus-run-session -- /usr/local/bin/tiaki-session
+Restart=always
+RestartSec=2
+
+[Install]
+WantedBy=graphical.target

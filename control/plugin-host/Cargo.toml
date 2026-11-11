@@ -1,0 +1,13 @@
+[package]
+name = "agentic-plugin-host"
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+rust-version.workspace = true
+
+[dependencies]
+agentic-json = { path = "../../core/json" }
+agentic-toml = { path = "../../core/toml" }
+agentic-core-log = { path = "../../core/log" }
+agentic-transaction = { path = "../transaction" }
+agentic-sandbox = { path = "../sandbox" }

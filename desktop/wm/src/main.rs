@@ -1,0 +1,1556 @@
+//! Tiaki's window manager.
+//!
+//! ShojiWM's window management, kept as the commodity layer it is, wearing
+//! Tiaki's frame: a 1px paper hairline, rounded corners, a soft lift —
+//! and no title bar. The shell bar is the decoration. See `tiaki.rs` for the palette.
+//!
+//! Built against a pinned ShojiWM revision (`Cargo.toml`). Run nested for
+//! development, on the console for a session:
+//!
+//! ```sh
+//! tiaki-wm --dev          # nested in the current compositor
+//! tiaki-wm --tty          # DRM/KMS
+//! ```
+//!
+//! Icons and shaders are in `assets/`; the packaged image installs them under
+//! `/usr/share/tiaki/wm/assets`.
+
+mod drag_and_drop;
+mod tiaki;
+mod flip_3d;
+mod window_animation;
+mod window_grid;
+mod window_manager;
+mod window_switcher;
+mod workspace;
+
+use std::{
+    cell::RefCell,
+    collections::{BTreeMap, BTreeSet},
+    rc::Rc,
+};
+
+use serde_json::{Value, json};
+use shojiwm_rs::{
+    ipc::IpcServer,
+    prelude::*,
+    runtime_input::{
+        RuntimeInputAccelProfile, RuntimeInputConfig, RuntimeInputDeviceConfig,
+        RuntimeInputMotionSpace, RuntimeInputScrollMethod, RuntimeKeyboardInputConfig,
+        RuntimePointerInputConfig, RuntimeTouchpadInputConfig,
+    },
+    runtime_workspace::{
+        RuntimeWorkspaceConfigUpdate, RuntimeWorkspaceEntry, RuntimeWorkspaceGroupConfig,
+    },
+    ssd::{
+        PointerMoveEventSnapshot,
+        WindowDecorationModeSnapshot, WindowDecorationStateSnapshot,
+    },
+};
+
+use crate::{
+    drag_and_drop::install_drag_and_drop,
+    flip_3d::create_flip_3d,
+    window_grid::create_window_grid,
+    window_manager::{
+        TITLEBAR_HEIGHT, WINDOW_BORDER_PX, WINDOW_STATE_FULLSCREEN,
+        WINDOW_STATE_MINIMIZE_VISUAL_IDLE, WINDOW_STATE_RECT,
+        WINDOW_STATE_TILE_DRAGGING, WINDOW_STATE_TILE_REORDERING, WINDOW_STATE_TILED,
+        WINDOW_STATE_VISIBLE_OUTPUTS, WINDOW_STATE_WORKSPACE_OFFSET_Y,
+        WINDOW_STATE_WORKSPACE_OPACITY, WINDOW_STATE_WORKSPACE_TILED,
+        WINDOW_STATE_WORKSPACE_VISIBLE, WindowManager, WorkspaceGestureSpeed, output_rect,
+    },
+    window_switcher::{TitlebarButton, WindowSwitcher},
+};
+
+/// The window switcher's look.
+#[allow(dead_code)]
+enum WindowSwitcherStyle {
+    /// Stack the windows in 3D (flip_3d.rs).
+    Flip3D,
+    /// Lay them out side by side (window_grid.rs).
+    Grid,
+}
+const WINDOW_SWITCHER_STYLE: WindowSwitcherStyle = WindowSwitcherStyle::Flip3D;
+
+const FULLSCREEN_Z_INDEX: i32 = 2_000_000_000;
+const FLOATING_WINDOW_Z_INDEX_BASE: i32 = 1_500_000_000;
+const WINDOW_STACK_Z_INDEX_RANGE: i32 = 100_000_000;
+const FOCUSED_TILED_WINDOW_Z_INDEX: i32 = 1_000_000_000;
+const REORDERING_TILED_WINDOW_Z_INDEX: i32 = -2_000_000_000;
+
+// Dock proximity, with hysteresis: the pointer has to reach the bottom 10px
+// to reveal the dock, and leave the bottom 120px to dismiss it.
+const DOCK_SHOW_ZONE_PX: f64 = 10.0;
+const DOCK_HIDE_ZONE_PX: f64 = 120.0;
+
+fn main() -> std::process::ExitCode {
+    ConfigBuilder::new(setup)
+        .name("tiaki-wm")
+        .asset_root(asset_root())
+        .run()
+}
+
+/// Where the frame's icons and shaders live. The packaged image installs them
+/// under `/usr/share/tiaki`; a development run resolves them next to the crate.
+fn asset_root() -> std::path::PathBuf {
+    if let Ok(root) = std::env::var("TIAKI_WM_ASSETS") {
+        return root.into();
+    }
+    let source = std::path::Path::new(env!("CARGO_MANIFEST_DIR")).join("assets");
+    if source.is_dir() {
+        return source;
+    }
+    "/usr/share/tiaki/wm/assets".into()
+}
+
+/// Whether the client draws its own title bar.
+fn uses_client_decoration(decoration: &WindowDecorationStateSnapshot) -> bool {
+    decoration.mode == WindowDecorationModeSnapshot::Client
+        && !(decoration.client_preference == Some(WindowDecorationModeSnapshot::Server)
+            && decoration.configured_mode == WindowDecorationModeSnapshot::Server)
+}
+
+/// The client geometry plus the frame the decoration adds around it.
+///
+/// Must match the frame the composition draws: a client-decorated window gets
+/// only the border, so counting the title bar would size its client past what
+/// the layout meant (and past the client's own maximum). The border is drawn
+/// for both, so it is counted for both; a config that drops the border for
+/// client-decorated windows must drop `WINDOW_BORDER_PX` here too.
+fn natural_root_rect(window: Window) -> Rect {
+    let client = window.position().get_untracked();
+    // No title bar, so the frame is border-only for every window.
+    let titlebar = 0.0;
+    Rect::new(
+        client.x - WINDOW_BORDER_PX,
+        client.y - titlebar - WINDOW_BORDER_PX,
+        client.width + WINDOW_BORDER_PX * 2.0,
+        client.height + titlebar + WINDOW_BORDER_PX * 2.0,
+    )
+}
+
+fn setup() {
+    COMPOSITOR.env.apply([
+        ("QT_QPA_PLATFORM", "wayland;xcb"),
+        ("QT_QPA_PLATFORMTHEME", "qt6ct"),
+        ("QT_IM_MODULE", "fcitx"),
+        ("XMODIFIERS", "@im=fcitx"),
+        ("SDL_IM_MODULE", "fcitx"),
+        ("GLFW_IM_MODULE", "ibus"),
+        ("ELECTRON_OZONE_PLATFORM_HINT", "wayland"),
+    ]);
+    COMPOSITOR.env.publish();
+    COMPOSITOR.cursor.configure("Adwaita", 24);
+
+    COMPOSITOR.process.once(
+        "GTK-CSD-control-buttons",
+        Command::shell("gsettings set org.gnome.desktop.wm.preferences button-layout ':minimize,maximize,close'"),
+    );
+
+    COMPOSITOR.window.decoration(|_window, context| {
+        context
+            .client_preference
+            .unwrap_or(WindowDecorationModeSnapshot::Server)
+    });
+
+    // GTK 3 applications (Thunar, ...) choose between their own title bar
+    // and ours once, at startup, from this default alone: `Server` drops
+    // theirs. Firefox and GTK header bars still ask for CSD, and the policy
+    // above keeps honoring that. Forcing `Server` on Firefox makes it
+    // re-request CSD over and over (ShojiWM stops answering after a few, but
+    // this loop once pinned Firefox's CPU) and leaves two title bars.
+    COMPOSITOR
+        .window
+        .kde_default_decoration(|_client| WindowDecorationModeSnapshot::Server);
+
+    // Triple buffering: render the next frame while the previous one waits
+    // for its vblank.
+    COMPOSITOR.rendering.frame_pacing(FramePacing::Throughput);
+
+    let wm = WindowManager::new(natural_root_rect);
+    // Window switcher (Super+Tab, see `WINDOW_SWITCHER_STYLE`).
+    let switcher = {
+        let stack_wm = wm.clone();
+        let stack_order = move |window: Window| {
+            if window.state(&WINDOW_STATE_FULLSCREEN).get_untracked() {
+                FULLSCREEN_Z_INDEX
+            } else {
+                untrack(|| window_z_index(&stack_wm, window))
+            }
+        };
+        match WINDOW_SWITCHER_STYLE {
+            WindowSwitcherStyle::Flip3D => create_flip_3d(wm.clone(), stack_order),
+            WindowSwitcherStyle::Grid => create_window_grid(wm.clone(), stack_order),
+        }
+    };
+    // The grid's selected card: its title bar buttons work.
+    switcher.set_titlebar_button_at(titlebar_button_at);
+    // Drag and drop: the dragged image on a card with the action and the
+    // kind of data, flying back when a drop is refused (drag_and_drop.rs).
+    install_drag_and_drop();
+    {
+        let switcher = switcher.clone();
+        COMPOSITOR.rendering.composition(move |output| {
+            switcher
+                .compose(output)
+                .unwrap_or_else(OutputStack::default_stacking)
+        });
+    }
+    let ipc = setup_ipc(&wm);
+    setup_processes();
+    setup_key_bindings(&wm, &ipc, &switcher);
+    setup_outputs_and_input();
+    wm.with(|wm| {
+        wm.configure_workspace_gesture_speed(WorkspaceGestureSpeed {
+            workspace_scroll_factor: 1.5,
+            workspace_scroll_kinetic_factor: 1.0,
+            workspace_switch_factor: 1.0,
+            workspace_switch_velocity_factor: 1.0,
+            // At or below this scroll speed (logical px/s) the workspace
+            // scroll catches on tile snap positions. 0 disables snapping.
+            workspace_scroll_snap_max_velocity: 600.0,
+            // Finger travel (logical px) needed to break out of a catch.
+            workspace_scroll_snap_breakout_px: 48.0,
+        })
+    });
+    setup_effects(&switcher);
+    setup_events(&wm, &ipc);
+    setup_composition(&wm, &switcher);
+}
+
+/// External IPC for the bar:
+///
+/// - `workspaces.get` -> WorkspacesView (request/response)
+/// - `workspaces.switch { direction: -1 | 1 }`
+/// - `workspaces.activate { monitor, index }`
+/// - `workspaces.toggleTiling { monitor? }`
+/// - `windows.activate { windowId }`
+/// - broadcasts: `workspaces.changed`, `dock.proximity`, `snap.preview`
+#[derive(Clone)]
+struct Ipc {
+    server: Option<IpcServer>,
+    wm: WindowManager,
+    last_workspaces: Rc<RefCell<String>>,
+    last_snap: Rc<RefCell<String>>,
+    dock_proximity: Rc<RefCell<BTreeMap<String, bool>>>,
+}
+
+impl Ipc {
+    fn broadcast(&self, event: &str, payload: Value) {
+        if let Some(server) = &self.server {
+            server.broadcast(event, payload);
+        }
+    }
+
+    /// Stage the protocol workspace model (before the reply goes out, so bars
+    /// see it on this turn) and push the diffed view over IPC.
+    fn schedule_workspace_broadcast(&self) {
+        COMPOSITOR.workspace.reconfigure();
+        let view = self.wm.read(|wm| wm.view_for_ipc()).to_json();
+        let encoded = view.to_string();
+        if *self.last_workspaces.borrow() == encoded {
+            return;
+        }
+        *self.last_workspaces.borrow_mut() = encoded;
+        self.broadcast("workspaces.changed", view);
+    }
+
+    fn update_dock_proximity(&self, monitor: &str, inside: bool) {
+        if self.dock_proximity.borrow().get(monitor) == Some(&inside) {
+            return;
+        }
+        self.dock_proximity
+            .borrow_mut()
+            .insert(monitor.to_owned(), inside);
+        self.broadcast(
+            "dock.proximity",
+            json!({ "monitor": monitor, "inside": inside }),
+        );
+    }
+
+    fn next_dock_proximity(&self, monitor: &str, x: f64, y: f64, on_tracked_monitor: bool) -> bool {
+        if !on_tracked_monitor {
+            return false;
+        }
+        let was_inside = self.dock_proximity.borrow().get(monitor) == Some(&true);
+        let strip = if was_inside {
+            DOCK_HIDE_ZONE_PX
+        } else {
+            DOCK_SHOW_ZONE_PX
+        };
+        output_rect(monitor).is_some_and(|rect| {
+            x >= rect.x && x < rect.right() && y >= rect.bottom() - strip && y < rect.bottom()
+        })
+    }
+}
+
+fn setup_ipc(wm: &WindowManager) -> Ipc {
+    let server = match IpcServer::new() {
+        Ok(server) => Some(server),
+        Err(error) => {
+            tracing::warn!(%error, "workspace IPC socket unavailable");
+            None
+        }
+    };
+    let ipc = Ipc {
+        server,
+        wm: wm.clone(),
+        last_workspaces: Rc::default(),
+        last_snap: Rc::default(),
+        dock_proximity: Rc::default(),
+    };
+
+    // Workspaces a bar asked to create (by number). The view lists only
+    // workspaces with windows plus the active one, so these are listed as
+    // well until they show up there on their own.
+    let requested: Rc<RefCell<BTreeMap<String, BTreeSet<u32>>>> = Rc::default();
+
+    {
+        let wm = wm.clone();
+        let requested = requested.clone();
+        COMPOSITOR.workspace.configure(move || {
+            let view = wm.read(|wm| wm.view_for_ipc());
+            let mut requested = requested.borrow_mut();
+            RuntimeWorkspaceConfigUpdate {
+                virtual_desktops: None,
+                // Set by the SDK from the `on_create` listeners.
+                can_create: false,
+                groups: view
+                    .monitors
+                    .iter()
+                    .map(|monitor| {
+                        let pending = requested.entry(monitor.name.clone()).or_default();
+                        pending.retain(|index| {
+                            !monitor
+                                .workspaces
+                                .iter()
+                                .any(|workspace| workspace.index == *index)
+                        });
+                        let mut workspaces = monitor
+                            .workspaces
+                            .iter()
+                            .map(|workspace| RuntimeWorkspaceEntry {
+                                id: format!("{}:{}", monitor.name, workspace.index),
+                                name: workspace.index.to_string(),
+                                coordinates: vec![workspace.index.saturating_sub(1)],
+                                active: workspace.active,
+                                urgent: false,
+                                hidden: !workspace.active && workspace.window_count == 0,
+                            })
+                            .chain(pending.iter().map(|index| RuntimeWorkspaceEntry {
+                                id: format!("{}:{index}", monitor.name),
+                                name: index.to_string(),
+                                coordinates: vec![index.saturating_sub(1)],
+                                active: false,
+                                urgent: false,
+                                hidden: false,
+                            }))
+                            .collect::<Vec<_>>();
+                        workspaces.sort_by_key(|workspace| workspace.coordinates[0]);
+                        RuntimeWorkspaceGroupConfig {
+                            id: monitor.name.clone(),
+                            outputs: vec![monitor.name.clone()],
+                            workspaces,
+                        }
+                    })
+                    .collect(),
+            }
+        });
+    }
+
+    {
+        // ext-workspace `create_workspace`: the name is the workspace number.
+        let ipc = ipc.clone();
+        COMPOSITOR.workspace.on_create(move |event| {
+            let (Some(monitor), Ok(index)) = (&event.group_id, event.name.parse::<u32>()) else {
+                return;
+            };
+            if index >= 1 {
+                requested
+                    .borrow_mut()
+                    .entry(monitor.clone())
+                    .or_default()
+                    .insert(index);
+                ipc.schedule_workspace_broadcast();
+            }
+        });
+    }
+
+    {
+        let ipc = ipc.clone();
+        COMPOSITOR.workspace.on_activate(move |event| {
+            let Some((monitor, index)) = event.workspace_id.split_once(':') else {
+                return;
+            };
+            let Ok(index) = index.parse::<u32>() else {
+                return;
+            };
+            if index >= 1 {
+                ipc.wm.with(|wm| wm.activate(monitor, index));
+                ipc.schedule_workspace_broadcast();
+            }
+        });
+    }
+
+    if let Some(server) = &ipc.server {
+        {
+            let wm = wm.clone();
+            server.handle("workspaces.get", move |_| {
+                Ok(wm.read(|wm| wm.view_for_ipc()).to_json())
+            });
+        }
+        {
+            let ipc = ipc.clone();
+            server.handle("workspaces.switch", move |params| {
+                let direction = if params["direction"].as_i64() == Some(-1) {
+                    -1
+                } else {
+                    1
+                };
+                ipc.wm.with(|wm| wm.switch_workspace(direction));
+                ipc.schedule_workspace_broadcast();
+                Ok(Value::Null)
+            });
+        }
+        {
+            let ipc = ipc.clone();
+            server.handle("workspaces.activate", move |params| {
+                // Any JSON number, as in TypeScript (`2.0` too); workspaces
+                // are numbered by whole numbers, though.
+                let index = params["index"]
+                    .as_f64()
+                    .filter(|index| *index >= 0.0 && index.fract() == 0.0);
+                let monitor = params["monitor"]
+                    .as_str()
+                    .filter(|monitor| !monitor.is_empty());
+                if let (Some(monitor), Some(index)) = (monitor, index) {
+                    ipc.wm.with(|wm| wm.activate(monitor, index as u32));
+                    ipc.schedule_workspace_broadcast();
+                }
+                Ok(Value::Null)
+            });
+        }
+        {
+            let ipc = ipc.clone();
+            server.handle("workspaces.toggleTiling", move |params| {
+                match params["monitor"].as_str() {
+                    Some(monitor) => ipc
+                        .wm
+                        .with(|wm| wm.toggle_workspace_tiling_for_monitor(monitor)),
+                    None => ipc.wm.with(|wm| wm.toggle_current_workspace_tiling()),
+                }
+                ipc.schedule_workspace_broadcast();
+                Ok(Value::Null)
+            });
+        }
+        {
+            let ipc = ipc.clone();
+            server.handle("windows.activate", move |params| {
+                if let Some(id) = params["windowId"].as_str() {
+                    ipc.wm.with(|wm| wm.activate_window_by_id(id));
+                    ipc.schedule_workspace_broadcast();
+                }
+                Ok(Value::Null)
+            });
+        }
+    }
+
+    // Snap-zone preview: the bar draws the rounded overlay.
+    {
+        let ipc = ipc.clone();
+        wm.set_snap_preview_broadcaster(move |preview| {
+            let payload = json!({
+                "monitor": preview.monitor,
+                "kind": preview.kind,
+                "rect": preview.rect.map(|rect| json!({
+                    "x": rect.x, "y": rect.y, "width": rect.width, "height": rect.height,
+                })),
+            });
+            let encoded = payload.to_string();
+            if *ipc.last_snap.borrow() == encoded {
+                return;
+            }
+            *ipc.last_snap.borrow_mut() = encoded;
+            ipc.broadcast("snap.preview", payload);
+        });
+    }
+    {
+        let ipc = ipc.clone();
+        wm.set_workspace_change_broadcaster(move || ipc.schedule_workspace_broadcast());
+    }
+    {
+        let ipc = ipc.clone();
+        COMPOSITOR.on_disable(move |_| {
+            if let Some(server) = &ipc.server {
+                server.close();
+            }
+        });
+    }
+    ipc
+}
+
+fn setup_processes() {
+    // Tiaki's session supervisor starts the wallpaper, the remote server and
+    // the sign-in screen before this compositor; the config owns windows, not
+    // process order. Nothing to spawn here.
+}
+
+fn spawn(command: &str) {
+    COMPOSITOR.process.spawn(Command::shell(command));
+}
+
+fn launcher() {
+    spawn("tiaki-shell launcher");
+}
+
+fn setup_key_bindings(wm: &WindowManager, ipc: &Ipc, switcher: &WindowSwitcher) {
+    // Entering the desktop. Super+Space is the macOS habit; Super+A is the
+    // shortcut this config inherited and muscle memory is expensive.
+    COMPOSITOR.key.bind("launcher", "Super+Space", launcher);
+    COMPOSITOR.key.bind("launcher-a", "Super+A", launcher);
+    COMPOSITOR.key.bind("terminal", "Super+Return", || {
+        spawn("foot -c /etc/tiaki/foot.ini");
+    });
+    COMPOSITOR.key.bind("settings", "Super+Comma", || {
+        spawn("tiaki-shell settings");
+    });
+    COMPOSITOR.key.bind("screenshot", "Super+P", || {
+        spawn("grim /tmp/tiaki-$(date +%s).png");
+    });
+
+    let bind = |id: &str,
+                shortcut: &str,
+                broadcast: bool,
+                f: fn(&mut window_manager::HybridWindowManager)| {
+        let ipc = ipc.clone();
+        COMPOSITOR.key.bind(id, shortcut, move || {
+            ipc.wm.with(f);
+            if broadcast {
+                ipc.schedule_workspace_broadcast();
+            }
+        });
+    };
+
+    // Windows.
+    bind("close-focused-window", "Super+Q", false, |wm| {
+        wm.close_focused_window()
+    });
+    bind("toggle-focused-window-maximize", "Super+M", false, |wm| {
+        wm.toggle_focused_window_maximize()
+    });
+    bind("toggle-focused-window-fullscreen", "Super+F", false, |wm| {
+        wm.toggle_focused_window_fullscreen()
+    });
+    bind("toggle-tiling-mode", "Super+S", true, |wm| {
+        wm.toggle_current_workspace_tiling()
+    });
+    {
+        let (wm, switcher) = (wm.clone(), switcher.clone());
+        COMPOSITOR
+            .key
+            .bind("window-switcher", "Super+Tab", move || {
+                let monitor = wm.with(|wm| wm.current_monitor_name());
+                switcher.open(&monitor);
+            });
+    }
+    // Tiles.
+    bind("tile-focus-left-quick", "Super+Left", false, |wm| {
+        wm.focus_tile(-1)
+    });
+    bind("tile-focus-right-quick", "Super+Right", false, |wm| {
+        wm.focus_tile(1)
+    });
+    bind("tile-focus-left", "Super+Ctrl+Left", false, |wm| {
+        wm.focus_tile(-1)
+    });
+    bind("tile-focus-right", "Super+Ctrl+Right", false, |wm| {
+        wm.focus_tile(1)
+    });
+    bind("tile-move-left", "Super+Shift+Left", true, |wm| {
+        wm.move_focused_tile(-1)
+    });
+    bind("tile-move-right", "Super+Shift+Right", true, |wm| {
+        wm.move_focused_tile(1)
+    });
+
+    // Workspaces. The digit binds jump straight to a workspace on the
+    // monitor under the pointer.
+    for index in 1..=9u32 {
+        let ipc = ipc.clone();
+        let id = format!("workspace-{index}");
+        let shortcut = format!("Super+{index}");
+        COMPOSITOR.key.bind(&id, &shortcut, move || {
+            let monitor = ipc.wm.with(|wm| wm.current_monitor_name());
+            ipc.wm.with(|wm| wm.switch_workspace_to(&monitor, index - 1, true));
+            ipc.schedule_workspace_broadcast();
+        });
+    }
+    bind("window-move-workspace-prev", "Super+Shift+Up", true, |wm| {
+        wm.move_focused_window_to_workspace(-1)
+    });
+    bind(
+        "window-move-workspace-next",
+        "Super+Shift+Down",
+        true,
+        |wm| wm.move_focused_window_to_workspace(1),
+    );
+    bind("workspace-prev", "Super+Ctrl+Up", true, |wm| {
+        wm.switch_workspace(-1)
+    });
+    bind("workspace-next", "Super+Ctrl+Down", true, |wm| {
+        wm.switch_workspace(1)
+    });
+
+    // Diagnostics, kept from the upstream config: the frame counter and the
+    // profiler are how an idle-cost claim gets checked on real hardware.
+    let fps_counter = Rc::new(std::cell::Cell::new(false));
+    COMPOSITOR.key.bind("fps", "Super+Shift+F", move || {
+        fps_counter.set(!fps_counter.get());
+        COMPOSITOR.debug.set_fps_counter(fps_counter.get());
+    });
+    let profile = Rc::new(std::cell::Cell::new(false));
+    COMPOSITOR.key.bind("profile", "Super+Shift+T", move || {
+        profile.set(!profile.get());
+        COMPOSITOR.debug.enable_profile(profile.get());
+    });
+}
+
+fn setup_outputs_and_input() {
+    COMPOSITOR.output.configure(|context| {
+        let mut display = BTreeMap::new();
+        let mut edp = OutputConfig::extend(1.8);
+        edp.transform = Some(shojiwm_rs::compositor::OutputTransform::Normal);
+        display.insert("eDP-1".to_owned(), Some(edp));
+        display.insert("eDP-2".to_owned(), Some(OutputConfig::extend(1.8)));
+        display.insert("HDMI-A-1".to_owned(), Some(OutputConfig::extend(1.5)));
+        display.insert("DP-1".to_owned(), Some(OutputConfig::extend(1.5)));
+        display.insert("DP-4".to_owned(), Some(OutputConfig::extend(1.5)));
+        display.insert("DP-2".to_owned(), Some(OutputConfig::extend(1.6)));
+        let docked = context
+            .connected
+            .iter()
+            .any(|output| output.name == "HDMI-A-1");
+        if docked {
+            display.insert("eDP-1".to_owned(), Some(OutputConfig::disabled()));
+            display.insert("eDP-2".to_owned(), Some(OutputConfig::disabled()));
+        }
+        display
+    });
+
+    COMPOSITOR
+        .input
+        .configure(|input: &mut RuntimeInputConfig, _devices| {
+            input.global = Some(RuntimeInputDeviceConfig {
+                touchpad: Some(RuntimeTouchpadInputConfig {
+                    tap_to_click: Some(true),
+                    natural_scroll: Some(true),
+                    scroll_method: Some(RuntimeInputScrollMethod::TwoFinger),
+                    disable_while_typing: Some(true),
+                    scroll_factor: Some(1.0),
+                    ..Default::default()
+                }),
+                pointer: Some(RuntimePointerInputConfig {
+                    pointer_accel: Some(0.0),
+                    accel_profile: Some(RuntimeInputAccelProfile::Flat),
+                    motion_space: Some(RuntimeInputMotionSpace::Logical),
+                    ..Default::default()
+                }),
+                keyboard: Some(RuntimeKeyboardInputConfig {
+                    options: None,
+                    repeat_rate: Some(60),
+                    repeat_delay: Some(250),
+                    ..Default::default()
+                }),
+            });
+            input.device.insert(
+                "Razer Razer Blade Keyboard".into(),
+                Some(RuntimeInputDeviceConfig {
+                    keyboard: Some(RuntimeKeyboardInputConfig {
+                        layout: Some("us".into()),
+                        ..Default::default()
+                    }),
+                    ..Default::default()
+                }),
+            );
+        });
+
+    COMPOSITOR.pointer.bind_window_move_modifier("Super");
+    COMPOSITOR.pointer.bind_window_resize_modifier("Super");
+    COMPOSITOR.cursor.bind_app_lock_ignore_modifier("Super");
+}
+
+/// Where a (non-fullscreen) window sits in the stack; higher is on top.
+fn window_z_index(wm: &WindowManager, window: Window) -> i32 {
+    let stack_z_index = wm.window_z_index(window).get();
+    if !window.state(&WINDOW_STATE_WORKSPACE_TILED).get() {
+        return stack_z_index;
+    }
+    let offset = stack_z_index.clamp(-WINDOW_STACK_Z_INDEX_RANGE, WINDOW_STACK_Z_INDEX_RANGE);
+    if !window.state(&WINDOW_STATE_TILED).get() {
+        FLOATING_WINDOW_Z_INDEX_BASE + offset
+    } else if window.state(&WINDOW_STATE_TILE_REORDERING).get() {
+        REORDERING_TILED_WINDOW_Z_INDEX
+    } else if window.is_focused().get() {
+        FOCUSED_TILED_WINDOW_Z_INDEX
+    } else {
+        offset
+    }
+}
+
+fn setup_effects(_switcher: &WindowSwitcher) {
+    // Tiaki has no glass. Nothing blurs what is behind it: every surface is
+    // either paper or ink, and depth is weight, not light.
+    COMPOSITOR.effect.background_with(|| None);
+    COMPOSITOR.effect.layer(|_| SurfaceEffects::none());
+    COMPOSITOR.effect.popup(|_| SurfaceEffects::none());
+}
+
+fn setup_events(wm: &WindowManager, ipc: &Ipc) {
+    let on = |f: fn(&mut window_manager::HybridWindowManager, Window), broadcast: bool| {
+        let ipc = ipc.clone();
+        move |window: Window| {
+            ipc.wm.with(|wm| f(wm, window));
+            if broadcast {
+                ipc.schedule_workspace_broadcast();
+            }
+        }
+    };
+    COMPOSITOR
+        .event
+        .on_open(on(|wm, window| wm.on_open(window), false));
+    COMPOSITOR
+        .event
+        .on_initial_configure(on(|wm, window| wm.on_initial_configure(window), false));
+    COMPOSITOR
+        .event
+        .on_first_commit(on(|wm, window| wm.on_first_commit(window), true));
+    COMPOSITOR
+        .event
+        .on_start_close(on(|wm, window| wm.on_start_close(window), true));
+    COMPOSITOR
+        .event
+        .on_close(on(|wm, window| wm.on_close(window), true));
+
+    {
+        let ipc = ipc.clone();
+        COMPOSITOR.event.on_focus(move |window, focused| {
+            ipc.wm.with(|wm| {
+                wm.on_focus(window, focused);
+                if focused {
+                    wm.record_focus(window);
+                }
+            });
+            if focused {
+                ipc.schedule_workspace_broadcast();
+            }
+        });
+    }
+
+    {
+        let ipc = ipc.clone();
+        COMPOSITOR
+            .event
+            .on_pointer_move(move |event: &PointerMoveEventSnapshot| {
+                ipc.wm.with(|wm| wm.on_pointer_move(event));
+                // Dock proximity: only the monitor under the pointer can be
+                // "inside"; the others report leave.
+                for monitor in COMPOSITOR.output.list() {
+                    let on_monitor = event.output_name.as_deref() == Some(monitor.as_str());
+                    let inside = ipc.next_dock_proximity(
+                        &monitor,
+                        event.position.x,
+                        event.position.y,
+                        on_monitor,
+                    );
+                    ipc.update_dock_proximity(&monitor, inside);
+                }
+            });
+    }
+    {
+        let ipc = ipc.clone();
+        COMPOSITOR.event.on_gesture_swipe(move |event| {
+            ipc.wm.with(|wm| wm.on_gesture_swipe(event));
+            ipc.schedule_workspace_broadcast();
+        });
+    }
+    {
+        let ipc = ipc.clone();
+        COMPOSITOR.event.on_output_change(move |event| {
+            ipc.wm.with(|wm| wm.on_output_change(event));
+            ipc.schedule_workspace_broadcast();
+        });
+    }
+    for register in [
+        |f: Box<dyn Fn(&shojiwm_rs::ssd::WaylandLayerSnapshot)>| {
+            COMPOSITOR.event.on_create_layer(f)
+        },
+        |f: Box<dyn Fn(&shojiwm_rs::ssd::WaylandLayerSnapshot)>| {
+            COMPOSITOR.event.on_update_layer(f)
+        },
+        |f: Box<dyn Fn(&shojiwm_rs::ssd::WaylandLayerSnapshot)>| {
+            COMPOSITOR.event.on_destroy_layer(f)
+        },
+    ] {
+        let wm = wm.clone();
+        register(Box::new(move |_| {
+            wm.with(|wm| wm.refresh_usable_area_layouts())
+        }));
+    }
+
+    let wm_event = wm.clone();
+    COMPOSITOR.event.on_window_resize(move |window, event| {
+        wm_event.with(|wm| wm.on_window_resize(window, event))
+    });
+    let wm_event = wm.clone();
+    COMPOSITOR
+        .event
+        .on_window_move(move |window, event| wm_event.with(|wm| wm.on_window_move(window, event)));
+    let wm_event = wm.clone();
+    COMPOSITOR
+        .event
+        .on_window_maximize_request(move |window, event| {
+            wm_event.with(|wm| wm.on_window_maximize_request(window, event))
+        });
+    let wm_event = wm.clone();
+    COMPOSITOR
+        .event
+        .on_window_minimize_request(move |window, event| {
+            wm_event.with(|wm| wm.on_window_minimize_request(window, event))
+        });
+    let wm_event = wm.clone();
+    COMPOSITOR
+        .event
+        .on_window_fullscreen_request(move |window, event| {
+            wm_event.with(|wm| wm.on_window_fullscreen_request(window, event))
+        });
+    let ipc = ipc.clone();
+    COMPOSITOR
+        .event
+        .on_window_activate_request(move |window, event| {
+            ipc.wm
+                .with(|wm| wm.on_window_activate_request(window, event));
+            ipc.schedule_workspace_broadcast();
+        });
+}
+
+/// `COMPOSITOR.window.composition`: frame, titlebar and placement.
+fn setup_composition(wm: &WindowManager, switcher: &WindowSwitcher) {
+    let wm = wm.clone();
+    let switcher = switcher.clone();
+    COMPOSITOR.window.composition(move |window| {
+        // Read in the body on purpose: these switch the whole structure, so a
+        // change re-runs this function (like the TSX version).
+        let decoration = window.decoration().get();
+        let use_client_decoration = uses_client_decoration(&decoration);
+        let fullscreen = window.state(&WINDOW_STATE_FULLSCREEN).get();
+
+        let rect = window.state(&WINDOW_STATE_RECT);
+        let workspace_offset_y = window.state(&WINDOW_STATE_WORKSPACE_OFFSET_Y);
+        let managed_rect = memo(move || {
+            let rect = rect.get();
+            Rect {
+                y: rect.y + workspace_offset_y.get(),
+                ..rect
+            }
+        });
+        let force_rect_size =
+            memo(move || window.is_resizable().get() && !window.is_transient().get());
+        // Force no corner rounding by CSD.
+        let tiled = true;
+
+        let z_index = {
+            let wm = wm.clone();
+            memo(move || window_z_index(&wm, window))
+        };
+        let minimize_visual_idle = window.state(&WINDOW_STATE_MINIMIZE_VISUAL_IDLE);
+        let workspace_visible = window.state(&WINDOW_STATE_WORKSPACE_VISIBLE);
+        let tile_dragging = window.state(&WINDOW_STATE_TILE_DRAGGING);
+        let inactive = memo(move || {
+            minimize_visual_idle.get() || (!workspace_visible.get() && !tile_dragging.get())
+        });
+
+        let managed = ManagedWindow::new()
+            .rect(managed_rect)
+            .visible_outputs(window.state(&WINDOW_STATE_VISIBLE_OUTPUTS))
+            .opacity(window.state(&WINDOW_STATE_WORKSPACE_OPACITY))
+            .force_rect_size(force_rect_size)
+            .tiled(tiled)
+            .idle(inactive)
+            .interactive(inactive.map(|inactive| !inactive));
+
+        // Fullscreen: no chrome at all, so the tty backend can scan the
+        // client buffer out directly. Tearing only happens on that direct
+        // scanout path while the client outruns the refresh rate (games).
+        if fullscreen {
+            return managed
+                .z_index(FULLSCREEN_Z_INDEX)
+                .allow_tearing(true)
+                .child(ClientWindow::new());
+        }
+
+        // The lamp marks focus, and only focus. An unfocused frame is the
+        // same hairline the rest of the system uses on ink.
+        // A window needs no title bar: the top bar already owns menus, clock
+        // and chrome. The frame is a 1px hairline — paper at 32% when focused,
+        // 14% when not. The lamp stays in the bar and the dock, where the
+        // shell already uses it. Focus also reads as elevation (see shadows).
+        let border_color = window.is_focused().map(|focused| {
+            if *focused {
+                hex(tiaki::FOCUS_EDGE)
+            } else {
+                hex(tiaki::RULE_ON_INK)
+            }
+        });
+        // The dock's soft lift: focused windows sit higher than the rest.
+        let selected_window_id = switcher.selected_window_id();
+        let window_shadow = memo(move || {
+            if selected_window_id.with(|id| id.as_deref() == Some(&*window.id())) {
+                tiaki::selected()
+            } else if window.is_focused().get() {
+                tiaki::lift()
+            } else {
+                tiaki::rest()
+            }
+        });
+        let frame = || {
+            WindowBorder::new()
+                .style(
+                    Style::new()
+                        .border(tiaki::BORDER_PX, border_color)
+                        .border_radius(tiaki::FRAME_RADIUS)
+                        .box_shadow(window_shadow)
+                        .background(hex("#00000000"))
+                        .padding(0.0),
+                )
+                .resize_hit_area(8, 14)
+        };
+
+        // Every window gets the same treatment: border, radius, shadow.
+        // Whether the client wanted its own decorations no longer matters —
+        // CSD windows are wrapped in our border, SSD windows are not given a
+        // title bar. The shell bar is the decoration.
+        let _ = use_client_decoration;
+        managed
+            .z_index(z_index)
+            .child(frame().child(ClientWindow::new()))
+    });
+}
+
+/// The title bar's button size, padding and gap — kept for the switcher's
+/// hit-testing even though no title bar is drawn.
+#[allow(dead_code)]
+const TITLEBAR_BUTTON_SIZE: f64 = 24.0;
+#[allow(dead_code)]
+const TITLEBAR_ICON_SIZE: f64 = 16.0;
+const TITLEBAR_PADDING_X: f64 = 8.0;
+const TITLEBAR_GAP: f64 = 5.0;
+
+/// The title bar button at `(x, y)`, logical px from the top-left corner of
+/// `window.rect()` (the frame: border, then the title bar). From the right:
+/// close, maximize, minimize. Each button takes the whole title bar height
+/// and half the gap on both sides, so a scaled-down card still has a usable
+/// target.
+fn titlebar_button_at(window: Window, x: f64, y: f64) -> Option<TitlebarButton> {
+    if window.state(&WINDOW_STATE_FULLSCREEN).get_untracked()
+        || uses_client_decoration(&window.decoration().get_untracked())
+    {
+        return None;
+    }
+    titlebar_button_in(window.rect().width, x, y)
+}
+
+/// [`titlebar_button_at`] for a server-decorated frame `frame_width` wide.
+fn titlebar_button_in(frame_width: f64, x: f64, y: f64) -> Option<TitlebarButton> {
+    if !(WINDOW_BORDER_PX..=WINDOW_BORDER_PX + TITLEBAR_HEIGHT).contains(&y) {
+        return None;
+    }
+    let buttons = [
+        TitlebarButton::Close,
+        TitlebarButton::Maximize,
+        TitlebarButton::Minimize,
+    ];
+    let pitch = TITLEBAR_BUTTON_SIZE + TITLEBAR_GAP;
+    let right = frame_width - WINDOW_BORDER_PX - TITLEBAR_PADDING_X;
+    buttons.into_iter().enumerate().find_map(|(index, button)| {
+        let center = right - TITLEBAR_BUTTON_SIZE / 2.0 - index as f64 * pitch;
+        ((x - center).abs() <= pitch / 2.0).then_some(button)
+    })
+}
+
+/// Titlebar and client area of a server-side decorated window.
+///
+/// Focus is carried by the frame, so the title bar is the same ink on every
+/// window; only the title dims to the tertiary ink when the window is not
+/// focused. No glass, no gradient, no app icon at 16 px.
+#[allow(dead_code)]
+fn decorated_contents(window: Window) -> Element {
+    let title_color = window.is_focused().map(|focused| {
+        if *focused {
+            hex(tiaki::PAPER)
+        } else {
+            hex(tiaki::PAPER_DIM)
+        }
+    });
+    let titlebar = Flex::row()
+        .style(
+            Style::new()
+                .height(tiaki::TITLEBAR_HEIGHT)
+                .padding_x(TITLEBAR_PADDING_X)
+                .gap(TITLEBAR_GAP)
+                .align_items(AlignItems::Center)
+                .background(hex(tiaki::INK)),
+        )
+        .children(vec![
+            Label::new(window.title()).style(
+                Style::new()
+                    .color(title_color)
+                    .fonts([tiaki::UI_FONT])
+                    .font_size(12.5)
+                    .font_weight(500)
+                    .flex_grow(1.0)
+                    .flex_shrink(1.0)
+                    .min_width(0.0),
+            ),
+            minimize_button(window),
+            maximize_button(window),
+            close_button(window),
+        ]);
+    Flex::column().child(titlebar).child(ClientWindow::new())
+}
+
+/// How long the pointer has to rest on a title bar button before its tooltip shows.
+#[allow(dead_code)]
+const TOOLTIP_DELAY_MS: f64 = 500.0;
+
+/// A small label under a title bar button, drawn above every window. It
+/// opens once the pointer has rested on the button for [`TOOLTIP_DELAY_MS`]
+/// and closes as soon as it leaves.
+#[allow(dead_code)]
+fn titlebar_tooltip(text: impl Into<Prop<String>>) -> Element {
+    Popup::new()
+        .trigger(PopupTrigger::hover(TOOLTIP_DELAY_MS, 0.0))
+        .placement(PopupPlacement::Bottom)
+        .offset(8.0)
+        .child(
+            Flex::column()
+                .style(
+                    Style::new()
+                        .background(hex(tiaki::INK))
+                        .border_radius(tiaki::PANEL_RADIUS)
+                        .padding_x(8.0)
+                        .padding_y(4.0)
+                        .border(1.0, hex(tiaki::RULE_ON_INK))
+                        .box_shadow(shadow(0.0, 8.0, 24.0, hex("#0000008C"))),
+                )
+                .child(
+                    Label::new(text).style(
+                        Style::new()
+                            .color(hex(tiaki::PAPER))
+                            .fonts([tiaki::UI_FONT])
+                            .font_size(11.5),
+                    ),
+                ),
+        )
+}
+
+/// A round titlebar button whose icon appears while hovered.
+#[allow(dead_code)]
+fn title_button(
+    hover_border: Memo<Color>,
+    hover: Signal<bool>,
+    icon: impl Fn() -> Option<Element> + 'static,
+    tooltip: impl Fn() -> Option<Element> + 'static,
+    on_click: impl Fn() + 'static,
+) -> Element {
+    Flex::column()
+        .style(Style::new().relative().flex_shrink(0.0))
+        .child(
+            Button::new()
+                .on_hover_change(move |value| hover.set(value))
+                .on_click(on_click)
+                .style(
+                    Style::new()
+                        .size(TITLEBAR_BUTTON_SIZE, TITLEBAR_BUTTON_SIZE)
+                        .border_radius(tiaki::BUTTON_RADIUS)
+                        .background(hover.map(|hover| {
+                            if *hover {
+                                hex(tiaki::PAPER_WASH)
+                            } else {
+                                hex("#00000000")
+                            }
+                        }))
+                        .border(1.0, hover_border),
+                ),
+        )
+        .child_dyn(icon)
+        .child_dyn(tooltip)
+}
+
+#[allow(dead_code)]
+fn button_icon(src: impl Into<Prop<String>>) -> Element {
+    Image::new(src).style(
+        Style::new()
+            .size(TITLEBAR_ICON_SIZE, TITLEBAR_ICON_SIZE)
+            .absolute()
+            .z_index(1)
+            .pointer_events_none(),
+    )
+}
+
+#[allow(dead_code)]
+fn close_button(window: Window) -> Element {
+    let hover = signal(false);
+    let border = hover.map(|hover| {
+        if *hover {
+            hex(tiaki::PAPER_EDGE)
+        } else {
+            hex(tiaki::RULE_ON_INK)
+        }
+    });
+    title_button(
+        border,
+        hover,
+        // The glyph is always drawn: an empty square does not say "close".
+        || Some(button_icon("./icons/x.svg")),
+        || None,
+        move || window.close(),
+    )
+}
+
+#[allow(dead_code)]
+fn maximize_button(window: Window) -> Element {
+    let hover = signal(false);
+    let border = memo(move || {
+        if !window.is_resizable().get() || hover.get() {
+            hex(tiaki::PAPER_EDGE)
+        } else {
+            hex(tiaki::RULE_ON_INK)
+        }
+    });
+    title_button(
+        border,
+        hover,
+        move || {
+            Some(button_icon(window.is_maximized().map(|maximized| {
+                if *maximized {
+                    "./icons/minimize-2.svg"
+                } else {
+                    "./icons/maximize-2.svg"
+                }
+            })))
+        },
+        move || {
+            window.is_resizable().get().then(|| {
+                titlebar_tooltip(
+                    window.is_maximized().map(|maximized| {
+                        if *maximized { "Restore" } else { "Maximize" }.to_string()
+                    }),
+                )
+            })
+        },
+        move || {
+            if !window.is_resizable().get_untracked() {
+                return;
+            }
+            if window.is_maximized().get_untracked() {
+                window.unmaximize();
+            } else {
+                window.maximize();
+            }
+        },
+    )
+}
+
+#[allow(dead_code)]
+fn minimize_button(window: Window) -> Element {
+    let hover = signal(false);
+    let border = hover.map(|hover| {
+        if *hover {
+            hex(tiaki::PAPER_EDGE)
+        } else {
+            hex(tiaki::RULE_ON_INK)
+        }
+    });
+    title_button(
+        border,
+        hover,
+        || Some(button_icon("./icons/minus.svg")),
+        || Some(titlebar_tooltip("Minimize")),
+        move || window.minimize(),
+    )
+}
+
+#[cfg(test)]
+mod tests {
+    //! Drives the ported config through the compositor's `RuntimeHandle`,
+    //! the same calls `shojiwm_lib` makes, to exercise the window manager.
+
+    use std::collections::BTreeMap;
+
+    use shojiwm_rs::{
+        RuntimeBoot, RuntimeHandle, RuntimeHost,
+        cli::CommonArgs,
+        ssd::{
+            OutputModeSnapshot, OutputPositionSnapshot, WaylandOutputSnapshot,
+            WaylandWindowSnapshot, WindowPositionSnapshot,
+        },
+    };
+
+    use super::*;
+
+    fn output(name: &str, x: i32) -> WaylandOutputSnapshot {
+        WaylandOutputSnapshot {
+            name: name.into(),
+            description: None,
+            make: None,
+            model: None,
+            serial: None,
+            connector: Some(name.into()),
+            enabled: true,
+            resolution: Some(OutputModeSnapshot {
+                width: 1920,
+                height: 1080,
+                refresh_rate: 60.0,
+                clock_khz: None,
+            }),
+            position: OutputPositionSnapshot { x, y: 0 },
+            scale: 1.0,
+            transform: Default::default(),
+            available_modes: Vec::new(),
+            subpixel: Default::default(),
+            detected_subpixel: Default::default(),
+            hdr_supported: false,
+            hdmi: None,
+        }
+    }
+
+    fn window(id: &str, focused: bool) -> WaylandWindowSnapshot {
+        WaylandWindowSnapshot {
+            output_name: None,
+            plasma: None,
+            minimized_geometry: None,
+            id: id.into(),
+            title: format!("window {id}"),
+            app_id: Some("org.example.App".into()),
+            position: WindowPositionSnapshot {
+                x: 100.0,
+                y: 100.0,
+                width: 800.0,
+                height: 600.0,
+            },
+            rect: Default::default(),
+            is_focused: focused,
+            is_floating: true,
+            is_maximized: false,
+            is_fullscreen: false,
+            is_xwayland: false,
+            decoration: Default::default(),
+            size_constraints: Default::default(),
+            is_resizable: true,
+            is_transient: false,
+            parent_id: None,
+            icon: None,
+            interaction: Default::default(),
+        }
+    }
+
+    fn start() -> RuntimeHandle {
+        let dir =
+            std::env::temp_dir().join(format!("shojiwm-default-config-{}", std::process::id()));
+        std::fs::create_dir_all(&dir).unwrap();
+        // SAFETY: tests in this module run one at a time on their own thread
+        // before anything else reads the environment.
+        unsafe {
+            std::env::set_var("XDG_RUNTIME_DIR", &dir);
+            std::env::set_var("WAYLAND_DISPLAY", "test-display");
+        }
+        let args = CommonArgs::parse(&[], &[]);
+        let launcher = ConfigBuilder::new(setup).asset_root(asset_root());
+        let mut runtime =
+            RuntimeBoot::new(Box::new(launcher), &args).launch(RuntimeHost::detached());
+        runtime.preload().unwrap();
+        runtime.enable().unwrap();
+        runtime.sync_display_state(BTreeMap::from([("DP-1".to_owned(), output("DP-1", 0))]));
+        runtime
+    }
+
+    /// Run timers and animations until nothing is pending.
+    fn settle(runtime: &mut RuntimeHandle, now: &mut f64, ids: &[&str]) {
+        for _ in 0..200 {
+            *now += 16.0;
+            let tick = runtime.scheduler_tick(*now).unwrap();
+            for id in ids {
+                runtime
+                    .evaluate_cached_window(id, None, *now as u64, false)
+                    .unwrap();
+            }
+            if tick.next_poll_in_ms.is_none() {
+                return;
+            }
+        }
+    }
+
+    #[test]
+    fn floating_then_tiled_layout() {
+        let mut runtime = start();
+        let mut now = 1000.0;
+
+        // A new window: initial configure (deferred while floating), then its
+        // first commit centres it on the output.
+        runtime
+            .evaluate_window_preview(&window("w1", true), now as u64)
+            .unwrap();
+        let evaluation = runtime
+            .evaluate_window(&window("w1", true), now as u64)
+            .unwrap();
+        let rect = evaluation.managed_window.rect.expect("managed rect");
+        assert_eq!(rect.width, 800.0 + WINDOW_BORDER_PX * 2.0);
+        assert_eq!(rect.x, (1920.0 - rect.width) / 2.0);
+        assert!(
+            evaluation
+                .actions
+                .iter()
+                .any(|action| action.channel.is_none() && action.animation.is_some()),
+            "the open animation rides along: {:?}",
+            evaluation.actions
+        );
+
+        // Tile the workspace: the window becomes a tile in the viewport.
+        let toggled = runtime
+            .invoke_key_binding("toggle-tiling-mode", now as u64)
+            .unwrap();
+        assert!(toggled.invoked);
+        assert!(toggled.dirty_window_ids.contains(&"w1".to_owned()));
+        let cached = runtime
+            .evaluate_cached_window("w1", None, now as u64, false)
+            .unwrap();
+        let tiled = cached.managed_window.rect.unwrap();
+        assert_eq!(tiled.y, 12.0);
+        assert_eq!(tiled.height, 1080.0 - 24.0);
+        assert!(cached.managed_window.tiled);
+        settle(&mut runtime, &mut now, &["w1"]);
+
+        // A second window joins the row after the focused one.
+        runtime
+            .evaluate_window_preview(&window("w2", false), now as u64)
+            .unwrap();
+        runtime
+            .evaluate_window(&window("w2", false), now as u64)
+            .unwrap();
+        settle(&mut runtime, &mut now, &["w1", "w2"]);
+        let first = runtime
+            .evaluate_cached_window("w1", None, now as u64, true)
+            .unwrap();
+        let second = runtime
+            .evaluate_cached_window("w2", None, now as u64, true)
+            .unwrap();
+        let (first, second) = (
+            first.managed_window.rect.unwrap(),
+            second.managed_window.rect.unwrap(),
+        );
+        assert!(second.x > first.x, "{first:?} {second:?}");
+
+        // Keyboard navigation and workspace switching run without trouble.
+        for binding in [
+            "tile-focus-left",
+            "tile-focus-right",
+            "tile-move-left",
+            "workspace-next",
+            "workspace-prev",
+        ] {
+            assert!(
+                runtime
+                    .invoke_key_binding(binding, now as u64)
+                    .unwrap()
+                    .invoked
+            );
+            settle(&mut runtime, &mut now, &["w1", "w2"]);
+        }
+
+        // Closing: the close animation's duration is declared.
+        let close = runtime.start_close("w2", now as u64).unwrap();
+        assert_eq!(close.close_animation_duration_ms, Some(500));
+        settle(&mut runtime, &mut now, &["w1", "w2"]);
+        runtime.window_closed("w2").unwrap();
+        settle(&mut runtime, &mut now, &["w1"]);
+    }
+
+    #[test]
+    fn decoration_reacts_to_focus() {
+        let mut runtime = start();
+        let focused = runtime.evaluate_window(&window("w1", true), 1).unwrap();
+        let unfocused = runtime.evaluate_window(&window("w1", false), 2).unwrap();
+        let border = |node: &shojiwm_rs::ssd::DecorationNode| node.style.border.unwrap().color;
+        assert_eq!(border(&focused.node), hex(tiaki::FOCUS_EDGE));
+        assert_eq!(border(&unfocused.node), hex(tiaki::RULE_ON_INK));
+    }
+
+    #[test]
+    fn titlebar_buttons_are_found_from_the_right() {
+        let width = 800.0;
+        let y = WINDOW_BORDER_PX + TITLEBAR_HEIGHT / 2.0;
+        let right = width - WINDOW_BORDER_PX - TITLEBAR_PADDING_X;
+        let center = |index: f64| {
+            right - TITLEBAR_BUTTON_SIZE / 2.0 - index * (TITLEBAR_BUTTON_SIZE + TITLEBAR_GAP)
+        };
+        assert_eq!(
+            titlebar_button_in(width, center(0.0), y),
+            Some(TitlebarButton::Close)
+        );
+        assert_eq!(
+            titlebar_button_in(width, center(1.0), y),
+            Some(TitlebarButton::Maximize)
+        );
+        assert_eq!(
+            titlebar_button_in(width, center(2.0), y),
+            Some(TitlebarButton::Minimize)
+        );
+        // The title, and the client area below the title bar, are no buttons.
+        assert_eq!(titlebar_button_in(width, center(4.0), y), None);
+        assert_eq!(
+            titlebar_button_in(width, center(0.0), WINDOW_BORDER_PX + TITLEBAR_HEIGHT + 1.0),
+            None
+        );
+    }
+
+    /// The drag card: the badge follows the action, and a refused drop flies
+    /// back to the origin, fades out and is disposed of.
+    #[test]
+    fn drag_card_flies_back_after_a_refused_drop() {
+        use shojiwm_lib::dnd::{DndEventSnapshot, DragSnapshot, DragViewCommand};
+        use shojiwm_rs::{
+            HostMessage,
+            dnd::{DragDevice, DragEndKind, DragPoint},
+            ssd::{DecorationNode, DecorationNodeKind},
+        };
+
+        let host = RuntimeHost::detached();
+        let args = CommonArgs::parse(&[], &[]);
+        let launcher = ConfigBuilder::new(|| crate::drag_and_drop::install_drag_and_drop())
+            .asset_root(concat!(
+                env!("CARGO_MANIFEST_DIR"),
+                "/examples/default_config/assets"
+            ));
+        let mut runtime = RuntimeBoot::new(Box::new(launcher), &args).launch(host.clone());
+        runtime.preload().unwrap();
+        runtime.enable().unwrap();
+        let commands = || -> Vec<DragViewCommand> {
+            std::iter::from_fn(|| host.pop())
+                .filter_map(|message| match message {
+                    HostMessage::DragView(command) => Some(command),
+                    _ => None,
+                })
+                .collect()
+        };
+        fn labels(node: &DecorationNode, out: &mut Vec<String>) {
+            if let DecorationNodeKind::Label(label) = &node.kind {
+                out.push(label.text.clone());
+            }
+            node.children.iter().for_each(|child| labels(child, out));
+        }
+        let content_labels = |commands: &[DragViewCommand]| {
+            commands.iter().rev().find_map(|command| match command {
+                DragViewCommand::Content {
+                    content: Some(tree),
+                    ..
+                } => {
+                    let mut out = Vec::new();
+                    labels(tree, &mut out);
+                    Some(out)
+                }
+                _ => None,
+            })
+        };
+        let last_props = |commands: &[DragViewCommand]| {
+            commands.iter().rev().find_map(|command| match command {
+                DragViewCommand::Props { props, .. } => Some(*props),
+                _ => None,
+            })
+        };
+
+        commands();
+        let start = DndEventSnapshot::Start {
+            drag: DragSnapshot {
+                id: 1,
+                mime_types: vec!["text/uri-list".into()],
+                actions: Default::default(),
+                action: DragAction::None,
+                source_window_id: None,
+                target_window_id: None,
+                device: DragDevice::Pointer,
+                origin: DragPoint { x: 100.0, y: 200.0 },
+                icon: None,
+            },
+        };
+        runtime.dnd_event(&start, 1000).unwrap();
+        let sent = commands();
+        assert_eq!(content_labels(&sent), Some(vec!["File".to_string()]));
+        let props = last_props(&sent).unwrap();
+        assert_eq!(props.anchor, DragViewAnchor::Pointer);
+        assert!(
+            (props.scale - 0.85).abs() < 1e-6 && props.opacity == 0.0,
+            "{props:?}"
+        );
+
+        let mut now = 1000.0;
+        for _ in 0..20 {
+            now += 16.0;
+            runtime.scheduler_tick(now).unwrap();
+        }
+        let props = last_props(&commands()).unwrap();
+        assert!(
+            props.opacity == 1.0 && props.scale == 1.0,
+            "popped in: {props:?}"
+        );
+
+        let update = DndEventSnapshot::Update {
+            drag_id: 1,
+            action: DragAction::Copy,
+            target_window_id: None,
+            icon: None,
+        };
+        runtime.dnd_event(&update, now as u64).unwrap();
+        assert_eq!(
+            content_labels(&commands()),
+            Some(vec!["+".to_string(), "File".to_string()])
+        );
+
+        let end = DndEventSnapshot::End {
+            drag_id: 1,
+            kind: DragEndKind::Dropped,
+            accepted: false,
+            target_window_id: None,
+            position: DragPoint { x: 500.0, y: 600.0 },
+        };
+        runtime.dnd_event(&end, now as u64).unwrap();
+        let props = last_props(&commands()).unwrap();
+        assert_eq!(
+            (props.anchor, props.x, props.y),
+            (DragViewAnchor::Global, 500.0, 600.0)
+        );
+        let mut disposed = false;
+        let mut last = props;
+        for _ in 0..40 {
+            now += 16.0;
+            runtime.scheduler_tick(now).unwrap();
+            let sent = commands();
+            if let Some(props) = last_props(&sent) {
+                last = props;
+            }
+            if sent
+                .iter()
+                .any(|command| matches!(command, DragViewCommand::Dispose { .. }))
+            {
+                disposed = true;
+                break;
+            }
+        }
+        assert!(disposed, "the view goes once it flew back");
+        assert!(
+            (last.x - 100.0).abs() < 1.0 && (last.y - 200.0).abs() < 1.0,
+            "back at the origin: {last:?}"
+        );
+        assert!(last.opacity < 0.01, "faded out: {last:?}");
+    }
+}

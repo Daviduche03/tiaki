@@ -1,0 +1,48 @@
+#!/usr/bin/env bash
+# Tiaki dev bootstrap: check prerequisites, then give the next command.
+# Runs on macOS and Linux. Never installs anything for you.
+set -euo pipefail
+cd "$(dirname "$0")/.."
+
+fail() { echo "✗ $1" >&2; [ -n "${2:-}" ] && echo "  → $2" >&2; exit 1; }
+
+echo "== Tiaki dev bootstrap =="
+
+command -v cargo >/dev/null || fail "cargo not found" "Install Rust via rustup: curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh"
+command -v rustc >/dev/null || fail "rustc not found" "Run rustup update (toolchain pinned in rust-toolchain.toml)."
+
+if [ "$(uname)" = "Darwin" ]; then
+  if [ -z "${SDKROOT:-}" ]; then
+    SDKROOT="$(xcrun --show-sdk-path 2>/dev/null || true)"
+    [ -n "$SDKROOT" ] || fail "SDKROOT is unset and xcrun failed" "export SDKROOT=\$(xcrun --show-sdk-path)"
+    export SDKROOT
+  fi
+  echo "✓ macOS SDKROOT=$SDKROOT"
+fi
+
+cargo --version
+rustc --version
+
+if command -v docker >/dev/null; then
+  echo "✓ docker: $(docker --version 2>/dev/null | head -1)"
+else
+  echo "! docker not found — desktop image (make desktop) needs it; control-plane work doesn't."
+fi
+
+if [ -d t3code-upstream ] && [ -f t3code-upstream/package.json ]; then
+  echo "✓ t3code-upstream/ present (T3 fork)"
+else
+  echo "! t3code-upstream/ missing — optional, needed only for the full image:"
+  echo "    git clone --branch agentic/extra-mcp-servers https://github.com/Daviduche03/t3code t3code-upstream"
+fi
+
+echo ""
+echo "== cargo check (workspace) =="
+cargo check --workspace
+
+echo ""
+echo "Next:"
+echo "  make test        # full suite (178 tests)"
+echo "  make ci          # check + fmt + clippy + test (what CI runs)"
+echo "  cargo run -p agentd -- log     # try the ledger"
+echo "  make desktop     # build+run the Tiaki desktop (Docker, VNC :5900)"

@@ -1,0 +1,13 @@
+[package]
+name = "agentic-capability"
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+rust-version.workspace = true
+
+[dependencies]
+agentic-transaction = { path = "../transaction" }
+
+[dev-dependencies]
+agentic-core-log = { path = "../../core/log" }
+agentic-explain = { path = "../explain" }

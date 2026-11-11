@@ -1,0 +1,10 @@
+Package: agentic-desktop
+Version: 0.1.0
+Section: misc
+Priority: optional
+Architecture: arm64
+Maintainer: Agentic OS <dev@agentic.os>
+Depends: libc6
+Description: Agentic OS desktop shell
+ A declarative, transaction-backed desktop served by the agentd control
+ plane. Every UI edit is validated, logged, and reversible.

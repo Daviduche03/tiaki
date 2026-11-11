@@ -1,0 +1,12 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "Clock Panel UI",
+  "type": "object",
+  "properties": {
+    "id": { "type": "string" },
+    "type": { "enum": ["clock"] },
+    "props": { "type": "object" }
+  },
+  "required": ["id", "type"],
+  "additionalProperties": true
+}

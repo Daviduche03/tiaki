@@ -1,0 +1,106 @@
+/* Control Center. Same material as the bar: ink panel, paper text,
+   one lamp accent. Spec: docs/design/brand/color.md */
+
+.cc-panel {
+  background-color: #151413;
+  background-image: none;
+  border: 1px solid rgba(230, 224, 212, 0.14);
+  border-radius: 3px;
+  box-shadow: 0 18px 42px rgba(0, 0, 0, 0.55);
+}
+
+.cc-title {
+  color: #e6e0d4;
+  font-size: 13px;
+  font-weight: 500;
+}
+
+.cc-rule {
+  background-color: rgba(230, 224, 212, 0.10);
+}
+
+.cc-icon-button {
+  background: transparent;
+  background-image: none;
+  border: none;
+  box-shadow: none;
+  padding: 2px 4px;
+  border-radius: 3px;
+  min-height: 22px;
+}
+.cc-icon-button:hover {
+  background-color: rgba(230, 224, 212, 0.07);
+}
+
+/* ---- tiles ---- */
+.cc-tile {
+  background-color: #1b1917;
+  border: 1px solid rgba(230, 224, 212, 0.10);
+  border-radius: 3px;
+}
+.cc-tile:hover {
+  border-color: rgba(230, 224, 212, 0.18);
+}
+
+.cc-tile-title {
+  color: #e6e0d4;
+  font-size: 12.5px;
+  font-weight: 500;
+}
+.cc-tile-sub {
+  color: rgba(230, 224, 212, 0.55);
+  font-family: "IBM Plex Mono", monospace;
+  font-size: 9.5px;
+}
+.cc-dot {
+  background-color: #d08a2c;
+  border-radius: 1px;
+}
+
+/* ---- sliders and rows ---- */
+.cc-card {
+  background-color: #1b1917;
+  border: 1px solid rgba(230, 224, 212, 0.10);
+  border-radius: 3px;
+  margin-top: 8px;
+}
+.cc-slider-title {
+  color: #e6e0d4;
+  font-size: 12.5px;
+}
+.cc-value {
+  color: rgba(230, 224, 212, 0.72);
+  font-family: "IBM Plex Mono", monospace;
+  font-size: 10.5px;
+}
+.cc-meta {
+  color: rgba(230, 224, 212, 0.45);
+  font-family: "IBM Plex Mono", monospace;
+  font-size: 9.5px;
+}
+
+/* GTK3 scale: ink trough, lamp fill, paper handle */
+.cc-scale trough {
+  background-color: #232324;
+  border: none;
+  border-radius: 2px;
+  min-height: 4px;
+}
+.cc-scale highlight {
+  background-color: #e6e0d4;
+  border-radius: 2px;
+  min-height: 4px;
+}
+.cc-scale slider {
+  background-color: #e6e0d4;
+  background-image: none;
+  border: none;
+  border-radius: 7px;
+  min-width: 13px;
+  min-height: 13px;
+  margin: -5px 0;
+  box-shadow: none;
+}
+.cc-scale slider:hover {
+  background-color: #ffffff;
+}

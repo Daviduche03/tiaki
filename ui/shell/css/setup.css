@@ -1,0 +1,139 @@
+/* First-run setup. One question per screen, paper on ink, no panels.
+   Only proven GTK3 properties: one invalid property drops the whole sheet. */
+
+.su-brand {
+  color: #e6e0d4;
+  font-size: 13px;
+  font-weight: 500;
+  letter-spacing: -0.01em;
+}
+
+.su-title {
+  color: #e6e0d4;
+  font-size: 44px;
+  font-weight: 500;
+}
+
+.su-lede {
+  color: rgba(230, 224, 212, 0.62);
+  font-size: 15px;
+}
+
+.su-label {
+  color: rgba(230, 224, 212, 0.55);
+  font-size: 12px;
+  font-weight: 500;
+}
+
+.su-field {
+  color: #e6e0d4;
+  font-size: 15px;
+}
+
+.su-foot {
+  color: rgba(230, 224, 212, 0.40);
+  font-family: "IBM Plex Mono", monospace;
+  font-size: 10.5px;
+}
+
+/* cards: luminance step, lamp edge only on the chosen one */
+.su-card {
+  background-color: #1b1917;
+  border: 1px solid rgba(230, 224, 212, 0.10);
+  border-radius: 3px;
+}
+.su-card.on {
+  border-color: rgba(208, 138, 44, 0.60);
+}
+.su-card-title {
+  color: #e6e0d4;
+  font-size: 15px;
+  font-weight: 500;
+}
+.su-card-tag {
+  color: #d08a2c;
+  font-family: "IBM Plex Mono", monospace;
+  font-size: 9.5px;
+  border: 1px solid rgba(208, 138, 44, 0.45);
+  border-radius: 2px;
+  padding: 2px 6px;
+}
+.su-card-body {
+  color: rgba(230, 224, 212, 0.60);
+  font-size: 12.5px;
+}
+
+/* the single commit action: paper fill, ink text */
+.su-stamp {
+  background-color: #e6e0d4;
+  background-image: none;
+  border: none;
+  box-shadow: none;
+  border-radius: 2px;
+  color: #151413;
+  font-size: 14px;
+  font-weight: 500;
+  padding: 0 28px;
+}
+.su-stamp:hover {
+  background-color: #ffffff;
+  background-image: none;
+}
+.su-stamp:active {
+  background-color: #d8d1c2;
+  background-image: none;
+}
+
+/* review rows */
+.su-marker {
+  background-color: #2e6b4e;
+  border-radius: 1px;
+}
+.su-change {
+  color: #e6e0d4;
+  font-size: 15px;
+}
+.su-change-sub {
+  color: rgba(230, 224, 212, 0.50);
+  font-family: "IBM Plex Mono", monospace;
+  font-size: 10.5px;
+}
+.su-rule {
+  color: rgba(230, 224, 212, 0.10);
+}
+
+/* contents rail */
+.su-contents {
+  background-color: #131314;
+}
+.su-toc-title {
+  color: rgba(230, 224, 212, 0.62);
+  font-size: 13px;
+}
+.su-toc-count {
+  color: rgba(230, 224, 212, 0.38);
+  font-family: "IBM Plex Mono", monospace;
+  font-size: 10px;
+}
+.su-toc-num {
+  color: rgba(230, 224, 212, 0.38);
+  font-family: "IBM Plex Mono", monospace;
+  font-size: 10px;
+}
+.su-toc-item {
+  color: rgba(230, 224, 212, 0.45);
+  font-size: 13px;
+}
+.su-toc-now {
+  color: #e6e0d4;
+  font-size: 13px;
+  font-weight: 500;
+}
+.su-toc-done {
+  color: rgba(230, 224, 212, 0.62);
+}
+.su-toc-state {
+  color: rgba(230, 224, 212, 0.38);
+  font-family: "IBM Plex Mono", monospace;
+  font-size: 10px;
+}

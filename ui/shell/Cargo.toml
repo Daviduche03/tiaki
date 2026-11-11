@@ -1,0 +1,20 @@
+[package]
+name = "tiaki-shell"
+version = "0.1.0"
+edition = "2021"
+license = "MIT OR Apache-2.0"
+rust-version = "1.75"
+
+# Separate workspace: the shell uses GTK/gtk-layer-shell, while the core
+# workspace stays dependency-free.
+[workspace]
+
+[dependencies]
+agentic-json = { path = "../../core/json" }
+agentic-ui-tree = { path = "../tree" }
+gtk = "0.18"
+gtk-layer-shell = { version = "0.8.2", features = ["v0_6"] }
+
+[[bin]]
+name = "tiaki-shell"
+path = "src/main.rs"

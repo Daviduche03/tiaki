@@ -1,0 +1,12 @@
+{
+  "id": "sim/tiny",
+  "version": "1.0.0",
+  "architecture": "simulated",
+  "context_length": 8192,
+  "quantization": "none",
+  "weights_digest": "sha256:0000000000000000000000000000000000000000000000000000000000000000",
+  "tokenizer": "word",
+  "license": "Apache-2.0",
+  "backend": "simulated",
+  "loaded": false
+}

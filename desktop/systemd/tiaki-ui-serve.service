@@ -1,0 +1,15 @@
+[Unit]
+Description=Tiaki tree API (agentd ui serve)
+After=tiaki-firstboot.service
+Requires=tiaki-firstboot.service
+
+[Service]
+Environment=TIAKI_HOME=/var/lib/tiaki
+Environment=XDG_RUNTIME_DIR=/run/tiaki
+ExecStartPre=/bin/mkdir -p /run/tiaki
+ExecStart=/usr/local/bin/agentd --principal user:ada ui serve --host 127.0.0.1 --port 8787
+Restart=always
+RestartSec=2
+
+[Install]
+WantedBy=multi-user.target

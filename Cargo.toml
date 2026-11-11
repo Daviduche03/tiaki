@@ -1,0 +1,35 @@
+[workspace]
+resolver = "2"
+members = [
+    "core/boot",
+    "core/init",
+    "core/json",
+    "core/toml",
+    "core/log",
+    "core/rollback",
+    "control/agentd",
+    "control/capability",
+    "control/transaction",
+    "control/plugin-host",
+    "control/state-api",
+    "control/explain",
+    "control/sandbox",
+    "control/inference",
+    "control/agents",
+    "ui/compositor",
+    "ui/tree",
+    "ui/widgets",
+    "runtime/abi",
+    "runtime/opencode",
+    "runtime/codex",
+    "runtime/acp",
+]
+
+[workspace.package]
+version = "0.0.0"
+edition = "2021"
+license = "MIT OR Apache-2.0"
+rust-version = "1.75"
+
+# Shared dependencies land here once the skeleton grows beyond std.
+[workspace.dependencies]
