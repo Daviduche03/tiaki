@@ -59,6 +59,23 @@ cargo run -p agentd -- agent run --title hello -- "Reply with ONLY the word unto
 cargo run -p agentd -- notify --title disk -- "Run df -h via terminal.exec"
 ```
 
+## Look at the tree-driven UI (no Docker)
+
+The same tree the shell renders is served by `agentd`, so you can see it in a
+browser before building an image. Pick a free port — 8787 is commonly taken by
+other local services.
+
+```bash
+cargo run -p agentd -- --principal user:ada ui set desktop/desktop.json
+cargo run -p agentd -- --principal user:ada ui serve --port 18787
+open http://127.0.0.1:18787
+```
+
+Endpoints: `/` (page), `/fragment` (the tree as JSON), `/tree.json` (full
+state), `/state` (revision + theme), `/page.css`, `/page.js`. Rust emits JSON
+only; the page builds the DOM. This is a development preview — the shipping
+desktop is the GTK shell in `ui/shell`, not this page.
+
 ## Build the desktop image (Docker)
 
 ```bash

@@ -9,7 +9,7 @@
 use gtk::prelude::*;
 use gtk_layer_shell::LayerShell;
 
-use crate::{agents, bar, chrome, control, dock, greet, launcher, menu, notify, settings, setup, switcher};
+use crate::{agents, bar, chrome, control, dock, files, greet, launcher, menu, notify, settings, setup, switcher};
 
 #[allow(dead_code)]
 pub const BG: &str = "#16161e";
@@ -37,6 +37,7 @@ fn all_sheets() -> Vec<&'static str> {
     sheets.extend_from_slice(settings::STYLE_SHEETS);
     sheets.extend_from_slice(agents::STYLE_SHEETS);
     sheets.extend_from_slice(control::STYLE_SHEETS);
+    sheets.extend_from_slice(files::STYLE_SHEETS);
     sheets.extend_from_slice(notify::STYLE_SHEETS);
     sheets.extend_from_slice(setup::STYLE_SHEETS);
     sheets.extend_from_slice(switcher::STYLE_SHEETS);

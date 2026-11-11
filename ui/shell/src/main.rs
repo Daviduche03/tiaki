@@ -16,6 +16,7 @@ mod chrome;
 mod clock;
 mod control;
 mod dock;
+mod files;
 mod greet;
 mod glyphs;
 mod icons;
@@ -54,6 +55,10 @@ fn main() -> ExitCode {
         "bar" => bar::run(&tree),
         "chrome" => chrome::run(),
         "dock" => dock::run(&tree),
+        "files" => {
+            let start = args.get(1).map(String::as_str);
+            files::run(start)
+        }
         "greet" => greet::run(),
         "launcher" => launcher::run(&tree),
         "menu" => {
@@ -95,7 +100,7 @@ fn main() -> ExitCode {
             return ExitCode::SUCCESS;
         }
         other => {
-            eprintln!("tiaki-shell: unknown mode '{other}' (bar, dock, launcher, menu, control, agents, settings, switcher, chrome)");
+            eprintln!("tiaki-shell: unknown mode '{other}' (bar, dock, launcher, menu, control, agents, settings, switcher, chrome, files)");
             return ExitCode::FAILURE;
         }
     }

@@ -11,23 +11,77 @@ RUN apt-get update \
         libpango1.0-dev libgdk-pixbuf-2.0-dev libatk1.0-dev \
     && rm -rf /var/lib/apt/lists/*
 WORKDIR /src
+
+# rust-toolchain.toml asks for rustfmt + clippy, which the rust image does not
+# ship. Satisfy that here, with retries, so the compile step never has to reach
+# the network for a toolchain — Docker DNS here fails intermittently and a
+# failed rustup download aborts the whole build.
+RUN set -eu; \
+    i=0; \
+    until rustup component add rustfmt clippy; do \
+        i=$((i + 1)); \
+        if [ "$i" -ge 5 ]; then echo "rustup component add failed 5 times" >&2; exit 1; fi; \
+        echo "rustup component add failed (attempt $i), retrying" >&2; \
+        sleep 5; \
+    done; \
+    rustup component list --installed | grep -q '^rustfmt'
+
 COPY . .
-RUN cargo build --release -p agentd
-RUN cargo build --release --manifest-path ui/native/Cargo.toml
-RUN cargo build --release --manifest-path ui/shell/Cargo.toml
-RUN cargo build --release -p agentic-agents
-RUN cargo build --release -p agentic-runtime-acp
+
+# Cache the cargo registry and every workspace's target directory, so editing
+# one source file does not recompile the whole dependency graph. A cache mount
+# is not part of the image layer, so the five binaries are copied to /out for
+# the final stage to take.
+ENV CARGO_NET_RETRY=10 \
+    CARGO_HTTP_TIMEOUT=60
+RUN --mount=type=cache,target=/usr/local/cargo/registry \
+    --mount=type=cache,target=/src/target \
+    --mount=type=cache,target=/src/ui/native/target \
+    --mount=type=cache,target=/src/ui/shell/target \
+    set -eu; \
+    chmod +x desktop/wayland/build-payload.sh; \
+    ./desktop/wayland/build-payload.sh /out
 
 FROM debian:trixie-slim
 RUN apt-get update \
     && apt-get install -y --no-install-recommends \
         sway swaybg foot mousepad btop thunar epiphany-browser swaylock \
-        fonts-ibm-plex fonts-jetbrains-mono fonts-font-awesome adwaita-icon-theme \
-        grim curl wayvnc libgtk-3-0 libgtk-layer-shell0 ca-certificates wtype wl-clipboard brightnessctl pamixer \
-        fastfetch imagemagick dbus adduser librsvg2-common python3 \
+        fonts-jetbrains-mono fonts-font-awesome adwaita-icon-theme \
+        grim curl unzip xz-utils wayvnc libgtk-3-0 libgtk-layer-shell0 ca-certificates wtype wl-clipboard brightnessctl pamixer \
+        fastfetch imagemagick dbus adduser librsvg2-common python3 git \
     && rm -rf /var/lib/apt/lists/*
 
+# The shell is typeset in IBM Plex Sans/Mono. Debian does not package it, so
+# fetch the pinned IBM releases and cache them. Without this the whole UI
+# silently falls back to DejaVu Sans.
+ARG PLEX_SANS_VERSION=1.1.0
+ARG PLEX_MONO_VERSION=2.5.0
+RUN set -eu; \
+    tmp="$(mktemp -d)"; \
+    curl -fsSL "https://github.com/IBM/plex/releases/download/%40ibm/plex-sans%40${PLEX_SANS_VERSION}/ibm-plex-sans.zip" -o "$tmp/sans.zip"; \
+    curl -fsSL "https://github.com/IBM/plex/releases/download/%40ibm/plex-mono%40${PLEX_MONO_VERSION}/ibm-plex-mono.zip" -o "$tmp/mono.zip"; \
+    mkdir -p /usr/share/fonts/truetype/ibm-plex; \
+    unzip -j -o "$tmp/sans.zip" "ibm-plex-sans/fonts/complete/ttf/*.ttf" -d /usr/share/fonts/truetype/ibm-plex >/dev/null; \
+    unzip -j -o "$tmp/mono.zip" "ibm-plex-mono/fonts/complete/ttf/*.ttf" -d /usr/share/fonts/truetype/ibm-plex >/dev/null; \
+    rm -rf "$tmp"; \
+    fc-cache -f >/dev/null; \
+    fc-match "IBM Plex Sans" | grep -qi "plex"
+
 RUN adduser --disabled-password --gecos "" desktop
+
+# The base is Debian; the OS is Tiaki. Nothing user-facing says Debian:
+# os-release drives Settings > About, fastfetch, and every app that asks.
+RUN printf '%s\n' \
+        'PRETTY_NAME="Tiaki"' \
+        'NAME="Tiaki"' \
+        'ID=tiaki' \
+        'ID_LIKE=debian' \
+        'VERSION="0.1 (dev)"' \
+        'VERSION_ID="0.1"' \
+        'HOME_URL="https://github.com/Daviduche03/tiaki"' \
+        'BUG_REPORT_URL="https://github.com/Daviduche03/tiaki/issues"' \
+        > /usr/lib/os-release \
+    && ln -sf ../usr/lib/os-release /etc/os-release
 
 # Toolchain the hand-install used to be: Node 26 (Debian trixie's node is too
 # old for T3 Code), pnpm, and a pinned opencode. Arch-aware: amd64 and arm64.
@@ -63,11 +117,11 @@ RUN cd /opt/t3code-upstream && pnpm install --prefer-offline \
     && find /opt/t3code-upstream -name "._*" -not -path "*/node_modules/*" -delete \
     && chown -R desktop:desktop /opt/t3code-upstream
 
-COPY --from=builder /src/target/release/agentd /usr/local/bin/agentd
-COPY --from=builder /src/ui/native/target/release/tiaki-ui-native /usr/local/bin/tiaki-ui-native
-COPY --from=builder /src/ui/shell/target/release/tiaki-shell /usr/local/bin/tiaki-shell
-COPY --from=builder /src/target/release/sched-launch /usr/local/bin/sched-launch
-COPY --from=builder /src/target/release/acp-run /usr/local/bin/acp-run
+COPY --from=builder /out/agentd /usr/local/bin/agentd
+COPY --from=builder /out/tiaki-ui-native /usr/local/bin/tiaki-ui-native
+COPY --from=builder /out/tiaki-shell /usr/local/bin/tiaki-shell
+COPY --from=builder /out/sched-launch /usr/local/bin/sched-launch
+COPY --from=builder /out/acp-run /usr/local/bin/acp-run
 COPY runtime/skills /usr/share/tiaki/skills
 COPY desktop/desktop.json /usr/share/tiaki/desktop.json
 COPY desktop/icons /usr/share/tiaki/icons

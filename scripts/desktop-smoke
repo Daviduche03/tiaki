@@ -1,0 +1,49 @@
+#!/bin/sh
+# Boot the desktop image headlessly and prove the session renders.
+#
+# Starts the image, waits for Sway's Wayland socket, takes a grim screenshot
+# inside the container and copies it out. No VNC client needed, so this also
+# works as a CI gate once the image pipeline exists.
+#
+# Usage: scripts/desktop-smoke [image] [out.png]
+set -eu
+
+IMAGE="${1:-tiaki-wayland:dev}"
+OUT="${2:-desktop-screenshot.png}"
+NAME="tiaki-smoke-$$"
+
+cleanup() { docker rm -f "$NAME" >/dev/null 2>&1 || true; }
+trap cleanup EXIT INT TERM
+
+socket_present() {
+  docker exec "$NAME" sh -c 'ls /run/tiaki/wayland-* >/dev/null 2>&1'
+}
+
+echo "starting $IMAGE as $NAME"
+docker run -d --name "$NAME" "$IMAGE" >/dev/null
+
+echo "waiting for the session (up to 180s)..."
+i=0
+while [ "$i" -lt 90 ]; do
+  if socket_present; then
+    break
+  fi
+  i=$((i + 1))
+  sleep 2
+done
+
+if ! socket_present; then
+  echo "no Wayland socket after 180s. Session log:" >&2
+  docker exec "$NAME" journalctl -u tiaki-session --no-pager -n 40 >&2 2>&1 || true
+  exit 1
+fi
+
+docker exec "$NAME" sh -c '
+  set -- /run/tiaki/wayland-*
+  XDG_RUNTIME_DIR=/run/tiaki
+  WAYLAND_DISPLAY="$(basename "$1")"
+  export XDG_RUNTIME_DIR WAYLAND_DISPLAY
+  grim /tmp/smoke.png
+'
+docker cp "$NAME:/tmp/smoke.png" "$OUT" >/dev/null
+echo "rendered: $OUT"

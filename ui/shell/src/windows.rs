@@ -265,7 +265,8 @@ pub fn app_id_for_command(command: &str) -> String {
     let command = command.strip_prefix("tiaki:").unwrap_or(command);
     match command {
         "terminal.new" => return "foot".to_string(),
-        "files.open" => return "thunar".to_string(),
+        "files.open" => return "tiaki-shell".to_string(),
+        "trash.open" => return "tiaki-shell".to_string(),
         "editor.open" => return "mousepad".to_string(),
         "monitor.open" => return "btop".to_string(),
         "settings.open" => return "tiaki-shell".to_string(),
@@ -298,6 +299,7 @@ pub fn is_action(command: &str) -> bool {
             | "transactions.open"
             | "palette.open"
             | "wallpaper.next"
+            | "trash.open"
             | "session.exit"
     )
 }

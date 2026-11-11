@@ -1,0 +1,313 @@
+/* Files. The same ink panel as Settings: cards, hairlines, paper text. */
+
+.files-panel {
+  background-color: #151413;
+  background-image: none;
+  border: none;
+  border-radius: 0;
+  box-shadow: none;
+}
+
+.files-toolbar {
+  background-color: #151413;
+  background-image: none;
+  border-bottom: 1px solid rgba(230, 224, 212, 0.10);
+  padding: 4px 12px;
+}
+
+.files-navbtn {
+  background: transparent;
+  background-image: none;
+  border: none;
+  box-shadow: none;
+  border-radius: 3px;
+  min-height: 28px;
+  min-width: 30px;
+  padding: 2px 4px;
+  color: #e6e0d4;
+}
+.files-navbtn:hover {
+  background-color: rgba(230, 224, 212, 0.07);
+}
+.files-navbtn:disabled {
+  opacity: 0.35;
+}
+
+.files-crumb {
+  background: transparent;
+  background-image: none;
+  border: none;
+  box-shadow: none;
+  border-radius: 3px;
+  color: rgba(230, 224, 212, 0.78);
+  font-size: 12.5px;
+  font-weight: 500;
+  padding: 4px 8px;
+}
+.files-crumb:hover {
+  background-color: rgba(230, 224, 212, 0.07);
+  color: #e6e0d4;
+}
+.files-crumb.current {
+  color: #e6e0d4;
+}
+
+.files-path {
+  background-color: #1b1917;
+  background-image: none;
+  border: 1px solid rgba(230, 224, 212, 0.14);
+  border-radius: 3px;
+  caret-color: #d08a2c;
+  color: #e6e0d4;
+  font-family: "IBM Plex Mono", monospace;
+  font-size: 12px;
+  padding: 6px 10px;
+}
+.files-path:focus {
+  border-color: rgba(208, 138, 44, 0.55);
+}
+
+.files-tool {
+  background: transparent;
+  background-image: none;
+  border: 1px solid transparent;
+  border-radius: 3px;
+  box-shadow: none;
+  color: #e6e0d4;
+  font-size: 12.5px;
+  font-weight: 500;
+  padding: 5px 10px;
+}
+.files-tool:hover {
+  background-color: rgba(230, 224, 212, 0.07);
+  border-color: rgba(230, 224, 212, 0.18);
+}
+.files-tool:disabled {
+  opacity: 0.35;
+}
+
+.files-search {
+  background-color: #1b1917;
+  background-image: none;
+  border: 1px solid rgba(230, 224, 212, 0.14);
+  border-radius: 3px;
+  caret-color: #d08a2c;
+  color: #e6e0d4;
+  font-size: 12.5px;
+  padding: 5px 10px;
+}
+.files-search:focus {
+  border-color: rgba(208, 138, 44, 0.55);
+}
+
+.files-sidebar {
+  background: transparent;
+  border-right: 1px solid rgba(230, 224, 212, 0.14);
+  padding: 8px 10px 16px 10px;
+}
+
+.files-place {
+  background: transparent;
+  background-image: none;
+  border: none;
+  box-shadow: none;
+  border-radius: 3px;
+  color: rgba(230, 224, 212, 0.82);
+  font-size: 13px;
+  font-weight: 500;
+  padding: 0;
+}
+.files-place:hover {
+  background-color: rgba(230, 224, 212, 0.07);
+}
+.files-place.active {
+  background-color: rgba(230, 224, 212, 0.08);
+  box-shadow: inset 2px 0 0 #d08a2c;
+  color: #e6e0d4;
+}
+
+.files-sect {
+  color: #665f54;
+  font-size: 10.5px;
+  font-weight: 600;
+}
+
+.files-list {
+  background-color: #151413;
+  background-image: none;
+  border: none;
+}
+
+.files-list row,
+.files-list treeview,
+.files-list treeview.view {
+  background-color: #151413;
+  color: #e6e0d4;
+}
+
+.files-list row:selected,
+.files-list treeview:selected {
+  background-color: rgba(230, 224, 212, 0.14);
+  color: #e6e0d4;
+}
+
+.files-list header button {
+  background-color: #151413;
+  background-image: none;
+  border: none;
+  border-bottom: 1px solid rgba(230, 224, 212, 0.10);
+  border-radius: 0;
+  color: rgba(230, 224, 212, 0.62);
+  font-size: 11px;
+  font-weight: 600;
+  padding: 6px 8px;
+}
+
+.files-name {
+  font-size: 12.5px;
+  color: #e6e0d4;
+}
+.files-dim {
+  font-size: 11.5px;
+  color: rgba(230, 224, 212, 0.62);
+}
+.files-meta {
+  font-family: "IBM Plex Mono", monospace;
+  font-size: 10.5px;
+  color: rgba(230, 224, 212, 0.55);
+}
+
+.files-preview {
+  background-color: #1b1917;
+  background-image: none;
+  border-left: 1px solid rgba(230, 224, 212, 0.10);
+}
+
+.files-status {
+  background-color: #151413;
+  background-image: none;
+  border-top: 1px solid rgba(230, 224, 212, 0.10);
+  padding: 5px 14px;
+  color: rgba(230, 224, 212, 0.55);
+  font-family: "IBM Plex Mono", monospace;
+  font-size: 10.5px;
+}
+
+.files-note {
+  color: #d08a2c;
+  font-size: 11.5px;
+}
+
+.files-dialog {
+  background-color: #151413;
+  background-image: none;
+  border: 1px solid rgba(230, 224, 212, 0.14);
+  border-radius: 3px;
+  box-shadow: 0 18px 42px rgba(0, 0, 0, 0.55);
+}
+
+.files-dlg-title {
+  font-size: 15px;
+  font-weight: 600;
+  color: #e6e0d4;
+}
+
+.files-entry {
+  background-color: #1b1917;
+  background-image: none;
+  border: 1px solid rgba(230, 224, 212, 0.14);
+  border-radius: 3px;
+  caret-color: #d08a2c;
+  color: #e6e0d4;
+  font-size: 13px;
+  padding: 7px 10px;
+}
+.files-entry:focus {
+  border-color: rgba(208, 138, 44, 0.55);
+}
+
+.files-ok {
+  background-color: #d08a2c;
+  background-image: none;
+  border: 1px solid #d08a2c;
+  border-radius: 3px;
+  color: #151413;
+  font-size: 12.5px;
+  font-weight: 600;
+  padding: 7px 16px;
+}
+.files-ok:hover {
+  background-color: #e09a3f;
+  border-color: #e09a3f;
+}
+
+.files-cancel {
+  background: transparent;
+  background-image: none;
+  border: 1px solid rgba(230, 224, 212, 0.18);
+  border-radius: 3px;
+  color: #e6e0d4;
+  font-size: 12.5px;
+  font-weight: 500;
+  padding: 7px 16px;
+}
+.files-cancel:hover {
+  background-color: rgba(230, 224, 212, 0.07);
+}
+
+.files-danger {
+  background: transparent;
+  background-image: none;
+  border: 1px solid #a23b2a;
+  border-radius: 3px;
+  color: #e6e0d4;
+  font-size: 12.5px;
+  font-weight: 600;
+  padding: 7px 16px;
+}
+.files-danger:hover {
+  background-color: rgba(162, 59, 42, 0.25);
+}
+
+.files-tab {
+  background: transparent;
+  background-image: none;
+  border: none;
+  border-bottom: 2px solid transparent;
+  border-radius: 0;
+  color: rgba(230, 224, 212, 0.62);
+  font-size: 12.5px;
+  font-weight: 500;
+  padding: 6px 8px;
+}
+.files-tab.active {
+  border-bottom-color: #d08a2c;
+  color: #e6e0d4;
+}
+.files-tab:hover {
+  color: #e6e0d4;
+}
+
+.files-tabclose {
+  background: transparent;
+  background-image: none;
+  border: none;
+  border-radius: 3px;
+  color: rgba(230, 224, 212, 0.45);
+  padding: 0 4px;
+}
+.files-tabclose:hover {
+  background-color: rgba(230, 224, 212, 0.14);
+  color: #e6e0d4;
+}
+
+.files-progress trough {
+  background-color: #232324;
+  border: none;
+  border-radius: 2px;
+  min-height: 4px;
+}
+.files-progress highlight {
+  background-color: #d08a2c;
+  border-radius: 2px;
+}

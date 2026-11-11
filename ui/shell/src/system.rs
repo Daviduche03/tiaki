@@ -5,7 +5,7 @@
 use std::path::Path;
 use std::time::Duration;
 
-use crate::model;
+use crate::{model, windows};
 
 const ACTION_URL: &str = "http://127.0.0.1:8787/action?name=";
 /// Present in the desktop image. When it is missing (host dev builds) apps
@@ -78,8 +78,9 @@ pub fn run_action(action: &str) {
             spawn_app(&format!("{} settings {other}", self_exe()), "foreground")
         }
         "terminal.new" => spawn_app("foot -c /etc/tiaki/foot.ini", "foreground"),
+        "files.open" => launch_self("files"),
+        "trash.open" => spawn_app(&format!("{} files trash:", self_exe()), "foreground"),
         "browser.open" => spawn_app("epiphany", "foreground"),
-        "files.open" => spawn_app("thunar", "foreground"),
         "editor.open" => spawn_app("mousepad /home/desktop/demo.rs", "foreground"),
         "monitor.open" => spawn_app("foot -c /etc/tiaki/foot.ini -e btop", "foreground"),
         "agents.open" => launch_self("agents"),
@@ -147,6 +148,7 @@ pub fn open_command(command: &str) {
         "session.exit" => run_action("session.exit"),
         "palette.open" => launch_self("launcher"),
         "notifications.open" => launch_self("notifications"),
+        other if windows::is_action(other) => run_action(other),
         other => {
             let class = if other.contains("tiaki-wallpaper") {
                 "background"

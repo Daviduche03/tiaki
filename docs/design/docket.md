@@ -211,7 +211,8 @@ Hard bans, checked in review:
 
 ## 9. Adoption
 
-1. Add `fonts-ibm-plex` to the image; drop `fonts-inter` once ported.
+1. IBM Plex Sans/Mono ship in the image (pinned IBM releases — Debian does
+   not package them); no `fonts-inter` dependency remains.
 2. Replace `ui/shell/css/base.css` with `tokens.css` + a reset.
 3. Port in this order: bar → dock → menus → launcher → Settings shell →
    Settings pages → Control Center → switcher → agents.

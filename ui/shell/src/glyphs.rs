@@ -553,6 +553,73 @@ fn draw_status(cr: &Context, name: &str, color: (f64, f64, f64)) {
             cr.line_to(40.0, 50.0);
             let _ = cr.stroke();
         }
+        "x" => {
+            cr.set_source_rgba(white.0, white.1, white.2, white.3);
+            cr.set_line_width(5.5);
+            cr.move_to(20.0, 20.0);
+            cr.line_to(44.0, 44.0);
+            cr.move_to(44.0, 20.0);
+            cr.line_to(20.0, 44.0);
+            let _ = cr.stroke();
+        }
+        "trash" => {
+            cr.set_source_rgba(white.0, white.1, white.2, white.3);
+            cr.set_line_width(4.0);
+            cr.move_to(20.0, 16.0);
+            cr.line_to(44.0, 16.0);
+            cr.move_to(26.0, 16.0);
+            cr.line_to(26.0, 10.0);
+            cr.line_to(38.0, 10.0);
+            cr.line_to(38.0, 16.0);
+            cr.move_to(18.0, 16.0);
+            cr.line_to(22.0, 52.0);
+            cr.line_to(42.0, 52.0);
+            cr.line_to(46.0, 16.0);
+            let _ = cr.stroke();
+            cr.move_to(28.0, 24.0);
+            cr.line_to(28.0, 44.0);
+            cr.move_to(36.0, 24.0);
+            cr.line_to(36.0, 44.0);
+            let _ = cr.stroke();
+        }
+        "folder" => {
+            cr.set_source_rgba(white.0, white.1, white.2, white.3);
+            cr.set_line_width(4.0);
+            cr.move_to(10.0, 20.0);
+            cr.line_to(10.0, 50.0);
+            cr.line_to(54.0, 50.0);
+            cr.line_to(54.0, 22.0);
+            cr.line_to(28.0, 22.0);
+            cr.line_to(24.0, 14.0);
+            cr.line_to(10.0, 14.0);
+            cr.close_path();
+            let _ = cr.stroke();
+        }
+        "file" => {
+            cr.set_source_rgba(white.0, white.1, white.2, white.3);
+            cr.set_line_width(4.0);
+            cr.move_to(18.0, 10.0);
+            cr.line_to(38.0, 10.0);
+            cr.line_to(48.0, 20.0);
+            cr.line_to(48.0, 54.0);
+            cr.line_to(18.0, 54.0);
+            cr.close_path();
+            cr.move_to(38.0, 10.0);
+            cr.line_to(38.0, 20.0);
+            cr.line_to(48.0, 20.0);
+            let _ = cr.stroke();
+        }
+        "archive" => {
+            cr.set_source_rgba(white.0, white.1, white.2, white.3);
+            cr.set_line_width(4.0);
+            rounded_rect(cr, 12.0, 18.0, 40.0, 30.0, 3.0);
+            let _ = cr.stroke();
+            cr.move_to(12.0, 28.0);
+            cr.line_to(52.0, 28.0);
+            cr.move_to(32.0, 18.0);
+            cr.line_to(32.0, 28.0);
+            let _ = cr.stroke();
+        }
         _ => {}
     }
 }

@@ -94,6 +94,21 @@ mount "${P}6" "$MNT/home"
 
 echo "== base system config"
 echo "$HOSTNAME" > "$MNT/etc/hostname"
+
+# Debian is the base; the OS is Tiaki. This is what Settings > About,
+# fastfetch, and every /etc/os-release reader will report.
+mkdir -p "$MNT/usr/lib"
+cat > "$MNT/usr/lib/os-release" <<EOF
+PRETTY_NAME="Tiaki"
+NAME="Tiaki"
+ID=tiaki
+ID_LIKE=debian
+VERSION="0.1 (dev)"
+VERSION_ID="0.1"
+HOME_URL="https://github.com/Daviduche03/tiaki"
+BUG_REPORT_URL="https://github.com/Daviduche03/tiaki/issues"
+EOF
+ln -sf ../usr/lib/os-release "$MNT/etc/os-release"
 cat > "$MNT/etc/hosts" <<EOF
 127.0.0.1 localhost
 127.0.1.1 $HOSTNAME
@@ -115,8 +130,24 @@ chroot "$MNT" env DEBIAN_FRONTEND=noninteractive apt-get install -y --no-install
   "linux-image-$ARCH" systemd systemd-sysv systemd-boot mtools dosfstools \
   sway swaybg foot mousepad dbus openssh-server isc-dhcp-client \
   libxcb-cursor0 libxcb-image0 libxcb-render-util0 libxcb-util1 \
-  libgtk-3-0 libgtk-layer-shell0 wayvnc grim curl wtype wl-clipboard brightnessctl pamixer \
-  fonts-ibm-plex fonts-jetbrains-mono adwaita-icon-theme librsvg2-common sudo
+  libgtk-3-0 libgtk-layer-shell0 wayvnc grim curl unzip wtype wl-clipboard brightnessctl pamixer \
+  fonts-jetbrains-mono adwaita-icon-theme librsvg2-common git sudo
+
+# The shell is typeset in IBM Plex Sans/Mono, which Debian does not package.
+# Same pinned releases as desktop/wayland/Dockerfile.
+echo "== IBM Plex (shell typeface)"
+chroot "$MNT" sh -c '
+  set -eu
+  tmp="$(mktemp -d)"
+  curl -fsSL "https://github.com/IBM/plex/releases/download/%40ibm/plex-sans%401.1.0/ibm-plex-sans.zip" -o "$tmp/sans.zip"
+  curl -fsSL "https://github.com/IBM/plex/releases/download/%40ibm/plex-mono%402.5.0/ibm-plex-mono.zip" -o "$tmp/mono.zip"
+  mkdir -p /usr/share/fonts/truetype/ibm-plex
+  unzip -j -o "$tmp/sans.zip" "ibm-plex-sans/fonts/complete/ttf/*.ttf" -d /usr/share/fonts/truetype/ibm-plex >/dev/null
+  unzip -j -o "$tmp/mono.zip" "ibm-plex-mono/fonts/complete/ttf/*.ttf" -d /usr/share/fonts/truetype/ibm-plex >/dev/null
+  rm -rf "$tmp"
+  fc-cache -f >/dev/null
+  fc-match "IBM Plex Sans" | grep -qi plex
+'
 
 echo "== users and network"
 chroot "$MNT" useradd -m -s /bin/bash -G sudo,video,render desktop

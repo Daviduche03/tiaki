@@ -10,6 +10,24 @@ set -eu
 export TIAKI_HOME="${TIAKI_HOME:-/var/lib/tiaki}"
 mkdir -p "$TIAKI_HOME"
 
+# Debian is the base; the OS is Tiaki. Rewrite os-release on every boot so an
+# image built before the rebrand (or one whose base package reinstalled it)
+# still reports Tiaki to Settings > About, fastfetch, and apps.
+if ! grep -q '^ID=tiaki$' /usr/lib/os-release 2>/dev/null; then
+  mkdir -p /usr/lib
+  cat > /usr/lib/os-release <<'OSRELEASE'
+PRETTY_NAME="Tiaki"
+NAME="Tiaki"
+ID=tiaki
+ID_LIKE=debian
+VERSION="0.1 (dev)"
+VERSION_ID="0.1"
+HOME_URL="https://github.com/Daviduche03/tiaki"
+BUG_REPORT_URL="https://github.com/Daviduche03/tiaki/issues"
+OSRELEASE
+  ln -sf ../usr/lib/os-release /etc/os-release
+fi
+
 # Per-home workspaces. The system home serves the daemons; the desktop
 # principal gets its own home so agent file acts land in one attributable
 # place ($TIAKI_HOME/workspace) instead of wherever a child was spawned.
