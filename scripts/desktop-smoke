@@ -16,11 +16,12 @@ cleanup() { docker rm -f "$NAME" >/dev/null 2>&1 || true; }
 trap cleanup EXIT INT TERM
 
 socket_present() {
-  docker exec "$NAME" sh -c 'ls /run/tiaki/wayland-* >/dev/null 2>&1'
+  docker exec "$NAME" sh -c 'ls /run/tiaki/wayland-[0-9]* >/dev/null 2>&1'
 }
 
 echo "starting $IMAGE as $NAME"
-docker run -d --name "$NAME" "$IMAGE" >/dev/null
+# systemd is PID 1: plain `docker run` cannot boot it.
+docker run -d --privileged --name "$NAME" "$IMAGE" >/dev/null
 
 echo "waiting for the session (up to 180s)..."
 i=0
@@ -38,12 +39,14 @@ if ! socket_present; then
   exit 1
 fi
 
+# Screenshot to /root: `docker cp` cannot read from the container's /tmp
+# tmpfs on some drivers (OrbStack), but /root works everywhere.
 docker exec "$NAME" sh -c '
-  set -- /run/tiaki/wayland-*
-  XDG_RUNTIME_DIR=/run/tiaki
-  WAYLAND_DISPLAY="$(basename "$1")"
-  export XDG_RUNTIME_DIR WAYLAND_DISPLAY
-  grim /tmp/smoke.png
+  for candidate in /run/tiaki/wayland-[0-9]*; do
+    case "$candidate" in *.lock) continue ;; esac
+    if [ -S "$candidate" ]; then socket="${candidate##*/}"; break; fi
+  done
+  XDG_RUNTIME_DIR=/run/tiaki WAYLAND_DISPLAY="$socket" grim /root/smoke.png
 '
-docker cp "$NAME:/tmp/smoke.png" "$OUT" >/dev/null
+docker cp "$NAME:/root/smoke.png" "$OUT" >/dev/null
 echo "rendered: $OUT"

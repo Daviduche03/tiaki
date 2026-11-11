@@ -40,8 +40,12 @@ start_inside() {
     # foreground so the UI stays responsive while the session starts.
     /usr/local/bin/sched-launch --class background -- \
         /usr/local/bin/tiaki-wallpaper init || true
+    # sched-launch supervises in the foreground (child.wait), so the
+    # background helpers must be detached here or the sign-in screen below
+    # never starts. The wallpaper one exits on its own (it spawns swaybg);
+    # wayvnc runs forever and would block greet without the &.
     /usr/local/bin/sched-launch --class background -- \
-        wayvnc -C /etc/tiaki/wayvnc.conf || true
+        wayvnc -C /etc/tiaki/wayvnc.conf || true &
     /usr/local/bin/sched-launch --class foreground -- \
         /usr/local/bin/tiaki-shell greet || true
 }

@@ -80,8 +80,16 @@ desktop is the GTK shell in `ui/shell`, not this page.
 
 ```bash
 docker build -f desktop/wayland/Dockerfile -t tiaki-wayland:dev .
-docker run -d --name tiaki-wayland -p 5901:5900 tiaki-wayland:dev
+docker run -d --privileged --name tiaki-wayland -p 5901:5900 tiaki-wayland:dev
 open vnc://localhost:5901   # macOS Screen Sharing
+```
+
+`--privileged` is required: systemd is PID 1 and delegates the cgroup
+subtree. Without it the container exits immediately. No VNC client? Prove
+the session renders without one:
+
+```bash
+./scripts/desktop-smoke tiaki-wayland:dev /tmp/tiaki-desktop.png
 ```
 
 Needs `t3code-upstream/` present (fork clone above) — the image does `pnpm install` there. Screenshots are in `desktop/screenshots/`.

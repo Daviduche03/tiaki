@@ -27,7 +27,7 @@ transaction, not a rebuild.
 
 ```sh
 docker build -f desktop/wayland/Dockerfile -t tiaki-wayland:dev .
-docker run -d --name tiaki-wayland -p 5901:5900 tiaki-wayland:dev
+docker run -d --privileged --name tiaki-wayland -p 5901:5900 tiaki-wayland:dev
 open vnc://localhost:5901        # macOS Screen Sharing
 ```
 

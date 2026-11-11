@@ -138,6 +138,7 @@ COPY desktop/wayland/terminal-demo.sh /usr/share/tiaki/terminal-demo.sh
 COPY desktop/wayland/demo.rs /home/desktop/demo.rs
 COPY desktop/wayland/bashrc /home/desktop/.bashrc
 COPY desktop/wayland/run-wayland.sh /usr/local/bin/run-wayland
+COPY desktop/wayland/tiaki-session /usr/local/bin/tiaki-session
 COPY desktop/systemd/tiaki-firstboot.sh /usr/local/bin/tiaki-firstboot
 COPY desktop/systemd/tiaki-t3.sh /usr/local/bin/tiaki-t3
 COPY desktop/systemd/tiaki-firstboot.service desktop/systemd/tiaki-ui-serve.service desktop/systemd/tiaki-session.service desktop/systemd/tiaki-t3.service /etc/systemd/system/
@@ -147,7 +148,7 @@ COPY image/examples /usr/share/tiaki/image-examples
 
 RUN chown -R desktop:desktop /home/desktop \
     && chmod 0755 /usr/local/bin/agentd /usr/local/bin/tiaki-ui-native \
-        /usr/local/bin/tiaki-shell /usr/local/bin/run-wayland /usr/local/bin/tiaki-wallpaper \
+        /usr/local/bin/tiaki-shell /usr/local/bin/run-wayland /usr/local/bin/tiaki-session /usr/local/bin/tiaki-wallpaper \
         /usr/local/bin/tiaki-firstboot /usr/local/bin/tiaki-t3 /usr/share/tiaki/terminal-demo.sh \
     && mkdir -p /var/lib/tiaki \
     && systemctl enable tiaki-firstboot.service tiaki-ui-serve.service tiaki-session.service tiaki-t3.service
