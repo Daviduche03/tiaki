@@ -178,7 +178,6 @@ fn launch_spec(class: Class, command: &str) -> SandboxSpec {
 ///
 /// This is the whole scheduler at runtime: count the members, run the same
 /// `allocate` the tests use, split each pool evenly, write the weights.
-
 #[cfg(test)]
 mod tests {
     use super::*;

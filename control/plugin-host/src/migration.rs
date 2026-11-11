@@ -121,7 +121,7 @@ pub fn load_migrations(dir: &Path) -> Result<Vec<Migration>, MigrationError> {
             .map_err(|error| MigrationError::new(format!("{}: {error}", path.display())))?;
         migrations.push(migration);
     }
-    migrations.sort_by_key(|migration| migration.to.clone());
+    migrations.sort_by_key(|migration| migration.to);
     Ok(migrations)
 }
 

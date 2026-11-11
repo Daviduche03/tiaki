@@ -562,11 +562,11 @@ mod tests {
     #[test]
     fn shares_are_pushed_to_the_backend_not_just_remembered() {
         use agentic_sandbox::{SandboxProvisioner, SimulatedProvisioner};
-        use std::sync::Arc;
+        use std::rc::Rc;
 
         // Share one provisioner with the supervisor so the test can read what
         // the backend was told.
-        struct Shared(Arc<SimulatedProvisioner>);
+        struct Shared(Rc<SimulatedProvisioner>);
         impl SandboxProvisioner for Shared {
             fn create(
                 &self,
@@ -601,7 +601,7 @@ mod tests {
             }
         }
 
-        let backend = Arc::new(SimulatedProvisioner::new());
+        let backend = Rc::new(SimulatedProvisioner::new());
         let registry = RuntimeRegistry::new(vec![spec("opencode")]).unwrap();
         let mut supervisor =
             Supervisor::with_provisioner(registry, Box::new(Shared(backend.clone())));
