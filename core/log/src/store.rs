@@ -170,7 +170,7 @@ impl ActionLog {
         let mut prev = GENESIS_HASH.to_string();
         for (index, entry) in entries.iter_mut().enumerate() {
             entry.seq = index as u64 + 1;
-            entry.prev_hash = std::mem::replace(&mut prev, String::new());
+            entry.prev_hash = std::mem::take(&mut prev);
             entry.hash = entry.compute_hash();
             prev = entry.hash.clone();
         }
@@ -308,7 +308,7 @@ mod tests {
         log.verify().expect("valid chain");
         assert_eq!(log.entries().len(), 2);
 
-        let mut reopened = ActionLog::open(&path).expect("reopen");
+        let reopened = ActionLog::open(&path).expect("reopen");
         reopened.verify().expect("valid after reopen");
 
         let mut tampered = log.entries()[0].clone();
