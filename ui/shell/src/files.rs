@@ -1012,6 +1012,7 @@ impl Browser {
     }
 
     fn refresh(&mut self) {
+        self.preview_box.set_visible(self.preview_btn.is_active());
         // Tabs.
         for child in self.tab_strip.children() {
             self.tab_strip.remove(&child);
@@ -1025,6 +1026,10 @@ impl Browser {
             );
         }
         self.tab_strip.show_all();
+        // One tab needs no tab strip; it would just repeat the breadcrumb.
+        if let Some(row) = self.tab_strip.parent() {
+            row.set_visible(self.tabs.len() > 1);
+        }
 
         // Breadcrumb / path.
         for child in self.crumb_box.children() {
@@ -1190,11 +1195,13 @@ impl Browser {
             if active {
                 button.style_context().add_class("active");
             }
+            // Aligned with the PLACES heading above, and stretched to the
+            // sidebar's full width so the row is a target, not text.
             let row = gtk::Box::new(gtk::Orientation::Horizontal, 10);
-            row.set_margin_start(10);
-            row.set_margin_end(10);
+            row.set_margin_start(18);
+            row.set_margin_end(12);
             row.pack_start(
-                &glyphs::status_icon_tinted(glyph, 18, (0.902, 0.878, 0.831)),
+                &glyphs::status_icon_tinted(glyph, 16, (0.902, 0.878, 0.831)),
                 false,
                 false,
                 0,
@@ -1246,9 +1253,10 @@ impl Browser {
             Location::Search { root, .. } => fmt_free(&root),
             Location::Trash => fmt_free(&home_dir()),
         };
-        let mut text = format!("{count} items · {free} free");
+        let items = if count == 1 { "item" } else { "items" };
+        let mut text = format!("{count} {items} · {free} free");
         if selected > 1 {
-            text = format!("{count} items · {selected} selected · {free} free");
+            text = format!("{count} {items} · {selected} selected · {free} free");
         }
         if !self.note.is_empty() {
             text = format!("{} — {}", text, self.note);
@@ -1355,6 +1363,15 @@ fn tool_button(label: &str, tooltip: &str) -> gtk::Button {
     button
 }
 
+/// A 1px vertical hairline that groups toolbar clusters without a box.
+fn vrule() -> gtk::Box {
+    let rule = gtk::Box::new(gtk::Orientation::Vertical, 0);
+    rule.set_size_request(1, 18);
+    rule.set_valign(gtk::Align::Center);
+    theme::class(&rule, "files-vrule");
+    rule
+}
+
 fn nav_button(glyph: &str, tooltip: &str) -> gtk::Button {
     let button = gtk::Button::new();
     button.set_relief(gtk::ReliefStyle::None);
@@ -1386,83 +1403,121 @@ fn build_window(start: Location) -> Shared {
     chrome_spacer.set_size_request(-1, 30);
     shell.pack_start(&chrome_spacer, false, false, 0);
 
-    // Row 1: navigation, breadcrumb / path, search.
-    let toolbar = gtk::Box::new(gtk::Orientation::Horizontal, 4);
-    theme::class(&toolbar, "files-toolbar");
+    // ---------------------------------------------------------------- header
+    // One row, one job each: navigate, show where we are, search. Nothing
+    // else competes for this space.
+    let header = gtk::Box::new(gtk::Orientation::Horizontal, 4);
+    theme::class(&header, "files-header");
     let back_btn = nav_button("back", "Back");
-    // Forward chevron: reuse the back glyph mirrored via rotation is not
-    // available on DrawingArea, so draw it pointing right.
     let fwd_btn = nav_button("chevron_right", "Forward");
     let up_btn = nav_button("chevron_up", "Up one level");
-    toolbar.pack_start(&back_btn, false, false, 0);
-    toolbar.pack_start(&fwd_btn, false, false, 0);
-    toolbar.pack_start(&up_btn, false, false, 0);
-    let crumb_box = gtk::Box::new(gtk::Orientation::Horizontal, 0);
+    header.pack_start(&back_btn, false, false, 0);
+    header.pack_start(&fwd_btn, false, false, 0);
+    header.pack_start(&up_btn, false, false, 0);
+    header.pack_start(&vrule(), false, false, 6);
+
+    let crumb_box = gtk::Box::new(gtk::Orientation::Horizontal, 2);
     crumb_box.set_hexpand(true);
-    toolbar.pack_start(&crumb_box, true, true, 0);
+    crumb_box.set_halign(gtk::Align::Start);
+    header.pack_start(&crumb_box, true, true, 0);
     let path_entry = gtk::Entry::new();
     path_entry.set_has_frame(false);
     path_entry.set_hexpand(true);
     theme::class(&path_entry, "files-path");
     path_entry.set_no_show_all(true);
-    toolbar.pack_start(&path_entry, true, true, 0);
-    let path_toggle = nav_button("file", "Edit location");
-    toolbar.pack_start(&path_toggle, false, false, 0);
+    header.pack_start(&path_entry, true, true, 0);
+    let path_toggle = nav_button("file", "Edit location (Ctrl+L)");
+    header.pack_start(&path_toggle, false, false, 0);
+
     let search = gtk::Entry::new();
     search.set_has_frame(false);
-    search.set_width_chars(22);
+    search.set_width_chars(20);
     search.set_placeholder_text(Some("Search"));
     theme::class(&search, "files-search");
-    toolbar.pack_start(&search, false, false, 0);
-    shell.pack_start(&toolbar, false, false, 0);
+    header.pack_start(&search, false, false, 10);
+    shell.pack_start(&header, false, false, 0);
 
-    // Row 2: tabs plus actions.
+    // ------------------------------------------------------------------ tabs
+    // A single tab is just noise, so this strip only appears once there is
+    // more than one. The toolbar below is always present.
     let tabrow = gtk::Box::new(gtk::Orientation::Horizontal, 6);
-    tabrow.set_margin_start(12);
-    tabrow.set_margin_end(12);
-    tabrow.set_margin_top(2);
+    theme::class(&tabrow, "files-tabs");
     let tab_strip = gtk::Box::new(gtk::Orientation::Horizontal, 2);
     tab_strip.set_hexpand(true);
     tabrow.pack_start(&tab_strip, true, true, 0);
     let new_tab_btn = tool_button("+", "New tab (Ctrl+T)");
     tabrow.pack_start(&new_tab_btn, false, false, 0);
+    tabrow.set_no_show_all(true);
+    shell.pack_start(&tabrow, false, false, 0);
+
+    // --------------------------------------------------------------- actions
+    // Verbs worth showing. Everything else lives in the right-click menu and
+    // on the keyboard, which keeps this row readable at a glance.
+    let actions = gtk::Box::new(gtk::Orientation::Horizontal, 4);
+    theme::class(&actions, "files-actions");
     let new_folder_btn = tool_button("New Folder", "New folder (Ctrl+Shift+N)");
     let new_file_btn = tool_button("New File", "New empty file");
     let paste_btn = tool_button("Paste", "Paste (Ctrl+V)");
     let undo_btn = tool_button("Undo", "Undo (Ctrl+Z)");
     let redo_btn = tool_button("Redo", "Redo (Ctrl+Shift+Z)");
+    actions.pack_start(&new_folder_btn, false, false, 0);
+    actions.pack_start(&new_file_btn, false, false, 0);
+    actions.pack_start(&vrule(), false, false, 4);
+    actions.pack_start(&paste_btn, false, false, 0);
+    actions.pack_start(&undo_btn, false, false, 0);
+    actions.pack_start(&redo_btn, false, false, 0);
+
+    let empty_trash_btn = tool_button("Empty Trash", "Delete everything in Trash forever");
+    let restore_btn = tool_button("Restore", "Restore selected to its original place");
+    empty_trash_btn.set_no_show_all(true);
+    restore_btn.set_no_show_all(true);
+    actions.pack_start(&empty_trash_btn, false, false, 0);
+    actions.pack_start(&restore_btn, false, false, 0);
+
+    let action_spacer = gtk::Box::new(gtk::Orientation::Horizontal, 0);
+    action_spacer.set_hexpand(true);
+    actions.pack_start(&action_spacer, true, true, 0);
+
     let hidden_btn = gtk::ToggleButton::with_label("Hidden");
     hidden_btn.set_relief(gtk::ReliefStyle::None);
     hidden_btn.set_tooltip_text(Some("Show hidden files (Ctrl+H)"));
     theme::class(&hidden_btn, "files-tool");
     let preview_btn = gtk::ToggleButton::with_label("Preview");
     preview_btn.set_relief(gtk::ReliefStyle::None);
-    preview_btn.set_tooltip_text(Some("Toggle preview pane (Space)"));
+    preview_btn.set_tooltip_text(Some("Show the preview pane (Space)"));
     theme::class(&preview_btn, "files-tool");
-    preview_btn.set_active(true);
-    for button in [&new_folder_btn, &new_file_btn, &paste_btn, &undo_btn, &redo_btn] {
-        tabrow.pack_start(button, false, false, 0);
-    }
-    tabrow.pack_start(&hidden_btn, false, false, 0);
-    tabrow.pack_start(&preview_btn, false, false, 0);
-    shell.pack_start(&tabrow, false, false, 0);
+    actions.pack_end(&preview_btn, false, false, 0);
+    actions.pack_end(&hidden_btn, false, false, 0);
+    shell.pack_start(&actions, false, false, 0);
 
-    // Body: sidebar | list | preview.
-    let body = gtk::Box::new(gtk::Orientation::Horizontal, 0);
+    // ------------------------------------------------------------------ body
+    // Sidebar | list | preview. The list is the only child that grows, so it
+    // always owns the space instead of leaving a gutter.
+    // A Grid, not a Box: three fixed/expanding columns where the list is the
+    // only one that grows. GtkBox left the list at its natural width here,
+    // stranding hundreds of pixels between the sidebar and the columns.
+    let body = gtk::Grid::new();
     body.set_vexpand(true);
-    body.set_margin_top(4);
-    let sidebar = gtk::Box::new(gtk::Orientation::Vertical, 2);
-    sidebar.set_size_request(150, -1);
+    body.set_hexpand(true);
+    body.set_column_homogeneous(false);
+    body.set_row_homogeneous(false);
+
+    let sidebar = gtk::Box::new(gtk::Orientation::Vertical, 0);
+    sidebar.set_size_request(208, -1);
+    sidebar.set_hexpand(false);
     theme::class(&sidebar, "files-sidebar");
-    let side_label = gtk::Label::new(Some("Places"));
+    let side_label = gtk::Label::new(Some("PLACES"));
     side_label.set_xalign(0.0);
-    side_label.set_margin_start(10);
-    side_label.set_margin_top(4);
+    side_label.set_margin_start(18);
+    side_label.set_margin_top(12);
+    side_label.set_margin_bottom(4);
     theme::class(&side_label, "files-sect");
     sidebar.pack_start(&side_label, false, false, 0);
     let side_list = gtk::Box::new(gtk::Orientation::Vertical, 1);
-    sidebar.pack_start(&side_list, false, false, 0);
-    body.pack_start(&sidebar, false, false, 0);
+    // fill=true: place rows span the sidebar and start at its left edge
+    // instead of floating in the middle of an empty column.
+    sidebar.pack_start(&side_list, false, true, 0);
+    body.attach(&sidebar, 0, 0, 1, 1);
 
     let store = gtk::ListStore::new(&[
         String::static_type(), // name
@@ -1491,25 +1546,24 @@ fn build_window(start: Location) -> Shared {
         };
         sort_asc = parts.next().unwrap_or("asc") != "desc";
     }
-    for (title, col, min_width) in [("Name", COL_NAME, 80), ("Size", COL_SIZE_BYTES, 60), ("Modified", COL_MTIME_SECS, 110)] {
+    for (title, col, width, expand) in [
+        ("Name", COL_NAME, 0, true),
+        ("Size", COL_SIZE_BYTES, 84, false),
+        ("Modified", COL_MTIME_SECS, 136, false),
+    ] {
         let cell = gtk::CellRendererText::new();
+        cell.set_ellipsize(gtk::pango::EllipsizeMode::Middle);
         let column = gtk::TreeViewColumn::new();
         column.set_title(title);
-        column.set_min_width(min_width);
-        // Fixed sizing is the only mode where GTK honors a width cap, so
-        // the Name column cannot balloon on long filenames and shove Size
-        // and Modified out of the viewport. Expand still lets it absorb
-        // extra space in wide windows; overflow ellipsizes in the middle.
-        if col == COL_NAME {
-            column.set_sizing(gtk::TreeViewColumnSizing::Fixed);
-            column.set_fixed_width(220);
-        }
         column.set_resizable(true);
-        // The Name column absorbs leftover width but must never push
-        // Size and Modified out of the viewport: long filenames ellipsize
-        // instead of stretching the column past the tree.
-        column.set_expand(col == COL_NAME);
         column.set_clickable(true);
+        // Name absorbs the slack; Size and Modified keep a fixed width so a
+        // long filename can never push the date out of view.
+        column.set_expand(expand);
+        if !expand {
+            column.set_sizing(gtk::TreeViewColumnSizing::Fixed);
+            column.set_fixed_width(width);
+        }
         column.set_sort_indicator(col == sort_id);
         column.set_sort_order(if sort_asc {
             gtk::SortType::Ascending
@@ -1534,24 +1588,23 @@ fn build_window(start: Location) -> Shared {
             write_pref("files-sort", &format!("{name}:{dir}"));
             current.refresh();
         });
-        if col == COL_NAME {
-            cell.set_ellipsize(gtk::pango::EllipsizeMode::Middle);
-            gtk::prelude::CellLayoutExt::pack_start(&column, &cell, true);
-            gtk::prelude::CellLayoutExt::add_attribute(&column, &cell, "text", COL_NAME);
+        let attr = if col == COL_NAME {
+            COL_NAME
         } else if col == COL_SIZE_BYTES {
-            gtk::prelude::CellLayoutExt::pack_start(&column, &cell, true);
-            gtk::prelude::CellLayoutExt::add_attribute(&column, &cell, "text", COL_SIZE_TEXT);
+            COL_SIZE_TEXT
         } else {
-            gtk::prelude::CellLayoutExt::pack_start(&column, &cell, true);
-            gtk::prelude::CellLayoutExt::add_attribute(&column, &cell, "text", COL_MTIME_TEXT);
-        }
+            COL_MTIME_TEXT
+        };
+        gtk::prelude::CellLayoutExt::pack_start(&column, &cell, true);
+        gtk::prelude::CellLayoutExt::add_attribute(&column, &cell, "text", attr);
         tree.append_column(&column);
     }
     // "From" column, trash only.
     let origin_cell = gtk::CellRendererText::new();
+    origin_cell.set_ellipsize(gtk::pango::EllipsizeMode::Middle);
     let origin_col = gtk::TreeViewColumn::new();
     origin_col.set_title("Original Location");
-    origin_col.set_min_width(220);
+    origin_col.set_resizable(true);
     gtk::prelude::CellLayoutExt::pack_start(&origin_col, &origin_cell, true);
     gtk::prelude::CellLayoutExt::add_attribute(&origin_col, &origin_cell, "text", COL_ORIGIN);
     origin_col.set_visible(false);
@@ -1561,47 +1614,54 @@ fn build_window(start: Location) -> Shared {
     scroll.set_hexpand(true);
     scroll.set_vexpand(true);
     scroll.add(&tree);
-    body.pack_start(&scroll, true, true, 0);
+    body.attach(&scroll, 1, 0, 1, 1);
 
-    // Preview pane.
+    // Preview pane: off by default. It is optional information, not a
+    // permanent empty column the user has to interpret.
     let preview_box = gtk::Box::new(gtk::Orientation::Vertical, 8);
-    preview_box.set_size_request(200, -1);
-    preview_box.set_margin_top(12);
-    preview_box.set_margin_start(14);
-    preview_box.set_margin_end(14);
+    preview_box.set_size_request(260, -1);
+    preview_box.set_hexpand(false);
     theme::class(&preview_box, "files-preview");
+    preview_box.set_no_show_all(true);
     let preview_slot = gtk::Box::new(gtk::Orientation::Horizontal, 0);
     preview_slot.set_halign(gtk::Align::Center);
-    preview_slot.set_margin_top(18);
+    preview_slot.set_margin_top(20);
     preview_box.pack_start(&preview_slot, false, false, 0);
     let preview_title = gtk::Label::new(None);
     preview_title.set_xalign(0.5);
     preview_title.set_line_wrap(true);
-    preview_title.set_max_width_chars(30);
+    preview_title.set_max_width_chars(28);
     theme::class(&preview_title, "files-name");
     preview_box.pack_start(&preview_title, false, false, 0);
     let preview_meta = gtk::Label::new(None);
     preview_meta.set_xalign(0.5);
+    preview_meta.set_line_wrap(true);
+    preview_meta.set_max_width_chars(30);
     theme::class(&preview_meta, "files-dim");
     preview_box.pack_start(&preview_meta, false, false, 0);
     let preview_text = gtk::TextView::new();
     preview_text.set_editable(false);
     preview_text.set_cursor_visible(false);
     preview_text.set_wrap_mode(gtk::WrapMode::WordChar);
-    theme::class(&preview_text, "files-search");
+    preview_text.set_left_margin(10);
+    preview_text.set_right_margin(10);
+    preview_text.set_top_margin(8);
+    theme::class(&preview_text, "files-previewtext");
     let preview_scroll = gtk::ScrolledWindow::new(None::<&gtk::Adjustment>, None::<&gtk::Adjustment>);
     preview_scroll.set_policy(gtk::PolicyType::Automatic, gtk::PolicyType::Automatic);
     preview_scroll.set_vexpand(true);
+    preview_scroll.set_margin_start(12);
+    preview_scroll.set_margin_end(12);
     preview_scroll.add(&preview_text);
     preview_box.pack_start(&preview_scroll, true, true, 0);
     let preview_image = gtk::Image::new();
     preview_image.set_halign(gtk::Align::Center);
     preview_box.pack_start(&preview_image, false, false, 0);
     preview_image.hide();
-    body.pack_start(&preview_box, false, false, 0);
+    body.attach(&preview_box, 2, 0, 1, 1);
     shell.pack_start(&body, true, true, 0);
 
-    // Status: label, progress, cancel.
+    // ---------------------------------------------------------------- status
     let status_row = gtk::Box::new(gtk::Orientation::Horizontal, 10);
     theme::class(&status_row, "files-status");
     let status = gtk::Label::new(None);
@@ -1609,7 +1669,7 @@ fn build_window(start: Location) -> Shared {
     status.set_hexpand(true);
     status_row.pack_start(&status, true, true, 0);
     let progress = gtk::ProgressBar::new();
-    progress.set_size_request(220, -1);
+    progress.set_size_request(200, -1);
     progress.set_valign(gtk::Align::Center);
     theme::class(&progress, "files-progress");
     progress.set_no_show_all(true);
@@ -1620,14 +1680,6 @@ fn build_window(start: Location) -> Shared {
     status_row.pack_start(&progress, false, false, 0);
     status_row.pack_start(&progress_cancel, false, false, 0);
     shell.pack_start(&status_row, false, false, 0);
-
-    // Trash-only buttons live in the tab row; hidden elsewhere.
-    let empty_trash_btn = tool_button("Empty Trash", "Delete everything in Trash forever");
-    let restore_btn = tool_button("Restore", "Restore selected to its original place");
-    tabrow.pack_start(&empty_trash_btn, false, false, 0);
-    tabrow.pack_start(&restore_btn, false, false, 0);
-    empty_trash_btn.set_no_show_all(true);
-    restore_btn.set_no_show_all(true);
 
     window.add(&panel);
     let show_hidden = read_pref("files-show-hidden").as_deref() == Some("1");
