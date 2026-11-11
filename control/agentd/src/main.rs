@@ -60,7 +60,8 @@ fn run() -> Result<(), Box<dyn std::error::Error>> {
     let raw: Vec<String> = env::args().skip(1).collect();
     let (global, args) = parse_global(&raw)?;
 
-    let home = env::var("TIAKI_HOME").map(PathBuf::from)
+    let home = env::var("TIAKI_HOME")
+        .map(PathBuf::from)
         .unwrap_or_else(|_| PathBuf::from(".tiaki"));
     std::fs::create_dir_all(&home)?;
 
@@ -297,7 +298,5 @@ pub(crate) fn print_usage() {
     println!("  --principal <id>   default user:local");
     println!("  --mode guarded|full   default guarded");
     println!();
-    println!(
-        "State, log, snapshots, grants, and plugins live in $TIAKI_HOME (default .tiaki)."
-    );
+    println!("State, log, snapshots, grants, and plugins live in $TIAKI_HOME (default .tiaki).");
 }

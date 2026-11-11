@@ -138,6 +138,9 @@ mod tests {
 
     #[test]
     fn no_command_means_no_capabilities() {
-        assert_eq!(build(None, "mcp serve", Vec::new()), Json::Array(Vec::new()));
+        assert_eq!(
+            build(None, "mcp serve", Vec::new()),
+            Json::Array(Vec::new())
+        );
     }
 }

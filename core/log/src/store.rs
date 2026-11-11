@@ -105,7 +105,8 @@ impl ActionLog {
             .unwrap_or_else(|| GENESIS_HASH.to_string())
     }
 
-    pub fn append(&mut self, input: EntryInput) -> Result<LogEntry, LogError> {        let seq = self.entries.len() as u64 + 1;
+    pub fn append(&mut self, input: EntryInput) -> Result<LogEntry, LogError> {
+        let seq = self.entries.len() as u64 + 1;
         let prev_hash = self.last_hash();
 
         let mut entry = LogEntry {
@@ -164,9 +165,7 @@ impl ActionLog {
             if line.trim().is_empty() {
                 continue;
             }
-            entries.push(
-                LogEntry::from_line(&line).ok_or(LogError::Parse { line: index + 1 })?,
-            );
+            entries.push(LogEntry::from_line(&line).ok_or(LogError::Parse { line: index + 1 })?);
         }
         let mut prev = GENESIS_HASH.to_string();
         for (index, entry) in entries.iter_mut().enumerate() {
@@ -248,7 +247,8 @@ fn acquire_lock(lock: &Path, timeout: Duration) -> Result<(), LogError> {
     }
 }
 
-pub fn format_timestamp(seconds: u64) -> String {    let days = (seconds / 86_400) as i64;
+pub fn format_timestamp(seconds: u64) -> String {
+    let days = (seconds / 86_400) as i64;
     let remainder = seconds % 86_400;
     let (year, month, day) = civil_from_days(days);
     let hour = remainder / 3_600;

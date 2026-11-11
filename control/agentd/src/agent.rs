@@ -46,7 +46,15 @@ pub(crate) fn agent_command(
         }
         "notify" => {
             let (title, session, message) = parse_message_args(args)?;
-            run_agent(engine, global, home, "notification", &title, session, &message)?;
+            run_agent(
+                engine,
+                global,
+                home,
+                "notification",
+                &title,
+                session,
+                &message,
+            )?;
         }
         "list" => {
             let principal = effective_principal(&global.principal);
@@ -143,7 +151,9 @@ struct RunOutcome {
 fn parse_message_args(
     args: &[String],
 ) -> Result<(String, Option<String>, String), Box<dyn std::error::Error>> {
-    let title = flag_value(args, "--title").unwrap_or("untitled").to_string();
+    let title = flag_value(args, "--title")
+        .unwrap_or("untitled")
+        .to_string();
     let session = flag_value(args, "--session").map(str::to_string);
     let mut words: Vec<&str> = Vec::new();
     let mut index = 2;
@@ -216,7 +226,8 @@ fn ensure_server(home: &Path, principal: &str) -> Result<String, Box<dyn std::er
             #[cfg(unix)]
             {
                 use std::os::unix::fs::PermissionsExt as _;
-                let _ = std::fs::set_permissions(&pass_file, std::fs::Permissions::from_mode(0o600));
+                let _ =
+                    std::fs::set_permissions(&pass_file, std::fs::Permissions::from_mode(0o600));
             }
             password
         }
@@ -325,8 +336,14 @@ fn ensure_mcp(
         .arg("--")
         .arg(&agentd)
         .args(["mcp", "serve"])
-        .env("OPENCODE_SERVER_PASSWORD", server_password(home).unwrap_or_default())
-        .env("OPENCODE_PASSWORD", server_password(home).unwrap_or_default())
+        .env(
+            "OPENCODE_SERVER_PASSWORD",
+            server_password(home).unwrap_or_default(),
+        )
+        .env(
+            "OPENCODE_PASSWORD",
+            server_password(home).unwrap_or_default(),
+        )
         .env("TIAKI_HOME", home)
         .stdout(Stdio::null())
         .stderr(Stdio::null())
@@ -412,14 +429,17 @@ fn run_opencode_in(
         .arg(&argv[0])
         .args(&argv[1..])
         .current_dir(cwd)
-        .env("OPENCODE_SERVER_PASSWORD", server_password(home).unwrap_or_default())
-        .env("OPENCODE_PASSWORD", server_password(home).unwrap_or_default())
+        .env(
+            "OPENCODE_SERVER_PASSWORD",
+            server_password(home).unwrap_or_default(),
+        )
+        .env(
+            "OPENCODE_PASSWORD",
+            server_password(home).unwrap_or_default(),
+        )
         .env("TIAKI_HOME", home)
         .env("TIAKI_PRINCIPAL", principal)
-        .env(
-            "TIAKI_WORKSPACE",
-            workspace(home).display().to_string(),
-        )
+        .env("TIAKI_WORKSPACE", workspace(home).display().to_string())
         .stdin(Stdio::inherit())
         .stdout(Stdio::piped())
         .stderr(Stdio::inherit())
@@ -482,9 +502,7 @@ fn parse_run_output(output: &str) -> Result<RunOutcome, Box<dyn std::error::Erro
         }
         let event = agentic_json::parse(trimmed)
             .map_err(|error| format!("unparsable opencode event: {error}"))?;
-        let object = event
-            .as_object()
-            .ok_or("opencode event is not an object")?;
+        let object = event.as_object().ok_or("opencode event is not an object")?;
         if let Some(id) = object.get("sessionID").and_then(Json::as_str) {
             if session.is_empty() {
                 session = id.to_string();
@@ -512,14 +530,10 @@ fn parse_run_output(output: &str) -> Result<RunOutcome, Box<dyn std::error::Erro
                         reason = value.to_string();
                     }
                     if let Some(tokens) = part.get("tokens").and_then(Json::as_object) {
-                        tokens_in = tokens
-                            .get("input")
-                            .and_then(Json::as_f64)
-                            .unwrap_or(0.0) as u64;
-                        tokens_out = tokens
-                            .get("output")
-                            .and_then(Json::as_f64)
-                            .unwrap_or(0.0) as u64;
+                        tokens_in =
+                            tokens.get("input").and_then(Json::as_f64).unwrap_or(0.0) as u64;
+                        tokens_out =
+                            tokens.get("output").and_then(Json::as_f64).unwrap_or(0.0) as u64;
                     }
                 }
             }

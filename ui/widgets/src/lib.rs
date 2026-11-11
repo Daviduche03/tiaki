@@ -72,7 +72,11 @@ fn node_json(node: &Node) -> Json {
         node.children.iter().map(node_json).collect()
     }
     fn text(value: &str) -> Json {
-        Json::Object([("text".into(), Json::String(value.into()))].into_iter().collect())
+        Json::Object(
+            [("text".into(), Json::String(value.into()))]
+                .into_iter()
+                .collect(),
+        )
     }
     fn object(fields: Vec<(&str, Json)>) -> Json {
         Json::Object(fields.into_iter().map(|(k, v)| (k.into(), v)).collect())
@@ -83,16 +87,19 @@ fn node_json(node: &Node) -> Json {
             ("tag", Json::String("main".into())),
             ("cls", Json::String("workspace".into())),
             ("id", Json::String(node.id.clone())),
-            ("children", Json::Array({
-                let title = node.prop_str("title").unwrap_or("Tiaki");
-                let mut kids = vec![object(vec![
-                    ("tag", Json::String("div".into())),
-                    ("cls", Json::String("workspace-title".into())),
-                    ("children", Json::Array(vec![text(title)])),
-                ])];
-                kids.extend(children_of(node));
-                kids
-            })),
+            (
+                "children",
+                Json::Array({
+                    let title = node.prop_str("title").unwrap_or("Tiaki");
+                    let mut kids = vec![object(vec![
+                        ("tag", Json::String("div".into())),
+                        ("cls", Json::String("workspace-title".into())),
+                        ("children", Json::Array(vec![text(title)])),
+                    ])];
+                    kids.extend(children_of(node));
+                    kids
+                }),
+            ),
         ]),
         "panel" => {
             let layout = node.prop_str("layout").unwrap_or("row");
@@ -106,18 +113,9 @@ fn node_json(node: &Node) -> Json {
                 ]));
             }
             let body = object(vec![
-                (
-                    "tag",
-                    Json::String("div".into()),
-                ),
-                (
-                    "cls",
-                    Json::String(format!("panel-body panel-{dir}")),
-                ),
-                (
-                    "children",
-                    Json::Array(children_of(node)),
-                ),
+                ("tag", Json::String("div".into())),
+                ("cls", Json::String(format!("panel-body panel-{dir}"))),
+                ("children", Json::Array(children_of(node))),
             ]);
             kids.push(body);
             object(vec![

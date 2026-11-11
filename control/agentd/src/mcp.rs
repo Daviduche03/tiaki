@@ -149,10 +149,10 @@ impl Server<'_> {
             ("protocolVersion", Json::String(version)),
             (
                 "capabilities",
-                object(vec![("tools", object(vec![(
-                    "listChanged",
-                    Json::Bool(false),
-                )]))]),
+                object(vec![(
+                    "tools",
+                    object(vec![("listChanged", Json::Bool(false))]),
+                )]),
             ),
             (
                 "serverInfo",
@@ -187,9 +187,7 @@ impl Server<'_> {
                             "action",
                             enum_schema(
                                 "The action to perform.",
-                                &[
-                                    "invoke", "toggle", "set-text", "select", "focus", "scroll",
-                                ],
+                                &["invoke", "toggle", "set-text", "select", "focus", "scroll"],
                             ),
                         ),
                         ("value", string_schema("Value for set-text/select.")),
@@ -209,10 +207,7 @@ impl Server<'_> {
                 "fs.read",
                 "Read a UTF-8 file (up to 1 MiB). Relative paths resolve under the \
                  agent workspace.",
-                schema(
-                    vec![("path", string_schema("File path."))],
-                    vec!["path"],
-                ),
+                schema(vec![("path", string_schema("File path."))], vec!["path"]),
             ),
             tool(
                 "fs.write",
@@ -450,7 +445,12 @@ impl Server<'_> {
             ),
             None => format!("Created {} ({} bytes).", path.display(), content.len()),
         };
-        self.record("fs.write", summary.clone(), SandboxClass::UserWrite, Status::Committed);
+        self.record(
+            "fs.write",
+            summary.clone(),
+            SandboxClass::UserWrite,
+            Status::Committed,
+        );
         text_ok(summary)
     }
 
@@ -657,7 +657,12 @@ fn schema(properties: Vec<(&str, Json)>, required: Vec<&str>) -> Json {
         ),
         (
             "required",
-            Json::Array(required.into_iter().map(|key| Json::String(key.into())).collect()),
+            Json::Array(
+                required
+                    .into_iter()
+                    .map(|key| Json::String(key.into()))
+                    .collect(),
+            ),
         ),
     ])
 }
@@ -682,7 +687,12 @@ fn enum_schema(description: &str, values: &[&str]) -> Json {
         ("description", Json::String(description.into())),
         (
             "enum",
-            Json::Array(values.iter().map(|value| Json::String((*value).into())).collect()),
+            Json::Array(
+                values
+                    .iter()
+                    .map(|value| Json::String((*value).into()))
+                    .collect(),
+            ),
         ),
     ])
 }

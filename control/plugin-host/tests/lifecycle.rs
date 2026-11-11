@@ -200,9 +200,7 @@ fn update_hot_swaps_and_migrates_config() {
     assert_eq!(installed.active, version("1.1.0"));
     assert_eq!(installed.previous, Some(version("1.0.0")));
 
-    let swap = host
-        .rollback("org.tiaki.panel.clock")
-        .expect("rollback");
+    let swap = host.rollback("org.tiaki.panel.clock").expect("rollback");
     assert_eq!(swap, Swap::HotSwapped);
     assert_eq!(
         host.get("org.tiaki.panel.clock").unwrap().active,

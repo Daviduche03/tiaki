@@ -37,7 +37,9 @@ fn main() -> ExitCode {
 
 fn run() -> Result<(), String> {
     let raw: Vec<String> = std::env::args().skip(1).collect();
-    let mut principal = std::env::var("TIAKI_PRINCIPAL").ok().filter(|p| !p.is_empty());
+    let mut principal = std::env::var("TIAKI_PRINCIPAL")
+        .ok()
+        .filter(|p| !p.is_empty());
     let mut prompt = DEFAULT_PROMPT.to_string();
 
     let mut index = 0;
@@ -64,7 +66,10 @@ fn run() -> Result<(), String> {
     }
 
     let Some((command, rest)) = raw[index..].split_first() else {
-        return Err("usage: acp-run [--principal <id>] [--prompt <text>] -- <agent command> [args...]".into());
+        return Err(
+            "usage: acp-run [--principal <id>] [--prompt <text>] -- <agent command> [args...]"
+                .into(),
+        );
     };
     let rest: Vec<String> = rest.to_vec();
 

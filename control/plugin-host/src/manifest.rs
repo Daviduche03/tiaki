@@ -567,8 +567,7 @@ signature = "ed25519:abc"
     #[test]
     fn validation_reports_missing_assets() {
         let manifest = parse_manifest(GOOD).expect("parse");
-        let root =
-            std::env::temp_dir().join(format!("tiaki-plugin-empty-{}", std::process::id()));
+        let root = std::env::temp_dir().join(format!("tiaki-plugin-empty-{}", std::process::id()));
         let _ = fs::remove_dir_all(&root);
         fs::create_dir_all(&root).unwrap();
         let issues = validate(&manifest, &root);

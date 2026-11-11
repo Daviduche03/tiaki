@@ -1358,8 +1358,7 @@ mod tests {
 
     fn temp_dir() -> PathBuf {
         let index = COUNTER.fetch_add(1, Ordering::SeqCst);
-        let dir =
-            std::env::temp_dir().join(format!("tiaki-txn-{}-{}", std::process::id(), index));
+        let dir = std::env::temp_dir().join(format!("tiaki-txn-{}-{}", std::process::id(), index));
         let _ = fs::remove_dir_all(&dir);
         dir
     }

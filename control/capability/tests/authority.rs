@@ -17,11 +17,8 @@ static COUNTER: AtomicU64 = AtomicU64::new(0);
 
 fn temp_dir() -> PathBuf {
     let index = COUNTER.fetch_add(1, Ordering::SeqCst);
-    let dir = std::env::temp_dir().join(format!(
-        "tiaki-authority-{}-{}",
-        std::process::id(),
-        index
-    ));
+    let dir =
+        std::env::temp_dir().join(format!("tiaki-authority-{}-{}", std::process::id(), index));
     let _ = fs::remove_dir_all(&dir);
     dir
 }

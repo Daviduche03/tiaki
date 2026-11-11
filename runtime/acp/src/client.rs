@@ -94,12 +94,14 @@ impl AcpClient {
             .stderr(Stdio::inherit())
             .spawn()
             .map_err(|error| AcpError::Spawn(error.to_string()))?;
-        let stdin = child.stdin.take().ok_or_else(|| {
-            AcpError::Spawn("agent stdin unavailable".to_string())
-        })?;
-        let stdout = child.stdout.take().ok_or_else(|| {
-            AcpError::Spawn("agent stdout unavailable".to_string())
-        })?;
+        let stdin = child
+            .stdin
+            .take()
+            .ok_or_else(|| AcpError::Spawn("agent stdin unavailable".to_string()))?;
+        let stdout = child
+            .stdout
+            .take()
+            .ok_or_else(|| AcpError::Spawn("agent stdout unavailable".to_string()))?;
         let (sender, incoming) = mpsc::channel();
         std::thread::spawn(move || {
             let reader = BufReader::new(stdout);
@@ -131,14 +133,20 @@ impl AcpClient {
     /// `initialize` and agree on protocol v1. Anything else is a clean error,
     /// not a guess.
     pub fn initialize(&mut self) -> Result<(), AcpError> {
-        let id = self.send("initialize", object(vec![
-            ("protocolVersion", Json::Number(PROTOCOL_VERSION as f64)),
-            ("clientCapabilities", object(vec![])),
-            ("clientInfo", object(vec![
-                ("name", Json::String(CLIENT_NAME.into())),
-                ("version", Json::String(env!("CARGO_PKG_VERSION").into())),
-            ])),
-        ]))?;
+        let id = self.send(
+            "initialize",
+            object(vec![
+                ("protocolVersion", Json::Number(PROTOCOL_VERSION as f64)),
+                ("clientCapabilities", object(vec![])),
+                (
+                    "clientInfo",
+                    object(vec![
+                        ("name", Json::String(CLIENT_NAME.into())),
+                        ("version", Json::String(env!("CARGO_PKG_VERSION").into())),
+                    ]),
+                ),
+            ]),
+        )?;
         match self.wait_for(id, Duration::from_secs(120))? {
             Response::Ok(result) => {
                 let version = result
@@ -159,10 +167,13 @@ impl AcpClient {
     }
 
     pub fn new_session(&mut self, cwd: &str, mcp_servers: Json) -> Result<String, AcpError> {
-        let id = self.send("session/new", object(vec![
-            ("cwd", Json::String(cwd.into())),
-            ("mcpServers", mcp_servers),
-        ]))?;
+        let id = self.send(
+            "session/new",
+            object(vec![
+                ("cwd", Json::String(cwd.into())),
+                ("mcpServers", mcp_servers),
+            ]),
+        )?;
         match self.wait_for(id, Duration::from_secs(120))? {
             Response::Ok(result) => result
                 .as_ref()
@@ -183,13 +194,19 @@ impl AcpClient {
         text: &str,
         timeout: Duration,
     ) -> Result<TurnOutcome, AcpError> {
-        let id = self.send("session/prompt", object(vec![
-            ("sessionId", Json::String(session_id.into())),
-            ("prompt", Json::Array(vec![object(vec![
-                ("type", Json::String("text".into())),
-                ("text", Json::String(text.into())),
-            ])])),
-        ]))?;
+        let id = self.send(
+            "session/prompt",
+            object(vec![
+                ("sessionId", Json::String(session_id.into())),
+                (
+                    "prompt",
+                    Json::Array(vec![object(vec![
+                        ("type", Json::String("text".into())),
+                        ("text", Json::String(text.into())),
+                    ])]),
+                ),
+            ]),
+        )?;
         let deadline = Instant::now() + timeout;
         let mut message = String::new();
         let mut tools_seen = 0;
@@ -214,7 +231,11 @@ impl AcpClient {
                         self.reply(id, error_reply(-32601, "method not supported"));
                     }
                 }
-                Inbound::Response { id: rid, result, error } => {
+                Inbound::Response {
+                    id: rid,
+                    result,
+                    error,
+                } => {
                     if rid != id {
                         continue;
                     }
@@ -243,9 +264,10 @@ impl AcpClient {
                 }
             }
             if Instant::now() >= deadline {
-                let _ = self.notify("session/cancel", object(vec![
-                    ("sessionId", Json::String(session_id.into())),
-                ]));
+                let _ = self.notify(
+                    "session/cancel",
+                    object(vec![("sessionId", Json::String(session_id.into()))]),
+                );
                 return Err(AcpError::Timeout);
             }
         }
@@ -345,7 +367,11 @@ impl AcpClient {
                 return Err(AcpError::Timeout);
             }
             match self.next(remaining)? {
-                Inbound::Response { id: rid, result, error } if rid == id => {
+                Inbound::Response {
+                    id: rid,
+                    result,
+                    error,
+                } if rid == id => {
                     if let Some(message) = error {
                         return Ok(Response::Err(message));
                     }
@@ -395,7 +421,10 @@ fn classify(text: &str) -> Inbound {
         return Inbound::BadLine;
     };
     let id = object.get("id").cloned();
-    let method = object.get("method").and_then(Json::as_str).map(str::to_string);
+    let method = object
+        .get("method")
+        .and_then(Json::as_str)
+        .map(str::to_string);
     match (id, method) {
         (Some(id), Some(method)) => Inbound::Request {
             id,
@@ -505,20 +534,21 @@ mod tests {
 
     #[test]
     fn routes_responses_notifications_and_requests() {
-        let response =
-            classify(r#"{"jsonrpc":"2.0","id":3,"result":{"sessionId":"s"}}"#);
+        let response = classify(r#"{"jsonrpc":"2.0","id":3,"result":{"sessionId":"s"}}"#);
         assert!(matches!(response, Inbound::Response { id: 3, .. }));
 
-        let error =
-            classify(r#"{"jsonrpc":"2.0","id":4,"error":{"code":-32600,"message":"bad"}}"#);
+        let error = classify(r#"{"jsonrpc":"2.0","id":4,"error":{"code":-32600,"message":"bad"}}"#);
         assert!(matches!(
             error,
-            Inbound::Response { id: 4, error: Some(_), .. }
+            Inbound::Response {
+                id: 4,
+                error: Some(_),
+                ..
+            }
         ));
 
-        let notification = classify(
-            r#"{"jsonrpc":"2.0","method":"session/update","params":{"sessionId":"s"}}"#,
-        );
+        let notification =
+            classify(r#"{"jsonrpc":"2.0","method":"session/update","params":{"sessionId":"s"}}"#);
         assert!(matches!(notification, Inbound::Notification { .. }));
 
         let request = classify(

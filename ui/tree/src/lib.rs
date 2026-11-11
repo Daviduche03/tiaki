@@ -250,10 +250,9 @@ impl UiTree {
         main.children = vec![hint];
 
         let mut workspace = Node::new("desktop", "workspace");
-        workspace.props.insert(
-            "title".into(),
-            Json::String(format!("Tiaki — {owner}")),
-        );
+        workspace
+            .props
+            .insert("title".into(), Json::String(format!("Tiaki — {owner}")));
         workspace.children = vec![top, main];
 
         Self { root: workspace }
