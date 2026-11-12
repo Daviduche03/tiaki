@@ -562,6 +562,17 @@ fn draw_status(cr: &Context, name: &str, color: (f64, f64, f64)) {
             cr.line_to(20.0, 44.0);
             let _ = cr.stroke();
         }
+        "pencil" => {
+            cr.set_source_rgba(white.0, white.1, white.2, white.3);
+            cr.set_line_width(4.0);
+            cr.move_to(16.0, 48.0);
+            cr.line_to(18.0, 38.0);
+            cr.line_to(42.0, 14.0);
+            cr.line_to(50.0, 22.0);
+            cr.line_to(26.0, 46.0);
+            cr.close_path();
+            let _ = cr.stroke();
+        }
         "trash" => {
             cr.set_source_rgba(white.0, white.1, white.2, white.3);
             cr.set_line_width(4.0);
