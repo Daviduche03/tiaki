@@ -197,13 +197,14 @@ RUN chown -R desktop:desktop /home/desktop \
         /usr/local/bin/tiaki-firstboot /usr/local/bin/tiaki-t3 /usr/local/bin/tiaki-launch-shell /usr/share/tiaki/terminal-demo.sh \
         /usr/local/bin/omarchy-* \
     && mkdir -p /var/lib/tiaki \
-    && systemctl enable tiaki-firstboot.service tiaki-ui-serve.service tiaki-hyprland.service tiaki-t3.service
+    && systemctl enable tiaki-firstboot.service tiaki-ui-serve.service tiaki-session.service tiaki-t3.service
 
 ENV TIAKI_HOME=/var/lib/tiaki
 EXPOSE 5900 5733
 # PID 1 is systemd: firstboot seeds state and delegates cgroups, ui-serve
-# answers the tree API, and the hyprland unit runs Hyprland + Omarchy chrome
-# as the product session (tiaki-session.service stays installed but disabled
-# as the Sway fallback). run-wayland.sh remains for legacy direct launches.
+# answers the tree API, and the session unit runs Sway as the desktop user.
+# The Hyprland + Omarchy stack stays installed but disabled (product direction
+# under review; Sway is the default again). run-wayland.sh remains for legacy
+# direct launches.
 STOPSIGNAL SIGRTMIN+3
 ENTRYPOINT ["/sbin/init"]

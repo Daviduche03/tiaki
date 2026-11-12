@@ -280,9 +280,9 @@ for gen in "$MNT" /tmp/tiaki-b; do
     ln -sf "/etc/systemd/system/$unit" \
       "$gen/etc/systemd/system/multi-user.target.wants/"
   done
-  # Hyprland + Omarchy is the product session; the Sway unit stays installed
-  # but disabled as the fallback (switch back with one systemctl command).
-  ln -sf /etc/systemd/system/tiaki-hyprland.service \
+  # Sway + GTK is the product session again; the Hyprland unit stays
+  # installed but disabled (switch back with one systemctl command).
+  ln -sf /etc/systemd/system/tiaki-session.service \
     "$gen/etc/systemd/system/graphical.target.wants/"
 done
 echo "== verifying payload and units in both generations"
@@ -294,7 +294,7 @@ for gen in "$MNT" /tmp/tiaki-b; do
       etc/systemd/system/multi-user.target.wants/systemd-timesyncd.service \
       etc/systemd/system/multi-user.target.wants/systemd-resolved.service \
       etc/systemd/system/multi-user.target.wants/tiaki-ui-serve.service \
-      etc/systemd/system/graphical.target.wants/tiaki-hyprland.service \
+      etc/systemd/system/graphical.target.wants/tiaki-session.service \
       etc/systemd/system/sysinit.target.wants/tiaki-firstboot.service; do
     if [ ! -e "$gen/$needed" ] && [ ! -L "$gen/$needed" ]; then
       echo "missing in $gen: $needed" >&2
