@@ -785,13 +785,13 @@ struct Browser {
     progress_cancel: gtk::Button,
     crumb_box: gtk::Box,
     path_entry: gtk::Entry,
-    path_toggle: gtk::Button,
+    path_toggle: gtk::EventBox,
     search: gtk::Entry,
     tab_strip: gtk::Box,
     side_list: gtk::Box,
-    back_btn: gtk::Button,
-    fwd_btn: gtk::Button,
-    up_btn: gtk::Button,
+    back_btn: gtk::EventBox,
+    fwd_btn: gtk::EventBox,
+    up_btn: gtk::EventBox,
     new_tab_btn: gtk::Button,
     new_folder_btn: gtk::Button,
     new_file_btn: gtk::Button,
@@ -1012,7 +1012,14 @@ impl Browser {
     }
 
     fn refresh(&mut self) {
-        self.preview_box.set_visible(self.preview_btn.is_active());
+        // show_all(), not set_visible(): the pane was built with
+        // no_show_all so the window's first show_all leaves it out, which
+        // also means its children were never realised.
+        if self.preview_btn.is_active() {
+            self.preview_box.show_all();
+        } else {
+            self.preview_box.hide();
+        }
         // Tabs.
         for child in self.tab_strip.children() {
             self.tab_strip.remove(&child);
@@ -1146,11 +1153,15 @@ impl Browser {
         self.fwd_btn.set_sensitive(can_fwd);
         let can_up = matches!(self.location(), Location::Dir(_));
         self.up_btn.set_sensitive(can_up);
-        self.paste_btn.set_sensitive(
-            read_clipboard().is_some() && self.location().drop_dir().is_some(),
-        );
-        self.undo_btn.set_sensitive(!self.journal.is_empty());
-        self.redo_btn.set_sensitive(!self.redo.is_empty());
+        let can_paste = read_clipboard().is_some() && self.location().drop_dir().is_some();
+        self.paste_btn.set_sensitive(can_paste);
+        // Sensitivity, never visibility: a button that appears mid-row shifts
+        // every neighbour, so a click aimed at Empty Trash can land on
+        // Restore. Positions must not move under the pointer.
+        let can_undo = !self.journal.is_empty();
+        let can_redo = !self.redo.is_empty();
+        self.undo_btn.set_sensitive(can_undo);
+        self.redo_btn.set_sensitive(can_redo);
         for column in self.tree.columns() {
             // Indicator follows our own sort state, not the store's.
             let mine = match column.title().as_deref() {
@@ -1170,9 +1181,23 @@ impl Browser {
         self.restore_btn.set_visible(in_trash);
         self.restore_btn
             .set_sensitive(in_trash && !self.selected_paths().is_empty());
+        // Trash shows where each item came from and drops the size column;
+        // the origin column then takes the slack instead of overflowing.
+        if let Some(column) = self.tree.column(1) {
+            column.set_visible(!in_trash);
+        }
         if let Some(column) = self.tree.column(3) {
             column.set_visible(in_trash);
+            column.set_expand(in_trash);
         }
+        // Name always keeps slack; in Trash it shares that slack with the
+        // origin column rather than collapsing to the header width.
+        if let Some(column) = self.tree.column(0) {
+            column.set_expand(true);
+        }
+        // Nothing can be created inside Trash.
+        self.new_folder_btn.set_sensitive(!in_trash);
+        self.new_file_btn.set_sensitive(!in_trash);
 
         self.refresh_sidebar();
         self.update_status();
@@ -1189,18 +1214,20 @@ impl Browser {
         }
         let browser = self_rc_placeholder();
         let place = |label: &str, glyph: &str, location: Location, active: bool| {
-            let button = gtk::Button::new();
-            button.set_relief(gtk::ReliefStyle::None);
-            theme::class(&button, "files-place");
+            // EventBox, not Button: the theme's button metrics add ~12px of
+            // padding per side, which made a 32px row render 44px tall and
+            // pushed the icon off the PLACES heading's 18px inset.
+            let row = gtk::EventBox::new();
+            row.set_visible_window(true);
+            theme::class(&row, "files-place");
+            row.set_size_request(-1, 34);
             if active {
-                button.style_context().add_class("active");
+                row.style_context().add_class("active");
             }
-            // Aligned with the PLACES heading above, and stretched to the
-            // sidebar's full width so the row is a target, not text.
-            let row = gtk::Box::new(gtk::Orientation::Horizontal, 10);
-            row.set_margin_start(18);
-            row.set_margin_end(12);
-            row.pack_start(
+            let inner = gtk::Box::new(gtk::Orientation::Horizontal, 10);
+            inner.set_margin_start(18);
+            inner.set_margin_end(12);
+            inner.pack_start(
                 &glyphs::status_icon_tinted(glyph, 16, (0.902, 0.878, 0.831)),
                 false,
                 false,
@@ -1209,14 +1236,18 @@ impl Browser {
             let text = gtk::Label::new(Some(label));
             text.set_xalign(0.0);
             text.set_hexpand(true);
-            row.pack_start(&text, true, true, 0);
-            button.add(&row);
+            inner.pack_start(&text, true, true, 0);
+            row.add(&inner);
             let target = location;
             let capture = browser.clone();
-            button.connect_clicked(move |_| {
-                capture.borrow_mut().navigate(target.clone());
+            row.connect_button_press_event(move |_, event| {
+                if event.button() == 1 {
+                    capture.borrow_mut().navigate(target.clone());
+                    return glib::Propagation::Stop;
+                }
+                glib::Propagation::Proceed
             });
-            self.side_list.pack_start(&button, false, false, 0);
+            self.side_list.pack_start(&row, false, false, 0);
         };
         let home = home_dir();
         let current = self.location();
@@ -1276,7 +1307,10 @@ impl Browser {
             }
             return;
         };
+        // Explicitly shown: the pane is built with no_show_all, so the
+        // first show_all() leaves these labels unrealised.
         self.preview_title.set_text(&entry.name);
+        self.preview_title.show();
         let kind = if entry.is_dir {
             "Folder"
         } else if entry.is_link {
@@ -1309,6 +1343,7 @@ impl Browser {
             format!("{kind} · {} · from {}", fmt_size(entry.len), entry.origin)
         };
         self.preview_meta.set_text(&meta);
+        self.preview_meta.show();
         // Text preview: first 8 KB. Images: thumbnail.
         self.preview_text.buffer().map(|buffer| buffer.set_text(""));
         self.preview_image.hide();
@@ -1372,13 +1407,32 @@ fn vrule() -> gtk::Box {
     rule
 }
 
-fn nav_button(glyph: &str, tooltip: &str) -> gtk::Button {
-    let button = gtk::Button::new();
-    button.set_relief(gtk::ReliefStyle::None);
-    button.set_tooltip_text(Some(tooltip));
-    theme::class(&button, "files-navbtn");
-    button.add(&glyphs::status_icon_tinted(glyph, 16, (0.902, 0.878, 0.831)));
-    button
+/// A 30x26 icon target. EventBox rather than Button on purpose: the theme's
+/// button metrics (padding + inner border) inflate a 16px glyph to ~46px and
+/// the toolbar then reads as loosely scattered icons.
+fn nav_button(glyph: &str, tooltip: &str) -> gtk::EventBox {
+    let area = gtk::EventBox::new();
+    area.set_visible_window(true);
+    area.set_tooltip_text(Some(tooltip));
+    theme::class(&area, "files-navbtn");
+    area.set_size_request(30, 26);
+    area.add(&glyphs::status_icon_tinted(
+        glyph,
+        16,
+        (0.902, 0.878, 0.831),
+    ));
+    area
+}
+
+/// Wire a nav target. Clicking anywhere in the 30x26 area activates it.
+fn on_nav(area: &gtk::EventBox, action: impl Fn() + 'static) {
+    area.connect_button_press_event(move |_, event| {
+        if event.button() == 1 {
+            action();
+            return glib::Propagation::Stop;
+        }
+        glib::Propagation::Proceed
+    });
 }
 
 fn build_window(start: Location) -> Shared {
@@ -1426,7 +1480,7 @@ fn build_window(start: Location) -> Shared {
     theme::class(&path_entry, "files-path");
     path_entry.set_no_show_all(true);
     header.pack_start(&path_entry, true, true, 0);
-    let path_toggle = nav_button("file", "Edit location (Ctrl+L)");
+    let path_toggle = nav_button("pencil", "Edit location (Ctrl+L)");
     header.pack_start(&path_toggle, false, false, 0);
 
     let search = gtk::Entry::new();
@@ -1460,9 +1514,11 @@ fn build_window(start: Location) -> Shared {
     let paste_btn = tool_button("Paste", "Paste (Ctrl+V)");
     let undo_btn = tool_button("Undo", "Undo (Ctrl+Z)");
     let redo_btn = tool_button("Redo", "Redo (Ctrl+Shift+Z)");
+    // The action row never changes shape: same buttons, same order, in
+    // every mode. Only sensitivity varies, so nothing moves under the
+    // pointer.
     actions.pack_start(&new_folder_btn, false, false, 0);
     actions.pack_start(&new_file_btn, false, false, 0);
-    actions.pack_start(&vrule(), false, false, 4);
     actions.pack_start(&paste_btn, false, false, 0);
     actions.pack_start(&undo_btn, false, false, 0);
     actions.pack_start(&redo_btn, false, false, 0);
@@ -1548,13 +1604,25 @@ fn build_window(start: Location) -> Shared {
     }
     for (title, col, width, expand) in [
         ("Name", COL_NAME, 0, true),
-        ("Size", COL_SIZE_BYTES, 84, false),
-        ("Modified", COL_MTIME_SECS, 136, false),
+        ("Size", COL_SIZE_BYTES, 92, false),
+        ("Modified", COL_MTIME_SECS, 162, false),
     ] {
         let cell = gtk::CellRendererText::new();
         cell.set_ellipsize(gtk::pango::EllipsizeMode::Middle);
+        // Breathing room per row: GTK's default packs text tight against
+        // the hairlines, which reads as a spreadsheet rather than a list.
+        cell.set_property("ypad", 4u32);
+        // Same 10px horizontal inset as the header label, so column titles
+        // sit exactly over their values.
+        cell.set_property("xpad", 10u32);
+        let numeric = col != COL_NAME;
+        if numeric {
+            // Numbers and dates sit flush right, under their own headers.
+            gtk::prelude::CellRendererExt::set_alignment(&cell, 1.0, 0.5);
+        }
         let column = gtk::TreeViewColumn::new();
         column.set_title(title);
+        column.set_alignment(if numeric { 1.0 } else { 0.0 });
         column.set_resizable(true);
         column.set_clickable(true);
         // Name absorbs the slack; Size and Modified keep a fixed width so a
@@ -1627,16 +1695,25 @@ fn build_window(start: Location) -> Shared {
     preview_slot.set_halign(gtk::Align::Center);
     preview_slot.set_margin_top(20);
     preview_box.pack_start(&preview_slot, false, false, 0);
+    // Ellipsis, not wrap: a wrapping label with only a max-width request
+    // collapses to one character wide inside a fixed pane.
     let preview_title = gtk::Label::new(None);
     preview_title.set_xalign(0.5);
-    preview_title.set_line_wrap(true);
-    preview_title.set_max_width_chars(28);
+    preview_title.set_justify(gtk::Justification::Center);
+    preview_title.set_ellipsize(gtk::pango::EllipsizeMode::Middle);
+    preview_title.set_hexpand(true);
+    preview_title.set_margin_start(14);
+    preview_title.set_margin_end(14);
     theme::class(&preview_title, "files-name");
     preview_box.pack_start(&preview_title, false, false, 0);
     let preview_meta = gtk::Label::new(None);
     preview_meta.set_xalign(0.5);
+    preview_meta.set_justify(gtk::Justification::Center);
     preview_meta.set_line_wrap(true);
-    preview_meta.set_max_width_chars(30);
+    preview_meta.set_max_width_chars(26);
+    preview_meta.set_hexpand(true);
+    preview_meta.set_margin_start(16);
+    preview_meta.set_margin_end(16);
     theme::class(&preview_meta, "files-dim");
     preview_box.pack_start(&preview_meta, false, false, 0);
     let preview_text = gtk::TextView::new();
@@ -2888,33 +2965,39 @@ fn run_transfer(browser: &Shared, is_move: bool, sources: Vec<PathBuf>, dest_dir
 // Wiring: toolbar, tree, search, keys.
 
 fn wire(browser: &Shared) {
-    let capture = browser.clone();
-    browser.borrow().back_btn.connect_clicked(move |_| {
-        let mut current = capture.borrow_mut();
-        let active = current.active;
-        if current.tabs[active].back() {
-            current.refresh();
-        }
-    });
-    let capture = browser.clone();
-    browser.borrow().fwd_btn.connect_clicked(move |_| {
-        let mut current = capture.borrow_mut();
-        let active = current.active;
-        if current.tabs[active].forward() {
-            current.refresh();
-        }
-    });
-    let capture = browser.clone();
-    browser.borrow().up_btn.connect_clicked(move |_| {
-        let parent = match capture.borrow().location() {
-            Location::Dir(path) => path.parent().map(Path::to_path_buf),
-            Location::Search { root, .. } => Some(root),
-            Location::Trash => None,
-        };
-        if let Some(dir) = parent {
-            capture.borrow_mut().navigate(Location::Dir(dir));
-        }
-    });
+    {
+        let capture = browser.clone();
+        on_nav(&browser.borrow().back_btn, move || {
+            let mut current = capture.borrow_mut();
+            let active = current.active;
+            if current.tabs[active].back() {
+                current.refresh();
+            }
+        });
+    }
+    {
+        let capture = browser.clone();
+        on_nav(&browser.borrow().fwd_btn, move || {
+            let mut current = capture.borrow_mut();
+            let active = current.active;
+            if current.tabs[active].forward() {
+                current.refresh();
+            }
+        });
+    }
+    {
+        let capture = browser.clone();
+        on_nav(&browser.borrow().up_btn, move || {
+            let parent = match capture.borrow().location() {
+                Location::Dir(path) => path.parent().map(Path::to_path_buf),
+                Location::Search { root, .. } => Some(root),
+                Location::Trash => None,
+            };
+            if let Some(dir) = parent {
+                capture.borrow_mut().navigate(Location::Dir(dir));
+            }
+        });
+    }
     let capture = browser.clone();
     browser.borrow().new_tab_btn.connect_clicked(move |_| {
         let location = capture.borrow().location();
@@ -2947,7 +3030,7 @@ fn wire(browser: &Shared) {
     let capture = browser.clone();
     browser.borrow().restore_btn.connect_clicked(move |_| restore_selected(&capture));
     let capture = browser.clone();
-    browser.borrow().path_toggle.connect_clicked(move |_| {
+    on_nav(&browser.borrow().path_toggle, move || {
         let current = capture.borrow();
         let editing = current.path_entry.get_visible();
         if editing {
@@ -3014,7 +3097,12 @@ fn wire(browser: &Shared) {
 
     let capture = browser.clone();
     browser.borrow().tree.connect_cursor_changed(move |_| {
-        let current = capture.borrow();
+        // Emptying the store during refresh() changes the selection, which
+        // re-enters this signal while refresh still holds a mutable borrow.
+        // refresh() already updates preview and status, so skipping is right.
+        let Ok(current) = capture.try_borrow() else {
+            return;
+        };
         current.update_preview();
         current.update_status();
         if matches!(current.location(), Location::Trash) {
@@ -3023,7 +3111,11 @@ fn wire(browser: &Shared) {
     });
     let capture = browser.clone();
     browser.borrow().tree.connect_row_activated(move |_, _, _| {
-        if let Some(entry) = capture.borrow().selected_entries().into_iter().next() {
+        let entry = match capture.try_borrow() {
+            Ok(current) => current.selected_entries().into_iter().next(),
+            Err(_) => None,
+        };
+        if let Some(entry) = entry {
             open_entry(&capture, &entry);
         }
     });
@@ -3204,6 +3296,9 @@ pub fn run(start: Option<&str>) {
         browser.borrow().empty_trash_btn.hide();
         browser.borrow().restore_btn.hide();
     }
+    // Focus the list, not the search field: arrow keys and F2 should work
+    // the moment the window opens.
+    browser.borrow().tree.grab_focus();
     gtk::main();
 }
 

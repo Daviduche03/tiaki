@@ -24,9 +24,9 @@
   border: none;
   box-shadow: none;
   border-radius: 3px;
-  min-height: 26px;
-  min-width: 28px;
-  padding: 2px 4px;
+  min-height: 0;
+  min-width: 0;
+  padding: 0;
   color: #e6e0d4;
 }
 .files-navbtn:hover {
@@ -150,6 +150,9 @@
 .files-tool {
   background: transparent;
   background-image: none;
+  padding-left: 9px;
+  padding-right: 9px;
+  background-image: none;
   border: 1px solid transparent;
   border-radius: 3px;
   box-shadow: none;
@@ -165,7 +168,9 @@
   color: #e6e0d4;
 }
 .files-tool:disabled {
-  opacity: 0.30;
+  /* Present but plainly inactive: enough contrast to read, dim enough that
+     it never looks like a live control. */
+  opacity: 0.55;
 }
 .files-tool:checked {
   background-color: rgba(208, 138, 44, 0.18);
@@ -198,8 +203,8 @@
   color: rgba(230, 224, 212, 0.82);
   font-size: 13px;
   font-weight: 500;
-  padding: 0;
-  min-height: 30px;
+  padding: 0 18px;
+  min-height: 32px;
 }
 .files-place:hover {
   background-color: rgba(230, 224, 212, 0.06);
@@ -224,6 +229,9 @@
   color: #e6e0d4;
 }
 
+.files-list treeview.view {
+  padding: 0;
+}
 .files-list treeview.view:hover {
   background-color: rgba(230, 224, 212, 0.05);
 }
@@ -281,7 +289,8 @@
   background-color: #151413;
   background-image: none;
   border-top: 1px solid rgba(230, 224, 212, 0.10);
-  padding: 0 14px;
+  /* Aligned with the PLACES heading's 18px inset. */
+  padding: 0 18px;
   min-height: 26px;
   color: rgba(230, 224, 212, 0.52);
   font-family: "IBM Plex Mono", monospace;
