@@ -56,20 +56,6 @@ else
   echo "tiaki-firstboot: cgroup delegation unavailable; scheduling is advisory" >&2
 fi
 
-# Clock + DNS without coupling the session to firstboot. The rig proved
-# both failure modes: a 2-day clock skew breaks TLS, and missing DNS
-# breaks every fetch. Best-effort: never fail the boot for this.
-if command -v timedatectl >/dev/null 2>&1; then
-  timedatectl set-ntp true 2>/dev/null || true
-fi
-mkdir -p /etc/systemd/resolved.conf.d
-if [ ! -e /etc/systemd/resolved.conf.d/tiaki-fallback.conf ]; then
-  cat > /etc/systemd/resolved.conf.d/tiaki-fallback.conf <<'RESOLVED' 2>/dev/null || true
-[Resolve]
-FallbackDNS=8.8.8.8 1.1.1.1
-RESOLVED
-fi
-
 # Seed the desktop principal's agent homes. Idempotent merges: hand-chosen
 # values are never overwritten, missing pieces are filled in.
 if id desktop >/dev/null 2>&1; then

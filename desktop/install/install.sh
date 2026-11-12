@@ -25,7 +25,7 @@ set -eu
 
 # Run from the repository root: the script reads the staged payload/ tree
 # (see `make payload`).
-for required in payload/agentd payload/sched-launch payload/tiaki-firstboot payload/tiaki-notify payload/desktop.json payload/tiaki-hyprland-session payload/wayvnc-screencopy.patch payload/omarchy/hyprland.lua payload/omarchy/shell/shell.qml payload/omarchy-bin/tiaki-launch-shell payload/omarchy-bin/omarchy-menu; do
+for required in payload/agentd payload/sched-launch payload/tiaki-firstboot payload/tiaki-notify payload/desktop.json; do
   if [ ! -e "$required" ]; then
     echo "missing $required — run from the repo root after \`make payload\`" >&2
     exit 1
@@ -125,56 +125,13 @@ mkdir -p "$MNT/boot/efi"
 mount "${P}1" "$MNT/boot/efi"
 
 echo "== kernel, bootloader, desktop stack"
-# Hyprland + Quickshell are not in trixie; take them (and only them) from
-# sid. Pin-priority 100 means sid is never an upgrade source on its own:
-# only packages named with -t sid below come from there.
-cat > "$MNT/etc/apt/sources.list.d/sid.list" <<EOF
-deb https://deb.debian.org/debian sid main
-EOF
-cat > "$MNT/etc/apt/preferences.d/sid-pin" <<EOF
-Package: *
-Pin: release n=trixie
-Pin-Priority: 900
-
-Package: *
-Pin: release n=sid
-Pin-Priority: 100
-EOF
 chroot "$MNT" apt-get update
 chroot "$MNT" env DEBIAN_FRONTEND=noninteractive apt-get install -y --no-install-recommends \
   "linux-image-$ARCH" systemd systemd-sysv systemd-boot mtools dosfstools \
   sway swaybg foot mousepad dbus openssh-server isc-dhcp-client \
   libxcb-cursor0 libxcb-image0 libxcb-render-util0 libxcb-util1 \
-  libgtk-3-0 libgtk-layer-shell0 grim curl unzip wtype wl-clipboard brightnessctl pamixer \
-  fonts-jetbrains-mono adwaita-icon-theme librsvg2-common git sudo \
-  pipewire wireplumber network-manager socat jq imagemagick
-# Hyprland + Quickshell + wayvnc come from sid (see the pin above): the
-# Omarchy chrome is the product session, Sway stays installed as fallback.
-chroot "$MNT" env DEBIAN_FRONTEND=noninteractive apt-get install -y --no-install-recommends -t sid \
-  hyprland quickshell qt6-wayland wayvnc
-# Qt image-formats module name differs by snapshot; accept either spelling.
-chroot "$MNT" env DEBIAN_FRONTEND=noninteractive apt-get install -y --no-install-recommends -t sid qt6-imageformats-plugins \
-  || chroot "$MNT" env DEBIAN_FRONTEND=noninteractive apt-get install -y --no-install-recommends -t sid qt6-image-formats-plugins
-# Patched wayvnc: force the wlr-screencopy capture path (see
-# desktop/wayland/wayvnc-screencopy.patch). Upstream prefers
-# ext-image-copy-capture, whose continuous session stays grey on llvmpipe
-# while single shots work; wlr-screencopy delivers frames. /usr/local/bin
-# shadows stock /usr/bin/wayvnc via PATH, so a future stock upgrade can
-# never silently re-grey VNC. Build deps are autoremoved right after.
-cp payload/wayvnc-screencopy.patch "$MNT/tmp/wayvnc-screencopy.patch"
-chroot "$MNT" sh -c '
-  set -eu
-  echo "deb-src https://deb.debian.org/debian sid main" > /etc/apt/sources.list.d/debsrc-sid.list
-  apt-get update
-  DEBIAN_FRONTEND=noninteractive apt-get build-dep -y wayvnc
-  mkdir -p /tmp/wvnc && cd /tmp/wvnc && apt-get source wayvnc
-  cd wayvnc-*/ && patch -p1 < /tmp/wayvnc-screencopy.patch
-  meson setup build --prefix=/usr/local --buildtype=release
-  ninja -C build && ninja -C build install
-  cd / && rm -rf /tmp/wvnc /tmp/wayvnc-screencopy.patch
-  DEBIAN_FRONTEND=noninteractive apt-get autoremove -y
-  /usr/local/bin/wayvnc --version
-'
+  libgtk-3-0 libgtk-layer-shell0 wayvnc grim curl unzip wtype wl-clipboard brightnessctl pamixer \
+  fonts-jetbrains-mono adwaita-icon-theme librsvg2-common git sudo
 
 # The shell is typeset in IBM Plex Sans/Mono, which Debian does not package.
 # Same pinned releases as desktop/wayland/Dockerfile.
@@ -190,21 +147,6 @@ chroot "$MNT" sh -c '
   rm -rf "$tmp"
   fc-cache -f >/dev/null
   fc-match "IBM Plex Sans" | grep -qi plex
-'
-
-# The Omarchy bar renders workspace and status icons from the Nerd Font
-# glyph set, which Debian does not package. Same pinned release the rig
-# was proven with; matches desktop/wayland/Dockerfile.
-echo "== JetBrainsMono Nerd Font (Omarchy bar icons)"
-chroot "$MNT" sh -c '
-  set -eu
-  tmp="$(mktemp -d)"
-  curl -fsSL "https://github.com/ryanoasis/nerd-fonts/releases/download/v3.4.0/JetBrainsMono.zip" -o "$tmp/nerd.zip"
-  mkdir -p /usr/share/fonts/truetype/nerd
-  unzip -j -o "$tmp/nerd.zip" "*.ttf" -d /usr/share/fonts/truetype/nerd >/dev/null
-  rm -rf "$tmp"
-  fc-cache -f >/dev/null
-  fc-match "JetBrainsMono Nerd Font" | grep -qi "Nerd Font"
 '
 
 echo "== users and network"
@@ -245,17 +187,6 @@ for gen in "$MNT" /tmp/tiaki-b; do
   chmod 0755 "$gen/usr/local/bin/agentd" "$gen/usr/local/bin/tiaki-firstboot" "$gen/usr/local/bin/tiaki-session" "$gen/usr/local/bin/sched-launch" "$gen/usr/local/bin/tiaki-notify"
   cp payload/desktop.json "$gen/usr/share/tiaki/"
   cp -r payload/icons payload/wallpapers "$gen/usr/share/tiaki/"
-  # Omarchy chrome: Hyprland defaults, Quickshell shell, Tokyo Night theme.
-  # Vendored verbatim from upstream (see desktop/omarchy/README.md).
-  mkdir -p "$gen/usr/share/omarchy"
-  cp -r payload/omarchy/* "$gen/usr/share/omarchy/"
-  cp payload/tiaki-hyprland-session "$gen/usr/local/bin/"
-  chmod 0755 "$gen/usr/local/bin/tiaki-hyprland-session"
-  # omarchy-* helpers live on PATH; the shell and bindings call them bare.
-  for helper in payload/omarchy-bin/*; do
-    cp "$helper" "$gen/usr/local/bin/$(basename "$helper")"
-  done
-  chmod 0755 "$gen"/usr/local/bin/omarchy-* "$gen/usr/local/bin/tiaki-launch-shell"
   mkdir -p "$gen/etc/tiaki"
   cp payload/etc-tiaki/sway.conf payload/etc-tiaki/wayvnc.conf payload/etc-tiaki/foot.ini "$gen/etc/tiaki/"
   # Tiaki GTK theme: ink windows for every third-party app.
@@ -276,23 +207,19 @@ for gen in "$MNT" /tmp/tiaki-b; do
            "$gen/etc/systemd/system/graphical.target.wants"
   ln -sf /etc/systemd/system/tiaki-firstboot.service \
     "$gen/etc/systemd/system/sysinit.target.wants/"
-  for unit in tiaki-ui-serve.service ssh.service systemd-networkd.service systemd-timesyncd.service systemd-resolved.service; do
+  for unit in tiaki-ui-serve.service ssh.service systemd-networkd.service; do
     ln -sf "/etc/systemd/system/$unit" \
       "$gen/etc/systemd/system/multi-user.target.wants/"
   done
-  # Sway + GTK is the product session again; the Hyprland unit stays
-  # installed but disabled (switch back with one systemctl command).
   ln -sf /etc/systemd/system/tiaki-session.service \
     "$gen/etc/systemd/system/graphical.target.wants/"
 done
 echo "== verifying payload and units in both generations"
 for gen in "$MNT" /tmp/tiaki-b; do
-  for needed in usr/local/bin/agentd usr/local/bin/sched-launch usr/local/bin/tiaki-firstboot usr/local/bin/tiaki-shell usr/local/bin/tiaki-session usr/local/bin/tiaki-hyprland-session usr/local/bin/tiaki-launch-shell usr/local/bin/omarchy-menu usr/local/bin/wayvnc \
-      usr/share/tiaki/desktop.json usr/share/omarchy/hyprland.lua usr/share/omarchy/shell/shell.qml etc/tiaki/sway.conf \
+  for needed in usr/local/bin/agentd usr/local/bin/sched-launch usr/local/bin/tiaki-firstboot usr/local/bin/tiaki-shell usr/local/bin/tiaki-session \
+      usr/share/tiaki/desktop.json etc/tiaki/sway.conf \
       etc/systemd/system/multi-user.target.wants/ssh.service \
       etc/systemd/system/multi-user.target.wants/systemd-networkd.service \
-      etc/systemd/system/multi-user.target.wants/systemd-timesyncd.service \
-      etc/systemd/system/multi-user.target.wants/systemd-resolved.service \
       etc/systemd/system/multi-user.target.wants/tiaki-ui-serve.service \
       etc/systemd/system/graphical.target.wants/tiaki-session.service \
       etc/systemd/system/sysinit.target.wants/tiaki-firstboot.service; do

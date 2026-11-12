@@ -1,53 +1,120 @@
-# Compositor spike: Hyprland + Quickshell on the ARM rig
+# Compositor spike — Sway → ShojiWM
 
-Date: 2026-11-12. Question: can Hyprland run in our ARM64 QEMU dev loop,
-so we can adopt Omarchy's stack (Hyprland + Quickshell) instead of
-migrating to Omarchy the distro? Verdict: **yes, with caveats**.
+Timeboxed feasibility spike, not a migration. Question: can Tiaki's existing
+shell run on [ShojiWM](https://github.com/bea4dev/ShojiWM), and does that
+compositor remove the two blockers Sway can never fix?
 
-## Result
+- **Blocked on Sway:** third-party GTK windows render Adwaita CSD chrome and the
+  compositor draws nothing around them; no per-window shape, no window
+  animation, no frame colouring.
+- **Next Move #6:** "schedule compositor replacement when Sway's ceiling is
+  reached."
 
-- Hyprland 0.57 (Debian sid, arm64) composites on this VM: KMS output
-  `Virtual-1 1280x800`, foot tiled with gaps/borders/rounding, all on
-  llvmpipe software GL (`kms_swrast` fallback after dri2 screen fails).
-- Quickshell 0.3.2 runs and renders a QML top bar as a real layer-shell
-  surface (`1280x30`, namespace `quickshell`).
-- Proven visually via Hyprland's own screencopy (`grim`), not VNC.
+## Verdict
 
-## What did not work
+Yes. The shell needs **no changes** to run under it, and every blocker question
+came back positive. The one thing the spike could not measure is idle cost,
+because the nested test path cannot idle by design (see below).
 
-- **Nested Hyprland inside Sway crashes** (`CBackend::create() failed`).
-  Aquamarine tries headless (mandatory) → DRM (if-available) → Wayland
-  (fallback), then needs a GBM allocator from any backend with a drmFD.
-  Headless provides none; DRM fails (no seat/logind for master, no virgl
-  for EGL on the node); the nested Wayland backend fails because
-  pixman-Sway advertises no `zwp_linux_dmabuf_v1`, which Aquamarine
-  requires. Net: Hyprland must own the DRM master, i.e. be the session
-  compositor, not a nested window. Dev-loop nested testing is out.
-- **wayvnc on Hyprland showed grey frames** while grim captured fine.
-  Frames exist; the VNC/screencopy path needs work before remote dev
-  works on a Hyprland session.
-- **Performance unmeasured.** llvmpipe does all rendering on CPU.
-  Static content is fine; animation FPS under load is unknown and is the
-  biggest remaining risk for "Omarchy-grade smoothness" on this VM.
-  (Production amd64 hardware with a real GPU would not share this risk.)
+## What was run
 
-## Notes that matter for the port
+ShojiWM `main` (smithay fork, Rust), built as the **Rust config runtime**
+(`shojiwm_rs` + `examples/default_config`) — no TypeScript, no V8, no JS
+anywhere in the process. Built in a Debian 13 arm64 container, run **nested**
+(`winit` backend) inside the existing Sway session on the QEMU guest, then
+Tiaki's real binaries launched into it on `wayland-2`.
 
-- Hyprland ≥0.55 speaks **Lua config**; legacy hyprlang is degraded
-  (0.57 parses `.conf` as Lua and fails on `exec-once`). Write Lua.
-- Quickshell needs the `qt6-wayland` QPA package for shell-integration
-  plugins; the client lib alone crashes it at startup.
-- Neither package exists in trixie; both come from sid today
-  (`hyprland 0.57.0+ds-1`, `quickshell 0.3.2-1`). The rig is now a
-  trixie/sid hybrid (libc 2.43, libstdc++ 16, Qt 6.11). Our Rust/GTK
-  shell is unaffected (no Qt linkage), and the system stayed healthy.
-- Rig fixes made along the way (guest-local, re-apply in image build):
-  `/etc/resolv.conf` → `nameserver 10.0.2.3` (systemd stub was dead),
-  guest clock +2 days (sid signatures rejected "not yet valid").
+![Tiaki bar inside ShojiWM](tiaki-bar-in-shojiwm.png)
 
-## Recommendation
+*`tiaki-shell bar`, unmodified, as a layer surface inside ShojiWM. Lamp chip,
+`gen a`, tray and clock all live. Mousepad in a ShojiWM-drawn frame.*
 
-Technically viable. Before committing: (1) FPS under animation on
-llvmpipe, (2) wayvnc-on-Hyprland for remote dev, (3) session design —
-Hyprland replaces Sway as the session compositor, Rust daemons unchanged,
-then port Omarchy's QML shell conventions (MIT) re-skinned to our tokens.
+## Results
+
+| Question | Result | Evidence |
+| --- | --- | --- |
+| Builds for Debian 13 / arm64 | **Yes** | 40 MB binary, rust 1.99, ~9 min cold |
+| Runs nested inside Sway | **Yes** | own socket `wayland-2` |
+| `wlr-layer-shell` | **Yes** | bar mapped as Top layer, 36 px, correct anchors; no `is_supported()` failure |
+| `wlr-screencopy` | **Yes** | `grim` inside ShojiWM captured the full output |
+| Server-side decoration | **Yes** | ShojiWM draws titlebar, buttons, border, radius around a GTK app |
+| Idle cost | **Not measurable here** | nested backend repaints continuously |
+
+### SSD is the point
+
+![SSD frame around a GTK app](ssd-frame-around-gtk-app.png)
+
+The frame is not hardcoded in the compositor — it is a **composition tree the
+config draws** (`COMPOSITOR.window.composition`, `main.rs:958`). `WindowBorder`,
+`Style::border`, `border_radius`, `box_shadow`. Tiaki would write that config
+crate and draw the frame in ink and paper, with the lamp on the focused window
+instead of `hex("#d7ba7d")`.
+
+The Rust default config does **not** handle `theme.set` — only the TS config
+does — and it hardcodes its colours. That is convenient: there is no M3E to
+strip out. The Rust runtime is a blank frame we own.
+
+### Idle is unmeasurable on this rig, and here is exactly why
+
+`backend/winit.rs:1630` calls `backend.window().request_redraw()` at the end of
+**every** redraw. The nested backend is a development backend that repaints
+continuously. Measured CPU confirms it: 100% at rest, and *lower* (45%) once a
+client exists — the loop is not frame-paced.
+
+So the 0%-idle claim is untestable here. It also cannot be tested on this guest
+generally: no GPU, software GL on an emulated ARM CPU. The only meaningful
+relative number: **ShojiWM 23% idle vs Sway 30% idle**, same guest, no clients.
+
+To test the real claim, run `--tty` on hardware with a GPU and read the FPS
+overlay (`Super+Shift+F`).
+
+## Costs found
+
+- Build needs the smithay dev set plus `libxcb-cursor-dev` (winit's X11 path).
+- The guest needed four runtime libs it did not have, copied in from the
+  builder: `libxcb-cursor`, `libxcb-image`, `libxcb-render-util`, `libxcb-util`.
+  All four are X11-only; a Wayland-only build would not need them, and a real
+  image installs them from apt.
+- The config's asset root is baked at build time (`/src/src/...`), so shaders
+  resolve against the build path unless `asset_root` / `--runtime-dir` is set.
+- The nested window does not present updates to the outer compositor: VNC shows
+  a stale rectangle. Verification has to go through `grim` inside ShojiWM.
+  Irrelevant on `--tty`.
+
+## What this changes
+
+The compositor and the shell toolkit are **independent decisions**. The shell
+ran unmodified, so moving to ShojiWM does not force or block adopting
+AntiWebUI. That decoupling is the main result.
+
+It also means the Adwaita-chrome blocker splits in two:
+
+1. **Frame** — solved by ShojiWM, which draws a frame we author. CSD clients
+   keep their own chrome but now sit inside our border, radius and shadow.
+2. **The client's own chrome** — still GTK theming. A `gtk-3.0/gtk.css` in Tiaki
+   tokens, which is doable on Sway today and is worth doing regardless.
+
+## If we proceed
+
+1. Write a Tiaki config crate on `shojiwm_rs` — the WM is ours, in Rust,
+   matching "own the thesis seams". Frame in ink/paper, lamp on focus.
+2. `--tty` boot on hardware; measure the FPS overlay at rest before committing.
+3. Check `wayvnc` against it (screencopy exists, so it should work) — the
+   remote path depends on it.
+4. Confirm `ext-workspace` or the config's IPC gives the bar workspace state.
+5. Keep Sway as the generation-A fallback. This is exactly what A/B slots are
+   for.
+
+## Remote-access note (verified 2026-11-11 on the QEMU rig)
+
+- `tiaki-wm --tty` cannot start on this rig: virtio-gpu's `/dev/dri/card0`
+  refuses the open (`FailedToOpenDevice … WouldBlock`). Product `--tty`
+  needs real GPU hardware; the harness can only host the nested backend.
+- `wayvnc` can never send input to ShojiWM: the compositor implements no
+  `zwlr_virtual_pointer_v1` anywhere (checked `shojiwm_lib` + `shojiwm_rs`),
+  so it aborts with "Virtual Pointer protocol not supported by compositor"
+  unless passed `--disable-input`. Screencopy works, so view-only VNC is
+  possible, but remote control of a tiaki-wm session needs upstream virtual
+  pointer support. This is now the remote-path blocker, not screencopy.
+- Packaging consequence, applied: the desktop user is created in
+  `video,render` (`install.sh`) so `--tty` can open DRM on hardware.
