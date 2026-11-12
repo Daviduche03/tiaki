@@ -7,7 +7,7 @@ Conflicts=tiaki-session.service
 [Service]
 # Root takes the DRM master: no seatd/logind user session exists on this
 # rig yet. See tiaki-hyprland-session; a user+seatd session is the
-# image-build followup. Sway stays the default until that lands.
+# followup. Sway stays installed but disabled as the fallback.
 User=root
 Environment=XDG_RUNTIME_DIR=/run/tiaki-hyprland
 Environment=HOME=/root

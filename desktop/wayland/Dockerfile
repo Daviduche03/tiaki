@@ -43,12 +43,21 @@ RUN --mount=type=cache,target=/usr/local/cargo/registry \
     ./desktop/wayland/build-payload.sh /out
 
 FROM debian:trixie-slim
+# Hyprland + Quickshell live in sid, not trixie. Pin sid at 100 so it is
+# never an upgrade source: only packages named with -t sid come from it.
+RUN echo "deb https://deb.debian.org/debian sid main" > /etc/apt/sources.list.d/sid.list && \
+    printf 'Package: *\nPin: release n=trixie\nPin-Priority: 900\n\nPackage: *\nPin: release n=sid\nPin-Priority: 100\n' > /etc/apt/preferences.d/sid-pin
 RUN apt-get update \
     && apt-get install -y --no-install-recommends \
         sway swaybg foot mousepad btop thunar epiphany-browser swaylock \
         fonts-jetbrains-mono fonts-font-awesome adwaita-icon-theme \
         grim curl unzip xz-utils wayvnc libgtk-3-0 libgtk-layer-shell0 ca-certificates wtype wl-clipboard brightnessctl pamixer \
         fastfetch imagemagick dbus adduser librsvg2-common python3 git \
+        pipewire wireplumber network-manager socat jq \
+    && apt-get install -y --no-install-recommends -t sid \
+        hyprland quickshell qt6-wayland \
+    && (apt-get install -y --no-install-recommends -t sid qt6-imageformats-plugins \
+        || apt-get install -y --no-install-recommends -t sid qt6-image-formats-plugins) \
     && rm -rf /var/lib/apt/lists/*
 
 # The shell is typeset in IBM Plex Sans/Mono. Debian does not package it, so
@@ -66,6 +75,19 @@ RUN set -eu; \
     rm -rf "$tmp"; \
     fc-cache -f >/dev/null; \
     fc-match "IBM Plex Sans" | grep -qi "plex"
+
+# The Omarchy bar renders workspace and status icons from the Nerd Font
+# glyph set, which Debian does not package. Same pinned release the rig
+# was proven with; matches desktop/install/install.sh.
+ARG NERD_FONT_VERSION=3.4.0
+RUN set -eu; \
+    tmp="$(mktemp -d)"; \
+    curl -fsSL "https://github.com/ryanoasis/nerd-fonts/releases/download/v${NERD_FONT_VERSION}/JetBrainsMono.zip" -o "$tmp/nerd.zip"; \
+    mkdir -p /usr/share/fonts/truetype/nerd; \
+    unzip -j -o "$tmp/nerd.zip" "*.ttf" -d /usr/share/fonts/truetype/nerd >/dev/null; \
+    rm -rf "$tmp"; \
+    fc-cache -f >/dev/null; \
+    fc-match "JetBrainsMono Nerd Font" | grep -qi "Nerd Font"
 
 RUN adduser --disabled-password --gecos "" desktop
 
@@ -139,24 +161,30 @@ COPY desktop/wayland/demo.rs /home/desktop/demo.rs
 COPY desktop/wayland/bashrc /home/desktop/.bashrc
 COPY desktop/wayland/run-wayland.sh /usr/local/bin/run-wayland
 COPY desktop/wayland/tiaki-session /usr/local/bin/tiaki-session
+COPY desktop/wayland/tiaki-hyprland-session /usr/local/bin/tiaki-hyprland-session
+COPY desktop/omarchy /usr/share/omarchy
+# All omarchy-* helpers live on PATH; the shell and bindings call them bare.
+COPY desktop/omarchy/bin/ /usr/local/bin/
 COPY desktop/systemd/tiaki-firstboot.sh /usr/local/bin/tiaki-firstboot
 COPY desktop/systemd/tiaki-t3.sh /usr/local/bin/tiaki-t3
-COPY desktop/systemd/tiaki-firstboot.service desktop/systemd/tiaki-ui-serve.service desktop/systemd/tiaki-session.service desktop/systemd/tiaki-t3.service /etc/systemd/system/
+COPY desktop/systemd/tiaki-firstboot.service desktop/systemd/tiaki-ui-serve.service desktop/systemd/tiaki-session.service desktop/systemd/tiaki-hyprland.service desktop/systemd/tiaki-t3.service /etc/systemd/system/
 COPY models /usr/share/tiaki/models
 COPY plugins /usr/share/tiaki/plugins
 COPY image/examples /usr/share/tiaki/image-examples
 
 RUN chown -R desktop:desktop /home/desktop \
     && chmod 0755 /usr/local/bin/agentd /usr/local/bin/tiaki-ui-native \
-        /usr/local/bin/tiaki-shell /usr/local/bin/run-wayland /usr/local/bin/tiaki-session /usr/local/bin/tiaki-wallpaper \
-        /usr/local/bin/tiaki-firstboot /usr/local/bin/tiaki-t3 /usr/share/tiaki/terminal-demo.sh \
+        /usr/local/bin/tiaki-shell /usr/local/bin/run-wayland /usr/local/bin/tiaki-session /usr/local/bin/tiaki-hyprland-session /usr/local/bin/tiaki-wallpaper \
+        /usr/local/bin/tiaki-firstboot /usr/local/bin/tiaki-t3 /usr/local/bin/tiaki-launch-shell /usr/share/tiaki/terminal-demo.sh \
+        /usr/local/bin/omarchy-* \
     && mkdir -p /var/lib/tiaki \
-    && systemctl enable tiaki-firstboot.service tiaki-ui-serve.service tiaki-session.service tiaki-t3.service
+    && systemctl enable tiaki-firstboot.service tiaki-ui-serve.service tiaki-hyprland.service tiaki-t3.service
 
 ENV TIAKI_HOME=/var/lib/tiaki
 EXPOSE 5900 5733
 # PID 1 is systemd: firstboot seeds state and delegates cgroups, ui-serve
-# answers the tree API, and the session unit runs Sway as the desktop user.
-# run-wayland.sh remains for legacy direct launches.
+# answers the tree API, and the hyprland unit runs Hyprland + Omarchy chrome
+# as the product session (tiaki-session.service stays installed but disabled
+# as the Sway fallback). run-wayland.sh remains for legacy direct launches.
 STOPSIGNAL SIGRTMIN+3
 ENTRYPOINT ["/sbin/init"]
