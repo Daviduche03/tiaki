@@ -61,6 +61,7 @@ payload:
 	cp desktop/bin/tiaki-notify payload/tiaki-notify
 	cp desktop/desktop.json payload/desktop.json
 	cp desktop/wayland/tiaki-hyprland-session payload/tiaki-hyprland-session
+	cp desktop/wayland/wayvnc-screencopy.patch payload/wayvnc-screencopy.patch
 	mkdir -p payload/omarchy
 	cp -r desktop/omarchy/shell desktop/omarchy/default desktop/omarchy/themes desktop/omarchy/config desktop/omarchy/hyprland.lua desktop/omarchy/README.md desktop/omarchy/UPSTREAM-LICENSE payload/omarchy/
 	mkdir -p payload/omarchy-bin

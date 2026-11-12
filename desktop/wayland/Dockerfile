@@ -51,14 +51,33 @@ RUN apt-get update \
     && apt-get install -y --no-install-recommends \
         sway swaybg foot mousepad btop thunar epiphany-browser swaylock \
         fonts-jetbrains-mono fonts-font-awesome adwaita-icon-theme \
-        grim curl unzip xz-utils wayvnc libgtk-3-0 libgtk-layer-shell0 ca-certificates wtype wl-clipboard brightnessctl pamixer \
+        grim curl unzip xz-utils libgtk-3-0 libgtk-layer-shell0 ca-certificates wtype wl-clipboard brightnessctl pamixer \
         fastfetch imagemagick dbus adduser librsvg2-common python3 git \
         pipewire wireplumber network-manager socat jq \
     && apt-get install -y --no-install-recommends -t sid \
-        hyprland quickshell qt6-wayland \
+        hyprland quickshell qt6-wayland wayvnc \
     && (apt-get install -y --no-install-recommends -t sid qt6-imageformats-plugins \
         || apt-get install -y --no-install-recommends -t sid qt6-image-formats-plugins) \
     && rm -rf /var/lib/apt/lists/*
+
+# Patched wayvnc: force the wlr-screencopy capture path (see the patch).
+# Upstream prefers ext-image-copy-capture, whose continuous session stays
+# grey on llvmpipe while single shots work; wlr-screencopy delivers frames.
+# /usr/local/bin shadows the stock /usr/bin/wayvnc via PATH, so a future
+# stock upgrade can never silently re-grey VNC.
+COPY desktop/wayland/wayvnc-screencopy.patch /tmp/wayvnc-screencopy.patch
+RUN set -eu; \
+    echo "deb-src https://deb.debian.org/debian sid main" > /etc/apt/sources.list.d/debsrc-sid.list; \
+    apt-get update; \
+    DEBIAN_FRONTEND=noninteractive apt-get build-dep -y wayvnc; \
+    mkdir -p /tmp/wvnc && cd /tmp/wvnc && apt-get source wayvnc; \
+    cd wayvnc-*/ && patch -p1 < /tmp/wayvnc-screencopy.patch; \
+    meson setup build --prefix=/usr/local --buildtype=release; \
+    ninja -C build && ninja -C build install; \
+    cd / && rm -rf /tmp/wvnc /tmp/wayvnc-screencopy.patch; \
+    DEBIAN_FRONTEND=noninteractive apt-get autoremove -y; \
+    rm -rf /var/lib/apt/lists/*; \
+    /usr/local/bin/wayvnc --version
 
 # The shell is typeset in IBM Plex Sans/Mono. Debian does not package it, so
 # fetch the pinned IBM releases and cache them. Without this the whole UI

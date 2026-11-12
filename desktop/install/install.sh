@@ -25,7 +25,7 @@ set -eu
 
 # Run from the repository root: the script reads the staged payload/ tree
 # (see `make payload`).
-for required in payload/agentd payload/sched-launch payload/tiaki-firstboot payload/tiaki-notify payload/desktop.json payload/tiaki-hyprland-session payload/omarchy/hyprland.lua payload/omarchy/shell/shell.qml payload/omarchy-bin/tiaki-launch-shell payload/omarchy-bin/omarchy-menu; do
+for required in payload/agentd payload/sched-launch payload/tiaki-firstboot payload/tiaki-notify payload/desktop.json payload/tiaki-hyprland-session payload/wayvnc-screencopy.patch payload/omarchy/hyprland.lua payload/omarchy/shell/shell.qml payload/omarchy-bin/tiaki-launch-shell payload/omarchy-bin/omarchy-menu; do
   if [ ! -e "$required" ]; then
     echo "missing $required — run from the repo root after \`make payload\`" >&2
     exit 1
@@ -145,16 +145,36 @@ chroot "$MNT" env DEBIAN_FRONTEND=noninteractive apt-get install -y --no-install
   "linux-image-$ARCH" systemd systemd-sysv systemd-boot mtools dosfstools \
   sway swaybg foot mousepad dbus openssh-server isc-dhcp-client \
   libxcb-cursor0 libxcb-image0 libxcb-render-util0 libxcb-util1 \
-  libgtk-3-0 libgtk-layer-shell0 wayvnc grim curl unzip wtype wl-clipboard brightnessctl pamixer \
+  libgtk-3-0 libgtk-layer-shell0 grim curl unzip wtype wl-clipboard brightnessctl pamixer \
   fonts-jetbrains-mono adwaita-icon-theme librsvg2-common git sudo \
   pipewire wireplumber network-manager socat jq imagemagick
-# Hyprland + Quickshell come from sid (see the pin above): the Omarchy
-# chrome is the product session, Sway stays installed as fallback.
+# Hyprland + Quickshell + wayvnc come from sid (see the pin above): the
+# Omarchy chrome is the product session, Sway stays installed as fallback.
 chroot "$MNT" env DEBIAN_FRONTEND=noninteractive apt-get install -y --no-install-recommends -t sid \
-  hyprland quickshell qt6-wayland
+  hyprland quickshell qt6-wayland wayvnc
 # Qt image-formats module name differs by snapshot; accept either spelling.
 chroot "$MNT" env DEBIAN_FRONTEND=noninteractive apt-get install -y --no-install-recommends -t sid qt6-imageformats-plugins \
   || chroot "$MNT" env DEBIAN_FRONTEND=noninteractive apt-get install -y --no-install-recommends -t sid qt6-image-formats-plugins
+# Patched wayvnc: force the wlr-screencopy capture path (see
+# desktop/wayland/wayvnc-screencopy.patch). Upstream prefers
+# ext-image-copy-capture, whose continuous session stays grey on llvmpipe
+# while single shots work; wlr-screencopy delivers frames. /usr/local/bin
+# shadows stock /usr/bin/wayvnc via PATH, so a future stock upgrade can
+# never silently re-grey VNC. Build deps are autoremoved right after.
+cp payload/wayvnc-screencopy.patch "$MNT/tmp/wayvnc-screencopy.patch"
+chroot "$MNT" sh -c '
+  set -eu
+  echo "deb-src https://deb.debian.org/debian sid main" > /etc/apt/sources.list.d/debsrc-sid.list
+  apt-get update
+  DEBIAN_FRONTEND=noninteractive apt-get build-dep -y wayvnc
+  mkdir -p /tmp/wvnc && cd /tmp/wvnc && apt-get source wayvnc
+  cd wayvnc-*/ && patch -p1 < /tmp/wayvnc-screencopy.patch
+  meson setup build --prefix=/usr/local --buildtype=release
+  ninja -C build && ninja -C build install
+  cd / && rm -rf /tmp/wvnc /tmp/wayvnc-screencopy.patch
+  DEBIAN_FRONTEND=noninteractive apt-get autoremove -y
+  /usr/local/bin/wayvnc --version
+'
 
 # The shell is typeset in IBM Plex Sans/Mono, which Debian does not package.
 # Same pinned releases as desktop/wayland/Dockerfile.
@@ -267,7 +287,7 @@ for gen in "$MNT" /tmp/tiaki-b; do
 done
 echo "== verifying payload and units in both generations"
 for gen in "$MNT" /tmp/tiaki-b; do
-  for needed in usr/local/bin/agentd usr/local/bin/sched-launch usr/local/bin/tiaki-firstboot usr/local/bin/tiaki-shell usr/local/bin/tiaki-session usr/local/bin/tiaki-hyprland-session usr/local/bin/tiaki-launch-shell usr/local/bin/omarchy-menu \
+  for needed in usr/local/bin/agentd usr/local/bin/sched-launch usr/local/bin/tiaki-firstboot usr/local/bin/tiaki-shell usr/local/bin/tiaki-session usr/local/bin/tiaki-hyprland-session usr/local/bin/tiaki-launch-shell usr/local/bin/omarchy-menu usr/local/bin/wayvnc \
       usr/share/tiaki/desktop.json usr/share/omarchy/hyprland.lua usr/share/omarchy/shell/shell.qml etc/tiaki/sway.conf \
       etc/systemd/system/multi-user.target.wants/ssh.service \
       etc/systemd/system/multi-user.target.wants/systemd-networkd.service \
