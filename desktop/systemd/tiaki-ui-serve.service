@@ -1,14 +1,21 @@
 [Unit]
 Description=Tiaki tree API (agentd ui serve)
 After=tiaki-firstboot.service
-Requires=tiaki-firstboot.service
+# Firstboot seeds state; the API can still serve the embedded tree without it.
+Wants=tiaki-firstboot.service
+# Same rule as the session: a broken tree API should surface, not spin.
+StartLimitIntervalSec=60
+StartLimitBurst=5
 
 [Service]
 Environment=TIAKI_HOME=/var/lib/tiaki
 Environment=XDG_RUNTIME_DIR=/run/tiaki
+# Both dirs must exist before agentd starts; /run is tmpfs and empty on boot,
+# and the session shares XDG_RUNTIME_DIR with this unit.
 ExecStartPre=/bin/mkdir -p /run/tiaki
+ExecStartPre=/bin/chmod 0700 /run/tiaki
 ExecStart=/usr/local/bin/agentd --principal user:ada ui serve --host 127.0.0.1 --port 8787
-Restart=always
+Restart=on-failure
 RestartSec=2
 
 [Install]
