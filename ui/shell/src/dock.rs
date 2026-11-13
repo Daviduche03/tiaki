@@ -202,13 +202,12 @@ pub fn run(root: &agentic_ui_tree::Node) {
         }
     };
 
-    // Track mouse motion across dock for continuous Gaussian magnification
-    {
+    // Shared magnification updater
+    let update_magnification = {
         let items = items_rc.clone();
         let start_tick = start_animation_tick.clone();
         let flabel = floating_label.clone();
-        event_box.connect_motion_notify_event(move |_, event| {
-            let (mouse_x, _) = event.position();
+        move |mouse_x: f64| {
             let mut closest_label: Option<&str> = None;
             let mut min_dist = f64::MAX;
 
@@ -231,7 +230,7 @@ pub fn run(root: &agentic_ui_tree::Node) {
                 }
             }
 
-            if min_dist < 36.0 {
+            if min_dist < 40.0 {
                 if let Some(lbl) = closest_label {
                     flabel.set_text(lbl);
                     flabel.set_opacity(1.0);
@@ -241,6 +240,29 @@ pub fn run(root: &agentic_ui_tree::Node) {
             }
 
             start_tick();
+        }
+    };
+
+    // Track mouse motion across event_box
+    {
+        let update_mag = update_magnification.clone();
+        event_box.connect_motion_notify_event(move |_, event| {
+            let (mouse_x, _) = event.position();
+            update_mag(mouse_x);
+            gtk::glib::Propagation::Proceed
+        });
+    }
+
+    // Also connect motion notify on every button so child hover propagates seamlessly
+    for item in items_rc.iter() {
+        let panel_ref = panel.clone();
+        let update_mag = update_magnification.clone();
+        item.button.add_events(gdk::EventMask::POINTER_MOTION_MASK);
+        item.button.connect_motion_notify_event(move |btn, event| {
+            let (bx, by) = event.position();
+            if let Some((px, _)) = btn.translate_coordinates(&panel_ref, bx as i32, by as i32) {
+                update_mag(px as f64);
+            }
             gtk::glib::Propagation::Proceed
         });
     }
