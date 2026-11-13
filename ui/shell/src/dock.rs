@@ -19,9 +19,9 @@ use crate::{icons, model, single, system, theme, windows};
 /// Stylesheets owned by this module, in cascade order.
 pub const STYLE_SHEETS: &[&str] = &[include_str!("../css/dock.css")];
 
-const BASE_ICON_SIZE: f64 = 40.0;
-const PEAK_ICON_SIZE: f64 = 50.0;
-const MAGNIFY_RADIUS: f64 = 100.0;
+const BASE_ICON_SIZE: f64 = 36.0;
+const PEAK_ICON_SIZE: f64 = 48.0;
+const MAGNIFY_RADIUS: f64 = 90.0;
 
 struct AppItemWidget {
     app: model::AppItem,
@@ -90,10 +90,10 @@ pub fn run(root: &agentic_ui_tree::Node) {
             }
             "separator" => {
                 let sep = gtk::Box::new(gtk::Orientation::Vertical, 0);
-                sep.set_size_request(1, 36);
+                sep.set_size_request(1, 32);
                 sep.set_valign(gtk::Align::Center);
                 theme::class(&sep, "dock-sep");
-                panel.pack_start(&sep, false, false, 5);
+                panel.pack_start(&sep, false, false, 4);
             }
             _ => {}
         }
@@ -360,7 +360,7 @@ fn create_dock_item(app: &model::AppItem) -> Rc<AppItemWidget> {
     let button = gtk::Button::new();
     button.set_relief(gtk::ReliefStyle::None);
     theme::class(&button, "dock-item");
-    button.set_size_request(46, 56);
+    button.set_size_request(40, 52);
 
     let content = gtk::Box::new(gtk::Orientation::Vertical, 0);
     content.set_valign(gtk::Align::Center);
@@ -375,7 +375,7 @@ fn create_dock_item(app: &model::AppItem) -> Rc<AppItemWidget> {
         });
 
     let drawing_area = gtk::DrawingArea::new();
-    drawing_area.set_size_request(46, 46);
+    drawing_area.set_size_request(40, 40);
     drawing_area.set_valign(gtk::Align::Center);
     drawing_area.set_halign(gtk::Align::Center);
     content.pack_start(&drawing_area, false, false, 0);
