@@ -648,7 +648,7 @@
             "label": "Agents",
             "icon": "system-run-symbolic",
             "art": "agents",
-            "command": "epiphany http://127.0.0.1:5733",
+            "command": "tiaki-t3-open",
             "category": "Tiaki",
             "description": "Your agent app: T3 Code.",
             "color": "pink",
@@ -760,7 +760,7 @@
             "label": "Agents",
             "icon": "system-run-symbolic",
             "art": "agents",
-            "command": "epiphany http://127.0.0.1:5733",
+            "command": "tiaki-t3-open",
             "category": "Tiaki",
             "description": "Your agent app: T3 Code.",
             "color": "pink"

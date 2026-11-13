@@ -1,4 +1,4 @@
-#!/bin/sh
+#!/bin/bash
 # Start the T3 Code fork as the desktop user.
 #
 # The extra-MCP variable is why this wrapper exists instead of calling the
@@ -22,5 +22,10 @@ export PORT=5733
 export T3CODE_PORT=13773
 
 mkdir -p "$TIAKI_HOME/workspace"
+mkdir -p "$T3CODE_HOME"
+# T3 prints its one-time admin pairing URL to stdout and writes it nowhere
+# else, so it has to be captured here for tiaki-t3-open. umask 077 keeps the
+# token out of other users' reach; the tee child is why this is bash.
+umask 077
 cd /opt/t3code-upstream
-exec ./node_modules/.bin/vp run dev
+exec ./node_modules/.bin/vp run dev > >(exec tee -a "$T3CODE_HOME/t3.log") 2>&1
