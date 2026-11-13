@@ -11,6 +11,11 @@ User=desktop
 Environment=HOME=/home/desktop
 Environment=PATH=/usr/local/bin:/usr/bin:/bin
 WorkingDirectory=/opt/t3code-upstream
+# T3's stdout carries its one-time admin pairing token. tiaki-t3.sh captures
+# it into ~/.t3/t3.log with umask 077 instead of journald, which would write a
+# world-readable file or nothing user-readable at all.
+ExecStartPre=/bin/mkdir -p /home/desktop/.t3
+ExecStartPre=-/bin/chown desktop:desktop /home/desktop/.t3
 ExecStart=/usr/local/bin/tiaki-t3
 Restart=on-failure
 RestartSec=5

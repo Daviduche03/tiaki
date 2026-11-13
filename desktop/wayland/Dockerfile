@@ -141,6 +141,7 @@ COPY desktop/wayland/run-wayland.sh /usr/local/bin/run-wayland
 COPY desktop/wayland/tiaki-session /usr/local/bin/tiaki-session
 COPY desktop/systemd/tiaki-firstboot.sh /usr/local/bin/tiaki-firstboot
 COPY desktop/systemd/tiaki-t3.sh /usr/local/bin/tiaki-t3
+COPY desktop/bin/tiaki-t3-open /usr/local/bin/tiaki-t3-open
 COPY desktop/systemd/tiaki-firstboot.service desktop/systemd/tiaki-ui-serve.service desktop/systemd/tiaki-session.service desktop/systemd/tiaki-t3.service /etc/systemd/system/
 COPY models /usr/share/tiaki/models
 COPY plugins /usr/share/tiaki/plugins

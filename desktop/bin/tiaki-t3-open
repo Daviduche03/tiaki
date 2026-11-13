@@ -1,0 +1,43 @@
+#!/bin/sh
+# tiaki-t3-open — open T3 Code in the browser, pairing included.
+#
+# T3 issues a one-time admin pairing URL at every start and prints it to
+# stdout only; nothing else on disk carries the token. tiaki-t3.service
+# captures that output in ~/.t3/t3.log, so this reads the newest URL.
+#
+# The token is single-use: opening it twice makes T3 answer "Invalid pairing
+# token" and strands the browser on the pair screen. So the first click of a
+# session spends the token and records that it did; later clicks open the
+# plain URL, which works because the browser now holds the session cookie.
+# A T3 restart issues a new token, and the next click pairs again.
+#
+# The URL is used exactly as announced: T3's web server binds IPv6 loopback
+# in this image, so rewriting the host to 127.0.0.1 connects to a dead port.
+set -eu
+
+home="${HOME:-/home/desktop}"
+log="$home/.t3/t3.log"
+marker="$home/.t3/pairing-spent"
+
+target="http://localhost:5733/"
+if [ -r "$log" ]; then
+  url=$(awk '/pairingUrl:/ { u = $0 } END { if (u) { sub(/^.*pairingUrl:[ \t]*/, "", u); print u } }' "$log")
+  case "$url" in
+    *#token=*)
+      token=${url##*#token=}
+      spent=""
+      [ -r "$marker" ] && spent=$(cat "$marker" 2>/dev/null || true)
+      if [ "$token" != "$spent" ]; then
+        # spend it: the first click of this T3 run is the one that pairs
+        umask 077
+        printf '%s' "$token" > "$marker"
+        target="$url"
+      fi
+      ;;
+    http://*|https://*)
+      target="$url"
+      ;;
+  esac
+fi
+
+exec "${BROWSER:-epiphany}" "$target"
