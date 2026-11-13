@@ -710,73 +710,34 @@
             "icon": "utilities-terminal-symbolic",
             "art": "terminal",
             "command": "foot -c /etc/tiaki/foot.ini",
-            "category": "System",
-            "description": "Open a new terminal window in the tiling session.",
+            "category": "Developer Tools",
+            "description": "Open a new terminal window.",
             "color": "green"
-          }
-        },
-        {
-          "id": "launch.files",
-          "kind": "app",
-          "props": {
-            "label": "Files",
-            "icon": "system-file-manager-symbolic",
-            "art": "files",
-            "command": "files.open",
-            "category": "System",
-            "description": "Browse home, media, and mounted generations.",
-            "color": "blue"
           }
         },
         {
           "id": "launch.editor",
           "kind": "app",
           "props": {
-            "label": "Editor",
+            "label": "Code Editor",
             "icon": "accessories-text-editor-symbolic",
             "art": "editor",
             "command": "mousepad /home/desktop/demo.rs",
-            "category": "Create",
-            "description": "Edit text and source files with a dark GTK theme.",
+            "category": "Developer Tools",
+            "description": "Edit code and text files.",
             "color": "orange"
-          }
-        },
-        {
-          "id": "launch.browser",
-          "kind": "app",
-          "props": {
-            "label": "Browser",
-            "icon": "web-browser-symbolic",
-            "art": "browser",
-            "command": "epiphany",
-            "category": "Internet",
-            "description": "A sandboxed web browser for documentation and research.",
-            "color": "cyan"
-          }
-        },
-        {
-          "id": "launch.monitor",
-          "kind": "app",
-          "props": {
-            "label": "Monitor",
-            "icon": "computer-symbolic",
-            "art": "monitor",
-            "command": "foot -c /etc/tiaki/foot.ini -a btop -w 940x560 -e btop",
-            "category": "System",
-            "description": "Live CPU, memory, network, and process view.",
-            "color": "purple"
           }
         },
         {
           "id": "launch.agents",
           "kind": "app",
           "props": {
-            "label": "Agents",
+            "label": "Antigravity",
             "icon": "system-run-symbolic",
             "art": "agents",
             "command": "foot -c /etc/tiaki/foot.ini -e /usr/local/bin/agentd state",
-            "category": "Tiaki",
-            "description": "See the runtime, capabilities, and transaction explanations.",
+            "category": "Developer Tools",
+            "description": "Agentic subsystem runtime and model registry.",
             "color": "pink"
           }
         },
@@ -788,9 +749,126 @@
             "icon": "document-properties-symbolic",
             "art": "transactions",
             "command": "foot -c /etc/tiaki/foot.ini -e /usr/local/bin/agentd log",
-            "category": "Tiaki",
-            "description": "The ledger: every change, who made it, and how to undo it.",
+            "category": "Developer Tools",
+            "description": "Append-only cryptographic state journal.",
             "color": "blue"
+          }
+        },
+        {
+          "id": "launch.monitor",
+          "kind": "app",
+          "props": {
+            "label": "Activity Monitor",
+            "icon": "computer-symbolic",
+            "art": "monitor",
+            "command": "foot -c /etc/tiaki/foot.ini -a btop -w 940x560 -e btop",
+            "category": "Developer Tools",
+            "description": "Live CPU, memory, and process monitor.",
+            "color": "purple"
+          }
+        },
+        {
+          "id": "launch.files",
+          "kind": "app",
+          "props": {
+            "label": "Files",
+            "icon": "system-file-manager-symbolic",
+            "art": "files",
+            "command": "files.open",
+            "category": "Productivity & Finance",
+            "description": "Browse filesystem, home directory and media.",
+            "color": "blue"
+          }
+        },
+        {
+          "id": "launch.notes",
+          "kind": "app",
+          "props": {
+            "label": "Notes",
+            "icon": "accessories-text-editor-symbolic",
+            "art": "editor",
+            "command": "mousepad",
+            "category": "Productivity & Finance",
+            "description": "Quick notes and scratchpad.",
+            "color": "orange"
+          }
+        },
+        {
+          "id": "launch.calculator",
+          "kind": "app",
+          "props": {
+            "label": "Calculator",
+            "icon": "accessories-calculator",
+            "art": "clock",
+            "command": "foot -e bc -l",
+            "category": "Productivity & Finance",
+            "description": "Precise math and unit conversions.",
+            "color": "green"
+          }
+        },
+        {
+          "id": "launch.calendar",
+          "kind": "app",
+          "props": {
+            "label": "Calendar",
+            "icon": "x-office-calendar",
+            "art": "clock",
+            "command": "settings.open",
+            "category": "Productivity & Finance",
+            "description": "Calendar and schedule view.",
+            "color": "cyan"
+          }
+        },
+        {
+          "id": "launch.browser",
+          "kind": "app",
+          "props": {
+            "label": "Browser",
+            "icon": "web-browser-symbolic",
+            "art": "browser",
+            "command": "epiphany",
+            "category": "Social",
+            "description": "Fast sandboxed web browser.",
+            "color": "cyan"
+          }
+        },
+        {
+          "id": "launch.chrome",
+          "kind": "app",
+          "props": {
+            "label": "Google Chrome",
+            "icon": "google-chrome",
+            "art": "browser",
+            "command": "epiphany",
+            "category": "Social",
+            "description": "Full web and devtools browser.",
+            "color": "orange"
+          }
+        },
+        {
+          "id": "launch.contacts",
+          "kind": "app",
+          "props": {
+            "label": "Contacts",
+            "icon": "user-info",
+            "art": "settings",
+            "command": "settings.open",
+            "category": "Social",
+            "description": "Users and accounts.",
+            "color": "purple"
+          }
+        },
+        {
+          "id": "launch.settings",
+          "kind": "app",
+          "props": {
+            "label": "Settings",
+            "icon": "preferences-system",
+            "art": "settings",
+            "command": "settings.open",
+            "category": "Utilities",
+            "description": "System settings, wallpapers, sound, network.",
+            "color": "slate"
           }
         },
         {
@@ -801,8 +879,8 @@
             "icon": "weather-clear-night-symbolic",
             "art": "theme",
             "command": "tiaki:theme.toggle",
-            "category": "Settings",
-            "description": "Flip dark and light as a reversible transaction.",
+            "category": "Utilities",
+            "description": "Toggle between dark and light appearance.",
             "color": "purple"
           }
         },
@@ -814,8 +892,8 @@
             "icon": "view-refresh-symbolic",
             "art": "reload",
             "command": "tiaki:ui.reload",
-            "category": "Settings",
-            "description": "Re-read the shell tree without restarting the session.",
+            "category": "Utilities",
+            "description": "Hot reload the desktop shell.",
             "color": "green"
           }
         },
@@ -827,8 +905,8 @@
             "icon": "preferences-system-time-symbolic",
             "art": "clock",
             "command": "tiaki:clock.toggle_format",
-            "category": "Settings",
-            "description": "Switch the menu bar clock between 12h and 24h.",
+            "category": "Utilities",
+            "description": "Toggle 12h / 24h clock display.",
             "color": "cyan"
           }
         },
@@ -840,20 +918,22 @@
             "icon": "preferences-desktop-wallpaper",
             "art": "wallpaper",
             "command": "wallpaper.next",
-            "category": "Settings",
-            "description": "Cycle the desktop wallpaper. The choice is remembered."
+            "category": "Creativity",
+            "description": "Cycle through curated desktop wallpapers.",
+            "color": "orange"
           }
         },
         {
-          "id": "launch.settings",
+          "id": "launch.docs",
           "kind": "app",
           "props": {
-            "label": "Settings",
-            "icon": "preferences-system",
-            "art": "settings",
-            "command": "settings.open",
-            "category": "Settings",
-            "description": "Wallpaper, appearance, sound, display, power, and about."
+            "label": "Documentation",
+            "icon": "help-browser",
+            "art": "files",
+            "command": "epiphany https://docs.tiaki.org",
+            "category": "Information & Reading",
+            "description": "Tiaki user guide and architecture manuals.",
+            "color": "blue"
           }
         },
         {
@@ -864,8 +944,8 @@
             "icon": "application-exit-symbolic",
             "art": "exit",
             "command": "session.exit",
-            "category": "System",
-            "description": "End the Sway session. The next boot restores it.",
+            "category": "Utilities",
+            "description": "Lock screen or end session.",
             "color": "red"
           }
         }
@@ -945,22 +1025,22 @@
       },
       "children": [
         {
-          "id": "settings.home",
+          "id": "settings.wifi",
           "kind": "button",
           "props": {
-            "label": "Home",
-            "action": "settings.page.home",
-            "icon": "home",
+            "label": "Wi-Fi",
+            "action": "settings.page.wifi",
+            "icon": "wifi",
             "variant": "list"
           }
         },
         {
-          "id": "settings.system",
+          "id": "settings.network",
           "kind": "button",
           "props": {
-            "label": "System",
-            "action": "settings.page.system",
-            "icon": "system",
+            "label": "Network",
+            "action": "settings.page.network",
+            "icon": "network",
             "variant": "list"
           }
         },
@@ -975,22 +1055,72 @@
           }
         },
         {
-          "id": "settings.network",
+          "id": "settings.personalization",
           "kind": "button",
           "props": {
-            "label": "Network & internet",
-            "action": "settings.page.network",
-            "icon": "network",
+            "label": "Background & theme",
+            "action": "settings.page.personalization",
+            "icon": "personalization",
             "variant": "list"
           }
         },
         {
-          "id": "settings.personalization",
+          "id": "settings.agents",
           "kind": "button",
           "props": {
-            "label": "Personalization",
-            "action": "settings.page.personalization",
-            "icon": "personalization",
+            "label": "Agents & AI",
+            "action": "settings.page.agents",
+            "icon": "agents",
+            "variant": "list"
+          }
+        },
+        {
+          "id": "settings.keyboard",
+          "kind": "button",
+          "props": {
+            "label": "Keyboard & Shortcuts",
+            "action": "settings.page.keyboard",
+            "icon": "keyboard",
+            "variant": "list"
+          }
+        },
+        {
+          "id": "settings.display",
+          "kind": "button",
+          "props": {
+            "label": "Displays",
+            "action": "settings.page.display",
+            "icon": "display",
+            "variant": "list"
+          }
+        },
+        {
+          "id": "settings.sound",
+          "kind": "button",
+          "props": {
+            "label": "Sound",
+            "action": "settings.page.sound",
+            "icon": "sound",
+            "variant": "list"
+          }
+        },
+        {
+          "id": "settings.power",
+          "kind": "button",
+          "props": {
+            "label": "Power & Battery",
+            "action": "settings.page.power",
+            "icon": "power",
+            "variant": "list"
+          }
+        },
+        {
+          "id": "settings.storage",
+          "kind": "button",
+          "props": {
+            "label": "Storage & Disks",
+            "action": "settings.page.storage",
+            "icon": "storage",
             "variant": "list"
           }
         },
@@ -998,49 +1128,9 @@
           "id": "settings.apps",
           "kind": "button",
           "props": {
-            "label": "Apps",
+            "label": "Applications",
             "action": "settings.page.apps",
             "icon": "apps",
-            "variant": "list"
-          }
-        },
-        {
-          "id": "settings.accounts",
-          "kind": "button",
-          "props": {
-            "label": "Accounts",
-            "action": "settings.page.accounts",
-            "icon": "accounts",
-            "variant": "list"
-          }
-        },
-        {
-          "id": "settings.time",
-          "kind": "button",
-          "props": {
-            "label": "Time & language",
-            "action": "settings.page.time",
-            "icon": "time",
-            "variant": "list"
-          }
-        },
-        {
-          "id": "settings.gaming",
-          "kind": "button",
-          "props": {
-            "label": "Gaming",
-            "action": "settings.page.gaming",
-            "icon": "gaming",
-            "variant": "list"
-          }
-        },
-        {
-          "id": "settings.accessibility",
-          "kind": "button",
-          "props": {
-            "label": "Accessibility",
-            "action": "settings.page.accessibility",
-            "icon": "accessibility",
             "variant": "list"
           }
         },
@@ -1065,42 +1155,12 @@
           }
         },
         {
-          "id": "settings.display",
+          "id": "settings.time",
           "kind": "button",
           "props": {
-            "label": "Display",
-            "action": "settings.page.display",
-            "icon": "system",
-            "variant": "list"
-          }
-        },
-        {
-          "id": "settings.sound",
-          "kind": "button",
-          "props": {
-            "label": "Sound",
-            "action": "settings.page.sound",
-            "icon": "sound",
-            "variant": "list"
-          }
-        },
-        {
-          "id": "settings.power",
-          "kind": "button",
-          "props": {
-            "label": "Power",
-            "action": "settings.page.power",
-            "icon": "power",
-            "variant": "list"
-          }
-        },
-        {
-          "id": "settings.storage",
-          "kind": "button",
-          "props": {
-            "label": "Storage",
-            "action": "settings.page.storage",
-            "icon": "storage",
+            "label": "Date & time",
+            "action": "settings.page.time",
+            "icon": "time",
             "variant": "list"
           }
         },
@@ -1108,9 +1168,9 @@
           "id": "settings.about",
           "kind": "button",
           "props": {
-            "label": "About",
+            "label": "About Tiaki",
             "action": "settings.page.about",
-            "icon": "info",
+            "icon": "about",
             "variant": "list"
           }
         },

@@ -640,6 +640,8 @@ pub fn settings_icon(name: &str) -> &str {
         "accessibility" => "a11y",
         "storage" => "drive",
         "agents" => "spark",
+        "display" => "monitor",
+        "about" => "info",
         other => other,
     }
 }

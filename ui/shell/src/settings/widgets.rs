@@ -244,6 +244,18 @@ pub(crate) fn value_text(right: &gtk::Box, text: &str) -> gtk::Label {
     label
 }
 
+pub(crate) fn toggle_switch(active: bool, on_change: impl Fn(bool) + 'static) -> gtk::Switch {
+    let switch = gtk::Switch::new();
+    switch.set_active(active);
+    switch.set_valign(gtk::Align::Center);
+    theme::class(&switch, "win-switch");
+    switch.connect_state_set(move |_, state| {
+        on_change(state);
+        gtk::glib::Propagation::Proceed
+    });
+    switch
+}
+
 pub(crate) fn slider(right: &gtk::Box, value: f64, on_change: impl Fn(f64) + 'static) {
     let scale = gtk::Scale::with_range(gtk::Orientation::Horizontal, 0.0, 100.0, 1.0);
     scale.set_value(value);

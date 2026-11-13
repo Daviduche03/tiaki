@@ -1,143 +1,163 @@
-/* Home-screen launcher: scrim, clock, search, grid, widgets, its own dock.
-   Same material as the rest of the shell: ink, paper, one lamp. */
+/* Applications Launcher Window:
+   Translucent ink modal, category pill filters, 7-column squircle grid.
+   Matches macOS Applications overlay style. */
 
 .home-scrim {
-  background-color: rgba(21, 20, 19, 0.55);
+  background-color: rgba(0, 0, 0, 0.45);
   background-image: none;
 }
 
-.home-clock {
-  font-size: 64px;
-  font-weight: 500;
-  color: #e6e0d4;
-  letter-spacing: -0.04em;
-  text-shadow: none;
-}
-.home-date {
-  font-family: "IBM Plex Mono", monospace;
-  font-size: 11px;
-  color: rgba(230, 224, 212, 0.55);
-  letter-spacing: 0;
+.app-window {
+  background-color: #161514;
+  background-image: none;
+  border: 1px solid rgba(230, 224, 212, 0.14);
+  border-radius: 18px;
+  box-shadow: 0 24px 64px rgba(0, 0, 0, 0.75);
 }
 
-/* search: an underline, not a pill */
-.home-search-pill {
+.app-header {
+  padding: 14px 20px;
+  border-bottom: 1px solid rgba(230, 224, 212, 0.10);
+}
+
+.app-title-glyph {
+  margin-right: 8px;
+}
+
+.app-title {
+  font-size: 15px;
+  font-weight: 600;
+  color: #ffffff;
+  letter-spacing: -0.01em;
+}
+
+.app-tabs {
+  margin: 0 12px;
+}
+
+.app-tab {
   background-color: transparent;
   background-image: none;
-  border: none;
-  border-bottom: 1px solid rgba(230, 224, 212, 0.16);
-  border-radius: 0;
-  box-shadow: none;
+  border: 1px solid transparent;
+  border-radius: 6px;
+  padding: 4px 10px;
+  font-size: 11.5px;
+  font-weight: 500;
+  color: rgba(230, 224, 212, 0.65);
 }
-.home-search-entry {
+
+.app-tab:hover {
+  background-color: rgba(230, 224, 212, 0.08);
+  color: #e6e0d4;
+}
+
+.app-tab.active {
+  background-color: rgba(230, 224, 212, 0.16);
+  border-color: rgba(230, 224, 212, 0.20);
+  color: #ffffff;
+  font-weight: 600;
+}
+
+.app-search-box {
+  background-color: #1b1917;
+  border: 1px solid rgba(230, 224, 212, 0.12);
+  border-radius: 6px;
+  padding: 3px 10px;
+  min-height: 28px;
+}
+
+.app-search-box:focus-within {
+  border-color: rgba(208, 138, 44, 0.55);
+}
+
+.app-search-entry {
   background: transparent;
-  background-image: none;
   border: none;
   box-shadow: none;
-  font-size: 15px;
   color: #e6e0d4;
+  font-size: 12px;
   padding: 0;
 }
-.home-search-entry:focus,
-.home-search-entry:focus-within {
+
+.app-search-entry:focus {
   outline: none;
-  border: none;
-  box-shadow: none;
 }
 
-.home-grid {
+.app-more-btn {
   background: transparent;
-}
-.home-cell {
-  background: transparent;
-  background-image: none;
-  border: none;
-  box-shadow: none;
-  padding: 8px 6px;
-  border-radius: 3px;
-}
-.home-cell:hover {
-  background-color: rgba(230, 224, 212, 0.06);
-}
-.home-cell:selected {
-  background-color: rgba(230, 224, 212, 0.05);
-  box-shadow: inset 0 0 0 1px rgba(208, 138, 44, 0.55);
-}
-.home-label {
-  font-size: 12.5px;
-  font-weight: 500;
-  color: rgba(230, 224, 212, 0.82);
-}
-.home-cell:selected .home-label {
+  border: 1px solid rgba(230, 224, 212, 0.14);
+  border-radius: 50%;
+  min-width: 26px;
+  min-height: 26px;
+  padding: 0;
   color: #e6e0d4;
 }
 
-/* page dots: squares, lamp marks the page you are on */
-.home-dot {
-  border-radius: 1px;
+.app-more-btn:hover {
+  background-color: rgba(230, 224, 212, 0.10);
+}
+
+.app-scroll {
+  background: transparent;
+}
+
+.app-scroll scrollbar {
+  background: transparent;
+  border: none;
+}
+
+.app-scroll scrollbar slider {
   background-color: rgba(230, 224, 212, 0.22);
-}
-.home-dot.active {
-  background-color: #d08a2c;
+  border-radius: 4px;
+  min-width: 5px;
 }
 
-.home-dock {
-  background-color: #201D1A;
-  background-image: none;
-  border: 1px solid rgba(230, 224, 212, 0.18);
-  border-radius: 9999px;
-  padding: 8px 10px;
-  box-shadow: 0 18px 44px rgba(0, 0, 0, 0.55);
+.app-scroll scrollbar slider:hover {
+  background-color: rgba(230, 224, 212, 0.40);
 }
-.home-dock-item {
+
+.app-grid {
   background: transparent;
-  background-image: none;
-  border: none;
-  box-shadow: none;
-  padding: 2px 4px;
-  border-radius: 8px;
-}
-.home-dock-item:hover {
-  background-color: rgba(230, 224, 212, 0.07);
+  padding: 24px 28px;
 }
 
-.home-widget {
-  background-color: rgba(21, 20, 19, 0.68);
-  border: 1px solid rgba(230, 224, 212, 0.10);
-  border-radius: 3px;
-  box-shadow: none;
+.app-cell {
+  background: transparent;
+  border: 1px solid transparent;
+  border-radius: 14px;
+  padding: 10px 8px;
 }
-.widget-title {
-  font-family: "IBM Plex Mono", monospace;
-  font-size: 9.5px;
-  font-weight: 400;
-  color: rgba(230, 224, 212, 0.45);
-  letter-spacing: 0;
+
+.app-cell:hover {
+  background-color: rgba(230, 224, 212, 0.08);
+  border-color: rgba(230, 224, 212, 0.12);
 }
-.widget-big {
-  font-size: 26px;
+
+.app-cell.selected {
+  background-color: rgba(230, 224, 212, 0.12);
+  border-color: rgba(208, 138, 44, 0.65);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.35);
+}
+
+.app-label {
+  font-size: 12px;
   font-weight: 500;
-  color: #e6e0d4;
-  letter-spacing: -0.02em;
-}
-.widget-sub {
-  font-family: "IBM Plex Mono", monospace;
-  font-size: 10px;
-  color: rgba(230, 224, 212, 0.55);
-}
-.home-meter trough {
-  background-color: #232324;
-  border-radius: 2px;
-  min-height: 4px;
-}
-.home-meter progress {
-  background-color: #e6e0d4;
-  border-radius: 2px;
-  min-height: 4px;
+  color: rgba(230, 224, 212, 0.88);
+  margin-top: 6px;
 }
 
-.home-hint {
+.app-cell:hover .app-label,
+.app-cell.selected .app-label {
+  color: #ffffff;
+}
+
+.app-footer {
+  padding: 10px 20px;
+  border-top: 1px solid rgba(230, 224, 212, 0.08);
+}
+
+.app-hint {
   font-family: "IBM Plex Mono", monospace;
-  font-size: 9.5px;
-  color: rgba(230, 224, 212, 0.40);
+  font-size: 11px;
+  color: rgba(230, 224, 212, 0.45);
 }
