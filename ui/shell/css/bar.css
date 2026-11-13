@@ -3,13 +3,12 @@
 
 .bar {
   background: transparent;
-  border-bottom: 1px solid rgba(255, 255, 255, 0.16);
-  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.25);
   padding: 0 10px;
-  color: #f5f1e8;
+  color: #ffffff;
   font-family: "Aspekta", "SF Pro Display", "Plus Jakarta Sans", "IBM Plex Sans", -apple-system, sans-serif;
   font-size: 13px;
   font-weight: 500;
+  text-shadow: 0 1px 2px rgba(0, 0, 0, 0.45);
 }
 
 /* ---- Tiaki brand button ---- */
@@ -37,6 +36,7 @@
   font-size: 13.5px;
   color: #ffffff;
   padding: 0 12px 0 2px;
+  text-shadow: 0 1px 2px rgba(0, 0, 0, 0.45);
 }
 
 /* ---- menus (File, Edit, View, Window, etc.) ---- */
@@ -48,18 +48,19 @@
   padding: 0 9px;
   margin: 0;
   border-radius: 4px;
-  color: rgba(255, 255, 255, 0.88);
+  color: rgba(255, 255, 255, 0.92);
   font-size: 13px;
   font-weight: 500;
   min-height: 22px;
+  text-shadow: 0 1px 2px rgba(0, 0, 0, 0.45);
 }
 .menu-button:hover {
-  background-color: rgba(255, 255, 255, 0.12);
+  background-color: rgba(255, 255, 255, 0.15);
   color: #ffffff;
 }
 .menu-button:active,
 .menu-button:checked {
-  background-color: rgba(255, 255, 255, 0.18);
+  background-color: rgba(255, 255, 255, 0.22);
   color: #ffffff;
 }
 
@@ -104,10 +105,10 @@ popover.background {
   min-height: 22px;
 }
 .bar-icon-button:hover {
-  background-color: rgba(255, 255, 255, 0.12);
+  background-color: rgba(255, 255, 255, 0.15);
 }
 .bar-icon-button:active {
-  background-color: rgba(255, 255, 255, 0.18);
+  background-color: rgba(255, 255, 255, 0.22);
 }
 
 /* ---- battery widget ---- */
@@ -118,8 +119,9 @@ popover.background {
   font-family: "Aspekta", "SF Pro Display", "Plus Jakarta Sans", monospace;
   font-size: 12px;
   font-weight: 500;
-  color: rgba(255, 255, 255, 0.88);
+  color: rgba(255, 255, 255, 0.92);
   margin-right: 4px;
+  text-shadow: 0 1px 2px rgba(0, 0, 0, 0.45);
 }
 
 /* ---- clock / notification button ---- */
@@ -134,17 +136,18 @@ popover.background {
   min-height: 22px;
 }
 .bar-clock-button:hover {
-  background-color: rgba(255, 255, 255, 0.12);
+  background-color: rgba(255, 255, 255, 0.15);
 }
 .bar-clock-button:active {
-  background-color: rgba(255, 255, 255, 0.18);
+  background-color: rgba(255, 255, 255, 0.22);
 }
 
 .bar-clock {
-  color: rgba(255, 255, 255, 0.92);
+  color: rgba(255, 255, 255, 0.95);
   font-size: 13px;
   font-weight: 500;
   padding: 0;
+  text-shadow: 0 1px 2px rgba(0, 0, 0, 0.45);
 }
 
 /* Legacy / fallback styles */

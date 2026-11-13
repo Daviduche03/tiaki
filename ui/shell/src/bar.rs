@@ -48,11 +48,11 @@ pub fn run(root: &agentic_ui_tree::Node) {
         let _ = cr.paint();
         cr.set_operator(gtk::cairo::Operator::Over);
 
-        // Subtle, airy frosted glass tint: mostly transparent (~85% transparent)
+        // Translucent frosted glass tint (showing ~60% wallpaper through with solid contrast)
         let pattern = gtk::cairo::LinearGradient::new(0.0, 0.0, 0.0, height);
-        pattern.add_color_stop_rgba(0.0, 1.0, 1.0, 1.0, 0.18);
-        pattern.add_color_stop_rgba(0.5, 1.0, 1.0, 1.0, 0.06);
-        pattern.add_color_stop_rgba(1.0, 0.0, 0.0, 0.0, 0.10);
+        pattern.add_color_stop_rgba(0.0, 1.0, 1.0, 1.0, 0.22); // subtle top rim specular
+        pattern.add_color_stop_rgba(0.15, 0.12, 0.10, 0.09, 0.35); // translucent glass body
+        pattern.add_color_stop_rgba(1.0, 0.08, 0.07, 0.06, 0.48); // bottom glass depth
         let _ = cr.set_source(&pattern);
         let _ = cr.paint();
 
