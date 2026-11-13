@@ -4,7 +4,7 @@ use std::rc::Rc;
 
 use gtk::prelude::*;
 
-use super::data::{live_clock, set_wallpaper, wallpaper_dir};
+use super::data::{live_clock, set_font, set_wallpaper, system_fonts, wallpaper_dir};
 use super::Nav;
 use crate::{glyphs, system, theme};
 
