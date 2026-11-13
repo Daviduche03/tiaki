@@ -1,79 +1,66 @@
-/* Top bar. Ink chrome on every wallpaper, one lamp signal.
-   Spec: docs/design/brand/color.md
-   Tokens are repeated here because GTK3 CSS has no custom properties. */
+/* Top bar: authentic macOS frosted glass menu bar.
+   Spec: docs/design/brand/color.md & macOS system reference */
 
 .bar {
   background: transparent;
   border-bottom: 1px solid rgba(255, 255, 255, 0.16);
   box-shadow: 0 4px 16px rgba(0, 0, 0, 0.25);
-  padding: 0 14px;
+  padding: 0 10px;
   color: #f5f1e8;
   font-family: "Aspekta", "SF Pro Display", "Plus Jakarta Sans", "IBM Plex Sans", -apple-system, sans-serif;
   font-size: 13px;
   font-weight: 500;
 }
 
-/* ---- brand ---- */
-.logo-button {
+/* ---- Apple brand button ---- */
+.apple-button {
   background: transparent;
   background-image: none;
   border: none;
   box-shadow: none;
-  padding: 0 7px;
+  padding: 0 8px;
   margin: 0;
-  border-radius: 3px;
-  min-height: 26px;
+  border-radius: 4px;
+  min-height: 22px;
 }
-.logo-button:hover {
-  background-color: rgba(230, 224, 212, 0.07);
+.apple-button:hover {
+  background-color: rgba(255, 255, 255, 0.12);
 }
-.logo-button:active {
-  background-color: rgba(230, 224, 212, 0.11);
-}
-
-.bar-wordmark {
-  font-size: 13px;
-  font-weight: 500;
-  letter-spacing: -0.01em;
-  color: #e6e0d4;
+.apple-button:active {
+  background-color: rgba(255, 255, 255, 0.18);
 }
 
-.bar-divider {
-  background-color: rgba(230, 224, 212, 0.14);
-  margin: 0 10px;
+/* ---- Active app title (bold) ---- */
+.bar-app-title {
+  font-family: "Aspekta", "SF Pro Display", "Plus Jakarta Sans", -apple-system, sans-serif;
+  font-weight: 700;
+  font-size: 13.5px;
+  color: #ffffff;
+  padding: 0 12px 0 2px;
 }
 
-/* ---- workspaces ---- */
-.bar-ws {
-  background-color: rgba(230, 224, 212, 0.18);
-  border-radius: 50%;
-  margin: 0 3px;
-}
-.bar-ws.bar-ws-on {
-  background-color: rgba(230, 224, 212, 0.75);
-}
-
-/* ---- menus ---- */
+/* ---- menus (File, Edit, View, Window, etc.) ---- */
 .menu-button {
   background: transparent;
   background-image: none;
   border: none;
   box-shadow: none;
   padding: 0 9px;
-  margin: 0 1px;
-  border-radius: 3px;
-  color: rgba(230, 224, 212, 0.78);
-  font-size: 12.5px;
-  min-height: 26px;
+  margin: 0;
+  border-radius: 4px;
+  color: rgba(255, 255, 255, 0.88);
+  font-size: 13px;
+  font-weight: 500;
+  min-height: 22px;
 }
 .menu-button:hover {
-  background-color: rgba(230, 224, 212, 0.07);
-  color: #e6e0d4;
+  background-color: rgba(255, 255, 255, 0.12);
+  color: #ffffff;
 }
 .menu-button:active,
 .menu-button:checked {
-  background-color: rgba(230, 224, 212, 0.11);
-  color: #e6e0d4;
+  background-color: rgba(255, 255, 255, 0.18);
+  color: #ffffff;
 }
 
 .menu-button popover,
@@ -85,73 +72,89 @@ popover.background {
   margin-right: 12px;
 }
 
-/* ---- approval chip: the only colour in the bar ---- */
+/* ---- privacy / agent status chip (orange capsule) ---- */
 .bar-chip {
-  background-color: rgba(208, 138, 44, 0.14);
+  background-color: #ff9500;
   background-image: none;
   border: none;
-  box-shadow: none;
-  border-radius: 2px;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.25);
+  border-radius: 12px;
   padding: 0 8px;
-  min-height: 22px;
-  margin: 0 10px 0 0;
+  min-height: 20px;
+  margin: 0 6px 0 0;
 }
 .bar-chip:hover {
-  background-color: rgba(208, 138, 44, 0.22);
-}
-.bar-chip-dot {
-  background-color: #d08a2c;
-  border-radius: 1px;
+  background-color: #e08500;
 }
 .bar-chip-label {
-  color: #d08a2c;
-  font-size: 11.5px;
-  font-weight: 500;
-}
-
-/* ---- machine facts ---- */
-.bar-meta {
-  font-family: "IBM Plex Mono", monospace;
-  font-size: 10.5px;
-  color: rgba(230, 224, 212, 0.55);
-  padding: 0 2px;
-}
-
-/* ---- status ---- */
-.status-item {
-  padding: 0 6px;
-}
-.status-glyph {
-  color: #e6e0d4;
-}
-.status-label {
+  color: #ffffff;
   font-size: 11px;
-  color: rgba(230, 224, 212, 0.7);
-  padding: 0 0 0 3px;
+  font-weight: 600;
 }
 
+/* ---- right status icon buttons ---- */
 .bar-icon-button {
   background: transparent;
   background-image: none;
   border: none;
   box-shadow: none;
-  padding: 0 7px;
+  padding: 0 6px;
   margin: 0;
-  border-radius: 3px;
-  min-height: 26px;
+  border-radius: 4px;
+  min-height: 22px;
 }
 .bar-icon-button:hover {
-  background-color: rgba(230, 224, 212, 0.07);
+  background-color: rgba(255, 255, 255, 0.12);
+}
+.bar-icon-button:active {
+  background-color: rgba(255, 255, 255, 0.18);
 }
 
-.bar-badge-dot {
-  background-color: #d08a2c;
-  border-radius: 3px;
+/* ---- battery widget ---- */
+.bar-battery-box {
+  padding: 0 4px;
+}
+.bar-battery-pct {
+  font-family: "Aspekta", "SF Pro Display", "Plus Jakarta Sans", monospace;
+  font-size: 12px;
+  font-weight: 500;
+  color: rgba(255, 255, 255, 0.88);
+  margin-right: 4px;
+}
+
+/* ---- clock / notification button ---- */
+.bar-clock-button {
+  background: transparent;
+  background-image: none;
+  border: none;
+  box-shadow: none;
+  padding: 0 6px;
+  margin: 0 0 0 4px;
+  border-radius: 4px;
+  min-height: 22px;
+}
+.bar-clock-button:hover {
+  background-color: rgba(255, 255, 255, 0.12);
+}
+.bar-clock-button:active {
+  background-color: rgba(255, 255, 255, 0.18);
 }
 
 .bar-clock {
-  color: rgba(230, 224, 212, 0.92);
-  font-size: 12.5px;
+  color: rgba(255, 255, 255, 0.92);
+  font-size: 13px;
+  font-weight: 500;
   padding: 0;
-  margin-right: 12px;
+}
+
+/* Legacy / fallback styles */
+.bar-divider {
+  background-color: rgba(255, 255, 255, 0.14);
+  margin: 0 6px;
+}
+.status-item {
+  padding: 0 5px;
+}
+.status-glyph {
+  color: #ffffff;
 }

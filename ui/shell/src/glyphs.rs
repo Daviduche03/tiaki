@@ -115,14 +115,34 @@ fn draw_status(cr: &Context, name: &str, color: (f64, f64, f64)) {
             }
         }
         "battery" => {
-            cr.set_source_rgba(white.0, white.1, white.2, white.3);
-            cr.set_line_width(3.6);
-            rounded_rect(cr, 10.0, 15.0, 38.0, 34.0, 5.0);
+            // Horizontal macOS battery capsule
+            cr.set_source_rgba(white.0, white.1, white.2, 0.70);
+            cr.set_line_width(3.0);
+            rounded_rect(cr, 8.0, 20.0, 44.0, 24.0, 4.5);
             let _ = cr.stroke();
-            rounded_rect(cr, 50.0, 23.0, 4.0, 18.0, 1.6);
+            // Positive terminal bump on the right
+            rounded_rect(cr, 53.0, 27.0, 3.5, 10.0, 1.8);
             let _ = cr.fill();
-            rounded_rect(cr, 15.0, 20.0, 24.0, 24.0, 3.0);
+            // Battery fill bar (yellow #ffd60a matching reference screenshot)
+            cr.set_source_rgb(1.0, 0.84, 0.04);
+            rounded_rect(cr, 11.5, 23.5, 26.0, 17.0, 2.5);
             let _ = cr.fill();
+        }
+        "mic" => {
+            cr.set_source_rgba(white.0, white.1, white.2, white.3);
+            cr.set_line_width(3.4);
+            // Microphone capsule
+            rounded_rect(cr, 26.0, 14.0, 12.0, 22.0, 6.0);
+            let _ = cr.fill();
+            // U-cradle
+            cr.arc(32.0, 25.0, 11.0, 0.0, std::f64::consts::PI);
+            let _ = cr.stroke();
+            // Stem & base
+            cr.move_to(32.0, 36.0);
+            cr.line_to(32.0, 47.0);
+            cr.move_to(22.0, 47.0);
+            cr.line_to(42.0, 47.0);
+            let _ = cr.stroke();
         }
         "search" => {
             cr.set_source_rgba(white.0, white.1, white.2, white.3);

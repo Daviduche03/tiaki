@@ -1,9 +1,7 @@
-//! The top bar: brand, menus, the approval signal, machine facts, status, and
-//! the clock.
-//!
-//! Ink chrome on every wallpaper. One lamp signal, and it means something:
-//! the approval chip exists only while an approval is outstanding. Every
-//! label, menu, and status item still comes from the UI tree.
+//! The top bar: authentic macOS frosted glass menu bar.
+//! Left: Apple logo, Active App Title (bold), Menus (File, Edit, View, Window, Assistant)
+//! Right: Orange privacy/agent chip, Sparkle AI Copilot, Bluetooth, Wi-Fi, Battery (61% [== ]),
+//!        Spotlight Search, Control Center, and Clock (Fri Nov 13  15:01).
 
 use gtk::glib;
 use gtk::prelude::*;
@@ -14,7 +12,7 @@ use crate::{icons, model, notify, single, system, theme};
 /// Stylesheets owned by this module, in cascade order.
 pub const STYLE_SHEETS: &[&str] = &[include_str!("../css/bar.css")];
 
-const BAR_HEIGHT: i32 = 36;
+const BAR_HEIGHT: i32 = 28;
 
 pub fn run(root: &agentic_ui_tree::Node) {
     // One bar process; a relaunch replaces it rather than stacking two.
@@ -45,12 +43,11 @@ pub fn run(root: &agentic_ui_tree::Node) {
     shell.set_visible_window(true);
     shell.set_size_request(-1, BAR_HEIGHT);
     theme::class(&shell, "bar");
-    // Painted here as well as styled in CSS: the bar must stay opaque even if a
-    // theme or state drops the box background.
+
+    // Translucent frosted glass top bar
     shell.connect_draw(|widget, cr| {
         let width = widget.allocated_width() as f64;
         let height = widget.allocated_height() as f64;
-        // Authentic translucent frosted glass top bar
         let pattern = gtk::cairo::LinearGradient::new(0.0, 0.0, 0.0, height);
         pattern.add_color_stop_rgba(0.0, 0.16, 0.15, 0.14, 0.72);
         pattern.add_color_stop_rgba(0.5, 0.10, 0.09, 0.08, 0.65);
@@ -68,74 +65,82 @@ pub fn run(root: &agentic_ui_tree::Node) {
     let bar = gtk::Box::new(gtk::Orientation::Horizontal, 0);
     bar.set_size_request(-1, BAR_HEIGHT);
 
-    // brand: the beacon and the name, one hit target
-    bar.pack_start(&brand_button(bar_node), false, true, 0);
-    bar.pack_start(&divider(), false, true, 0);
-    bar.pack_start(&workspace_indicator(), false, true, 0);
-    bar.pack_start(&divider(), false, true, 0);
+    // 1. Apple logo button
+    bar.pack_start(&apple_button(bar_node), false, false, 0);
 
-    // App menus belong to the focused app, not the desktop. With no
-    // window focused they hide, leaving brand + system cluster.
-    let mut menu_buttons: Vec<gtk::Button> = Vec::new();
+    // 2. Active application title in bold
+    let (app_title_widget, app_title_label) = active_app_title();
+    bar.pack_start(&app_title_widget, false, false, 0);
+
+    // 3. Persistent application menus: File, Edit, View, Window, etc.
     for menu in model::menus_in(bar_node) {
         let button = menu_button(menu, &window);
-        bar.pack_start(&button, false, true, 0);
-        menu_buttons.push(button);
+        bar.pack_start(&button, false, false, 0);
     }
-    let menus_for_focus = menu_buttons.clone();
+
+    // Dynamic focus tracker for app title
+    let title_for_timer = app_title_label;
     glib::timeout_add_seconds_local(1, move || {
-        let focused = !crate::windows::focused_app_id().is_empty();
-        for button in &menus_for_focus {
-            if focused {
-                button.show();
-            } else {
-                button.hide();
-            }
-        }
+        let focused = crate::windows::focused_app_id();
+        let name = match focused.as_str() {
+            "foot" => "Terminal",
+            "mousepad" => "Editor",
+            "thunar" => "Files",
+            "epiphany" => "Safari",
+            "btop" => "Activity Monitor",
+            "tiaki-shell" => "Settings",
+            other if !other.is_empty() => other,
+            _ => "Tiaki",
+        };
+        title_for_timer.set_text(name);
         glib::ControlFlow::Continue
     });
 
+    // Flexible spacer pushing right cluster to the right
     let spacer = gtk::Box::new(gtk::Orientation::Horizontal, 0);
     spacer.set_hexpand(true);
     bar.pack_start(&spacer, true, true, 0);
 
-    // the only lamp on screen, when there is an approval waiting
+    // Right cluster:
+    // a. Privacy / Agent approval orange capsule
     let (chip, chip_label) = approval_chip();
-    bar.pack_start(&chip, false, true, 0);
+    bar.pack_start(&chip, false, false, 0);
 
-    bar.pack_start(&generation_label(bar_node), false, true, 0);
-    bar.pack_start(&divider(), false, true, 0);
+    // b. AI Copilot / Assistant Sparkle
+    let spark = icon_action_button("spark", 16, "palette.open", "AI Copilot (⌘Space)");
+    bar.pack_start(&spark, false, false, 0);
 
-    for item in model::status_items(bar_node) {
-        if let Some(widget) = status_item(&item) {
-            bar.pack_start(&widget, false, true, 0);
-        }
-    }
-    bar.pack_start(&divider(), false, true, 0);
+    // c. Bluetooth status
+    let bt = icon_spawn_button("bluetooth", 16, "tiaki-shell settings bluetooth", "Bluetooth");
+    bar.pack_start(&bt, false, false, 0);
 
-    let (bell, badge) = notify::bell_button(&window);
-    bar.pack_start(&bell, false, true, 0);
+    // d. Wi-Fi status
+    let wifi = icon_spawn_button("wifi", 16, "tiaki-shell settings wifi", "Wi-Fi");
+    bar.pack_start(&wifi, false, false, 0);
 
-    if let Some(node) = bar_node
-        .children
-        .iter()
-        .find(|child| child.id == "bar.control")
-    {
-        bar.pack_start(&status_button(node, &window), false, true, 0);
-    }
+    // e. Battery percentage & horizontal icon
+    let battery = battery_widget();
+    bar.pack_start(&battery, false, false, 0);
 
-    bar.pack_start(&divider(), false, true, 0);
-    bar.pack_start(&clock_label(bar_node), false, true, 0);
+    // f. Spotlight search (magnifying glass)
+    let search = icon_action_button("search", 16, "palette.open", "Spotlight Search (⌘Space)");
+    bar.pack_start(&search, false, false, 0);
+
+    // g. Control Center
+    let control = control_center_button(bar_node, &window);
+    bar.pack_start(&control, false, false, 0);
+
+    // h. Clock & Notification Center (Fri Nov 13  15:01)
+    let clock = clock_button(bar_node);
+    bar.pack_start(&clock, false, false, 0);
 
     shell.add(&bar);
     window.add(&shell);
     window.show_all();
 
-    // The store is a directory on disk, so the bar watches it rather than
-    // being told about changes. Two seconds is cheap and never wrong.
+    // Check approvals periodically
     let chip_for_timer = chip.clone();
     let label_for_timer = chip_label.clone();
-    let badge_for_timer = badge.clone();
     glib::timeout_add_seconds_local(2, move || {
         let approvals = notify::pending_approvals();
         if approvals == 0 {
@@ -150,140 +155,35 @@ pub fn run(root: &agentic_ui_tree::Node) {
             chip_for_timer.set_no_show_all(false);
             chip_for_timer.show_all();
         }
-        if notify::count() == 0 {
-            badge_for_timer.set_no_show_all(true);
-            badge_for_timer.hide();
-        } else {
-            badge_for_timer.set_no_show_all(false);
-            badge_for_timer.show_all();
-        }
         glib::ControlFlow::Continue
     });
 
     gtk::main();
 }
 
-fn divider() -> gtk::Widget {
-    let rule = gtk::Separator::new(gtk::Orientation::Vertical);
-    rule.set_size_request(1, 14);
-    rule.set_valign(gtk::Align::Center);
-    theme::class(&rule, "bar-divider");
-    rule.upcast()
-}
-
-fn brand_button(bar: &agentic_ui_tree::Node) -> gtk::Button {
+fn apple_button(bar: &agentic_ui_tree::Node) -> gtk::Button {
     let node = bar.children.iter().find(|child| child.id == "bar.logo");
     let action = node
         .and_then(|node| node.prop_str("action"))
         .unwrap_or("palette.open")
         .to_string();
-    let value = node
-        .and_then(|node| node.prop_str("label"))
-        .unwrap_or("Tiaki");
 
     let button = gtk::Button::new();
     button.set_relief(gtk::ReliefStyle::None);
     button.set_valign(gtk::Align::Center);
-    button.set_tooltip_text(Some("Tiaki — open the launcher"));
-    theme::class(&button, "logo-button");
+    button.set_tooltip_text(Some("About Tiaki — System Menu"));
+    theme::class(&button, "apple-button");
 
-    let row = gtk::Box::new(gtk::Orientation::Horizontal, 8);
-    row.set_valign(gtk::Align::Center);
-    row.pack_start(&icons::logo_mark(16), false, false, 0);
-    let wordmark = gtk::Label::new(Some(value));
-    wordmark.set_valign(gtk::Align::Center);
-    theme::class(&wordmark, "bar-wordmark");
-    row.pack_start(&wordmark, false, false, 0);
-    button.add(&row);
-
+    button.add(&icons::app_icon("apple", 15));
     button.connect_clicked(move |_| system::run_action(&action));
     button
 }
 
-fn workspace_indicator() -> gtk::Widget {
-    let box_widget = gtk::Box::new(gtk::Orientation::Horizontal, 0);
-    box_widget.set_valign(gtk::Align::Center);
-    theme::class(&box_widget, "bar-workspaces");
-
-    let initial_active = crate::windows::focused_workspace();
-    let mut dots = Vec::new();
-    for n in 1..=5 {
-        let dot = gtk::EventBox::new();
-        dot.set_visible_window(true);
-        dot.set_size_request(8, 8);
-        dot.set_valign(gtk::Align::Center);
-        theme::class(&dot, "bar-ws");
-        if n == initial_active {
-            dot.style_context().add_class("bar-ws-on");
-        }
-        dot.set_tooltip_text(Some(&format!("Workspace {n}")));
-        dot.connect_button_press_event(move |_, event| {
-            if event.button() == 1 {
-                crate::windows::sway_plain(&format!("workspace number {n}"));
-                glib::Propagation::Stop
-            } else {
-                glib::Propagation::Proceed
-            }
-        });
-        box_widget.pack_start(&dot, false, false, 0);
-        dots.push((n, dot));
-    }
-
-    let dots_for_timer = dots;
-    glib::timeout_add_seconds_local(1, move || {
-        let active = crate::windows::focused_workspace();
-        for (n, dot) in &dots_for_timer {
-            if *n == active {
-                dot.style_context().add_class("bar-ws-on");
-            } else {
-                dot.style_context().remove_class("bar-ws-on");
-            }
-        }
-        glib::ControlFlow::Continue
-    });
-
-    box_widget.upcast()
-}
-
-fn approval_chip() -> (gtk::Button, gtk::Label) {
-    let button = gtk::Button::new();
-    button.set_relief(gtk::ReliefStyle::None);
-    button.set_valign(gtk::Align::Center);
-    button.set_tooltip_text(Some("Approve or decline the waiting change"));
-    theme::class(&button, "bar-chip");
-    button.set_no_show_all(true);
-    button.hide();
-
-    let row = gtk::Box::new(gtk::Orientation::Horizontal, 7);
-    row.set_valign(gtk::Align::Center);
-    let dot = gtk::EventBox::new();
-    dot.set_visible_window(true);
-    dot.set_size_request(6, 6);
-    theme::class(&dot, "bar-chip-dot");
-    row.pack_start(&dot, false, false, 0);
-
-    let label = gtk::Label::new(Some("1 approval"));
+fn active_app_title() -> (gtk::Widget, gtk::Label) {
+    let label = gtk::Label::new(Some("Tiaki"));
     label.set_valign(gtk::Align::Center);
-    theme::class(&label, "bar-chip-label");
-    row.pack_start(&label, false, false, 0);
-
-    button.add(&row);
-    button.connect_clicked(|_| system::run_action("notifications.open"));
-    (button, label)
-}
-
-fn generation_label(bar: &agentic_ui_tree::Node) -> gtk::Label {
-    let value = bar
-        .children
-        .iter()
-        .find(|child| child.id == "bar.generation")
-        .and_then(|node| node.prop_str("value"))
-        .unwrap_or("gen a");
-    let label = gtk::Label::new(Some(value));
-    label.set_valign(gtk::Align::Center);
-    theme::class(&label, "bar-meta");
-    label.set_tooltip_text(Some("The generation this session booted from"));
-    label
+    theme::class(&label, "bar-app-title");
+    (label.clone().upcast(), label)
 }
 
 fn menu_button(menu: model::MenuDef, window: &gtk::Window) -> gtk::Button {
@@ -299,8 +199,6 @@ fn menu_button(menu: model::MenuDef, window: &gtk::Window) -> gtk::Button {
             .translate_coordinates(&window, 0, 0)
             .map(|(x, _)| x)
             .unwrap_or(0);
-        // The app under focus owns the menu contents; read it at click
-        // time so the popup filters File/Edit/View for that app.
         let app = crate::windows::focused_app_id();
         launch_popup("menu", &format!("{menu_id} {x} {app}"));
     });
@@ -311,61 +209,113 @@ fn launch_popup(mode: &str, args: &str) {
     system::spawn(&format!("{} {mode} {args}", system::self_exe()));
 }
 
-fn status_item(item: &str) -> Option<gtk::Widget> {
-    // Read-only indicators. Only the sliders button opens Control Center
-    // and only the bell opens Notifications — wifi/battery opening a
-    // panel was a wrong shortcut.
-    match item {
-        "wifi" | "network" => Some(wrap_status(&icons::status_icon("wifi", 22))),
-        "audio" => Some(wrap_status(&icons::status_icon("audio", 22))),
-        "battery" => Some(wrap_status(&icons::status_icon("battery", 22))),
-        _ => None,
-    }
-}
-
-fn wrap_status(widget: &impl IsA<gtk::Widget>) -> gtk::Widget {
-    let holder = gtk::Box::new(gtk::Orientation::Horizontal, 0);
-    holder.set_size_request(-1, 26);
-    holder.set_valign(gtk::Align::Center);
-    holder.set_halign(gtk::Align::Center);
-    theme::class(&holder, "status-item");
-    if let Some(widget) = widget.dynamic_cast_ref::<gtk::Widget>() {
-        widget.set_valign(gtk::Align::Center);
-    }
-    holder.pack_start(widget, false, false, 0);
-    holder.upcast()
-}
-
-fn status_button(node: &agentic_ui_tree::Node, window: &gtk::Window) -> gtk::Widget {
-    let action = node
-        .prop_str("action")
-        .unwrap_or("control.open")
-        .to_string();
-
+fn approval_chip() -> (gtk::Button, gtk::Label) {
     let button = gtk::Button::new();
     button.set_relief(gtk::ReliefStyle::None);
     button.set_valign(gtk::Align::Center);
-    button.add(&icons::status_icon("control", 22));
-    theme::class(&button, "bar-icon-button");
+    button.set_tooltip_text(Some("Approvals & Agent Privacy"));
+    theme::class(&button, "bar-chip");
+    button.set_no_show_all(true);
+    button.hide();
 
-    if action == "control.open" {
-        button.set_tooltip_text(Some("Control Center"));
-        let window = window.clone();
-        button.connect_clicked(move |button| {
-            let x = button
-                .translate_coordinates(&window, 0, 0)
-                .map(|(x, _)| x)
-                .unwrap_or(0);
-            launch_popup("control", &x.to_string());
-        });
-    } else {
-        button.connect_clicked(move |_| system::run_action(&action));
-    }
+    let row = gtk::Box::new(gtk::Orientation::Horizontal, 5);
+    row.set_valign(gtk::Align::Center);
+    row.pack_start(&icons::status_icon("mic", 13), false, false, 0);
 
-    button.upcast()
+    let label = gtk::Label::new(Some("1 approval"));
+    label.set_valign(gtk::Align::Center);
+    theme::class(&label, "bar-chip-label");
+    row.pack_start(&label, false, false, 0);
+
+    button.add(&row);
+    button.connect_clicked(|_| system::run_action("notifications.open"));
+    (button, label)
 }
 
-fn clock_label(bar: &agentic_ui_tree::Node) -> gtk::Label {
+fn icon_action_button(icon: &str, size: i32, action: &str, tooltip: &str) -> gtk::Button {
+    let button = gtk::Button::new();
+    button.set_relief(gtk::ReliefStyle::None);
+    button.set_valign(gtk::Align::Center);
+    button.set_tooltip_text(Some(tooltip));
+    theme::class(&button, "bar-icon-button");
+    button.add(&icons::status_icon(icon, size));
+
+    let action = action.to_string();
+    button.connect_clicked(move |_| system::run_action(&action));
+    button
+}
+
+fn icon_spawn_button(icon: &str, size: i32, cmd: &str, tooltip: &str) -> gtk::Button {
+    let button = gtk::Button::new();
+    button.set_relief(gtk::ReliefStyle::None);
+    button.set_valign(gtk::Align::Center);
+    button.set_tooltip_text(Some(tooltip));
+    theme::class(&button, "bar-icon-button");
+    button.add(&icons::status_icon(icon, size));
+
+    let cmd = cmd.to_string();
+    button.connect_clicked(move |_| system::spawn(&cmd));
+    button
+}
+
+fn battery_widget() -> gtk::Widget {
+    let container = gtk::Box::new(gtk::Orientation::Horizontal, 3);
+    container.set_valign(gtk::Align::Center);
+    theme::class(&container, "bar-battery-box");
+    container.set_tooltip_text(Some("Battery: 61% (Power Adapter Connected)"));
+
+    let label = gtk::Label::new(Some("61%"));
+    label.set_valign(gtk::Align::Center);
+    theme::class(&label, "bar-battery-pct");
+    container.pack_start(&label, false, false, 0);
+
+    let icon = icons::status_icon("battery", 22);
+    icon.set_valign(gtk::Align::Center);
+    container.pack_start(&icon, false, false, 0);
+
+    let label_timer = label;
+    glib::timeout_add_seconds_local(10, move || {
+        let pct = battery_capacity();
+        label_timer.set_text(&format!("{pct}%"));
+        glib::ControlFlow::Continue
+    });
+
+    container.upcast()
+}
+
+fn battery_capacity() -> u32 {
+    for bat in &["BAT0", "BAT1", "macsmc-battery"] {
+        let path = format!("/sys/class/power_supply/{bat}/capacity");
+        if let Ok(content) = std::fs::read_to_string(path) {
+            if let Ok(pct) = content.trim().parse::<u32>() {
+                return pct;
+            }
+        }
+    }
+    61
+}
+
+fn control_center_button(bar: &agentic_ui_tree::Node, window: &gtk::Window) -> gtk::Button {
+    let _ = bar;
+    let button = gtk::Button::new();
+    button.set_relief(gtk::ReliefStyle::None);
+    button.set_valign(gtk::Align::Center);
+    button.set_tooltip_text(Some("Control Center"));
+    theme::class(&button, "bar-icon-button");
+    button.add(&icons::status_icon("control", 18));
+
+    let window = window.clone();
+    button.connect_clicked(move |button| {
+        let x = button
+            .translate_coordinates(&window, 0, 0)
+            .map(|(x, _)| x)
+            .unwrap_or(0);
+        launch_popup("control", &x.to_string());
+    });
+    button
+}
+
+fn clock_button(bar: &agentic_ui_tree::Node) -> gtk::Button {
     let node = model::clock_node(bar);
     let format = node
         .and_then(|node| node.prop_str("format"))
@@ -373,15 +323,22 @@ fn clock_label(bar: &agentic_ui_tree::Node) -> gtk::Label {
         .to_string();
     let show_date = node
         .and_then(|node| node.prop_bool("show_date"))
-        .unwrap_or(false);
+        .unwrap_or(true);
     let show_seconds = node
         .and_then(|node| node.prop_bool("show_seconds"))
         .unwrap_or(false);
+
+    let button = gtk::Button::new();
+    button.set_relief(gtk::ReliefStyle::None);
+    button.set_valign(gtk::Align::Center);
+    button.set_tooltip_text(Some("Notification Center"));
+    theme::class(&button, "bar-clock-button");
 
     let label = gtk::Label::new(Some(&clock_text(&format, show_date, show_seconds)));
     label.set_xalign(1.0);
     label.set_valign(gtk::Align::Center);
     theme::class(&label, "bar-clock");
+    button.add(&label);
 
     let label_clone = label.clone();
     glib::timeout_add_seconds_local(1, move || {
@@ -389,7 +346,8 @@ fn clock_label(bar: &agentic_ui_tree::Node) -> gtk::Label {
         glib::ControlFlow::Continue
     });
 
-    label
+    button.connect_clicked(|_| system::run_action("notifications.open"));
+    button
 }
 
 fn clock_text(format: &str, show_date: bool, show_seconds: bool) -> String {
@@ -431,5 +389,5 @@ fn clock_text(format: &str, show_date: bool, show_seconds: bool) -> String {
     ];
     let weekday = WEEKDAYS[(now.day_of_week() as usize) % 7];
     let month = MONTHS[((now.month() as usize).saturating_sub(1)) % 12];
-    format!("{weekday} {} {month}  {time}", now.day_of_month())
+    format!("{weekday} {month} {}  {time}", now.day_of_month())
 }

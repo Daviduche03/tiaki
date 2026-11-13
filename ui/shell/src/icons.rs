@@ -55,9 +55,13 @@ pub fn logo_mark(size: i32) -> gtk::DrawingArea {
 }
 
 pub fn app_icon(art: &str, size: i32) -> gtk::Widget {
-    // No fallback: the 14 SVGs ship with the image. A missing one is a
-    // packaging bug, not something to paper over with drawn tiles.
-    let path = format!("/usr/share/tiaki/icons/{art}.svg");
+    let primary = format!("/usr/share/tiaki/icons/{art}.svg");
+    let fallback = format!("desktop/icons/{art}.svg");
+    let path = if std::path::Path::new(&primary).exists() {
+        primary
+    } else {
+        fallback
+    };
     let pixbuf = gtk::gdk_pixbuf::Pixbuf::from_file_at_scale(&path, size, size, true)
         .unwrap_or_else(|_| {
             panic!("tiaki-shell: missing app icon {path}; the image must ship desktop/icons/")
