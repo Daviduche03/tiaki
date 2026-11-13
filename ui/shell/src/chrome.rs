@@ -93,7 +93,7 @@ pub fn run() {
 
     let windows_for_timer = windows.clone();
     let placement_for_timer = placement.clone();
-    gtk::glib::timeout_add_local(Duration::from_millis(100), move || {
+    gtk::glib::timeout_add_local(Duration::from_millis(500), move || {
         refresh(&windows_for_timer, &placement_for_timer);
         gtk::glib::ControlFlow::Continue
     });

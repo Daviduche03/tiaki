@@ -19,9 +19,9 @@ use crate::{icons, model, single, system, theme, windows};
 /// Stylesheets owned by this module, in cascade order.
 pub const STYLE_SHEETS: &[&str] = &[include_str!("../css/dock.css")];
 
-const BASE_ICON_SIZE: f64 = 36.0;
-const PEAK_ICON_SIZE: f64 = 52.0;
-const MAGNIFY_RADIUS: f64 = 120.0;
+const BASE_ICON_SIZE: f64 = 40.0;
+const PEAK_ICON_SIZE: f64 = 50.0;
+const MAGNIFY_RADIUS: f64 = 110.0;
 
 struct AppItemWidget {
     app: model::AppItem,
@@ -54,6 +54,7 @@ pub fn run(root: &agentic_ui_tree::Node) {
     // Floating label pill above the dock
     let label_box = gtk::Box::new(gtk::Orientation::Horizontal, 0);
     label_box.set_halign(gtk::Align::Center);
+    label_box.set_size_request(-1, 24);
     let floating_label = gtk::Label::new(None);
     theme::class(&floating_label, "dock-label-pill");
     floating_label.set_opacity(0.0);
@@ -124,6 +125,9 @@ pub fn run(root: &agentic_ui_tree::Node) {
                 }
             }
 
+            // Subtle vertical lift on magnification (macOS signature lift effect)
+            let lift = (cur_size - BASE_ICON_SIZE) * 0.35;
+
             let _ = cr.save();
             let pb_w = item_clone.pixbuf.width() as f64;
             let pb_h = item_clone.pixbuf.height() as f64;
@@ -134,7 +138,7 @@ pub fn run(root: &agentic_ui_tree::Node) {
                 let drawn_h = pb_h * scale;
 
                 let x_off = (alloc_w - drawn_w) / 2.0;
-                let y_off = (alloc_h - drawn_h) / 2.0 + y_bounce;
+                let y_off = (alloc_h - drawn_h) / 2.0 - lift + y_bounce;
 
                 cr.translate(x_off, y_off);
                 cr.scale(scale, scale);
@@ -170,14 +174,10 @@ pub fn run(root: &agentic_ui_tree::Node) {
                         let new_size = cur + diff * 0.35;
                         item.current_size.set(new_size);
                         item.drawing_area.queue_draw();
-                        item.button
-                            .set_size_request((new_size + 10.0) as i32, 60);
                         still_animating = true;
                     } else if (cur - tgt).abs() > 0.01 {
                         item.current_size.set(tgt);
                         item.drawing_area.queue_draw();
-                        item.button
-                            .set_size_request((tgt + 10.0) as i32, 60);
                     }
 
                     if let Some(start) = item.bounce_start.get() {
@@ -207,7 +207,14 @@ pub fn run(root: &agentic_ui_tree::Node) {
         let items = items_rc.clone();
         let start_tick = start_animation_tick.clone();
         let flabel = floating_label.clone();
+        let last_x = Cell::new(f64::NAN);
         move |mouse_x: f64| {
+            let prev = last_x.get();
+            if !prev.is_nan() && (mouse_x - prev).abs() < 1.0 {
+                return;
+            }
+            last_x.set(mouse_x);
+
             let mut closest_label: Option<&str> = None;
             let mut min_dist = f64::MAX;
 
@@ -217,7 +224,7 @@ pub fn run(root: &agentic_ui_tree::Node) {
                 let dist = (mouse_x - center_x).abs();
 
                 let target = if dist < MAGNIFY_RADIUS {
-                    let factor = ((dist / MAGNIFY_RADIUS) * std::f64::consts::FRAC_PI_2).cos().powi(2);
+                    let factor = 0.5 * (1.0 + ((dist / MAGNIFY_RADIUS) * std::f64::consts::PI).cos());
                     BASE_ICON_SIZE + (PEAK_ICON_SIZE - BASE_ICON_SIZE) * factor
                 } else {
                     BASE_ICON_SIZE
@@ -230,7 +237,7 @@ pub fn run(root: &agentic_ui_tree::Node) {
                 }
             }
 
-            if min_dist < 40.0 {
+            if min_dist < 35.0 {
                 if let Some(lbl) = closest_label {
                     flabel.set_text(lbl);
                     flabel.set_opacity(1.0);
@@ -354,7 +361,7 @@ fn create_dock_item(app: &model::AppItem) -> Rc<AppItemWidget> {
     let button = gtk::Button::new();
     button.set_relief(gtk::ReliefStyle::None);
     theme::class(&button, "dock-item");
-    button.set_size_request((BASE_ICON_SIZE + 10.0) as i32, 60);
+    button.set_size_request(52, 60);
 
     let content = gtk::Box::new(gtk::Orientation::Vertical, 0);
     content.set_valign(gtk::Align::Center);
@@ -362,14 +369,14 @@ fn create_dock_item(app: &model::AppItem) -> Rc<AppItemWidget> {
 
     // High resolution pixbuf for smooth Cairo scaling
     let path = format!("/usr/share/tiaki/icons/{}.svg", app.art);
-    let pixbuf = gtk::gdk_pixbuf::Pixbuf::from_file_at_scale(&path, 96, 96, true)
+    let pixbuf = gtk::gdk_pixbuf::Pixbuf::from_file_at_scale(&path, 128, 128, true)
         .unwrap_or_else(|_| {
-            gtk::gdk_pixbuf::Pixbuf::new(gtk::gdk_pixbuf::Colorspace::Rgb, true, 8, 96, 96)
+            gtk::gdk_pixbuf::Pixbuf::new(gtk::gdk_pixbuf::Colorspace::Rgb, true, 8, 128, 128)
                 .expect("failed to create fallback pixbuf")
         });
 
     let drawing_area = gtk::DrawingArea::new();
-    drawing_area.set_size_request(54, 54);
+    drawing_area.set_size_request(50, 50);
     drawing_area.set_valign(gtk::Align::Center);
     drawing_area.set_halign(gtk::Align::Center);
     content.pack_start(&drawing_area, false, false, 0);
