@@ -417,6 +417,16 @@
           }
         },
         {
+          "id": "bar.agent",
+          "kind": "button",
+          "props": {
+            "label": "",
+            "action": "t3.open",
+            "icon": "spark",
+            "variant": "status"
+          }
+        },
+        {
           "id": "bar.control",
           "kind": "button",
           "props": {
@@ -638,9 +648,9 @@
             "label": "Agents",
             "icon": "system-run-symbolic",
             "art": "agents",
-            "command": "foot -c /etc/tiaki/foot.ini -e /usr/local/bin/agentd state",
+            "command": "epiphany http://127.0.0.1:5733",
             "category": "Tiaki",
-            "description": "Inspect what the agent can do and how a change would be explained.",
+            "description": "Your agent app: T3 Code.",
             "color": "pink",
             "running": false,
             "pinned": true
@@ -750,9 +760,9 @@
             "label": "Agents",
             "icon": "system-run-symbolic",
             "art": "agents",
-            "command": "foot -c /etc/tiaki/foot.ini -e /usr/local/bin/agentd state",
+            "command": "epiphany http://127.0.0.1:5733",
             "category": "Tiaki",
-            "description": "See the runtime, capabilities, and transaction explanations.",
+            "description": "Your agent app: T3 Code.",
             "color": "pink"
           }
         },

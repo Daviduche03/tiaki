@@ -112,6 +112,14 @@ pub fn run(root: &agentic_ui_tree::Node) {
     if let Some(node) = bar_node
         .children
         .iter()
+        .find(|child| child.id == "bar.agent")
+    {
+        bar.pack_start(&status_button(node, &window), false, true, 0);
+    }
+
+    if let Some(node) = bar_node
+        .children
+        .iter()
         .find(|child| child.id == "bar.control")
     {
         bar.pack_start(&status_button(node, &window), false, true, 0);
@@ -293,10 +301,10 @@ fn status_button(node: &agentic_ui_tree::Node, window: &gtk::Window) -> gtk::Wid
     let button = gtk::Button::new();
     button.set_relief(gtk::ReliefStyle::None);
     button.set_valign(gtk::Align::Center);
-    button.add(&icons::status_icon("control", 22));
     theme::class(&button, "bar-icon-button");
 
     if action == "control.open" {
+        button.add(&icons::status_icon("control", 22));
         button.set_tooltip_text(Some("Control Center"));
         let window = window.clone();
         button.connect_clicked(move |button| {
@@ -307,6 +315,12 @@ fn status_button(node: &agentic_ui_tree::Node, window: &gtk::Window) -> gtk::Wid
             launch_popup("control", &x.to_string());
         });
     } else {
+        // Every other status button draws the icon the model names.
+        let icon = node.prop_str("icon").unwrap_or("spark").to_string();
+        button.add(&icons::status_icon(&icon, 22));
+        if action == "t3.open" {
+            button.set_tooltip_text(Some("T3 Code — your agent app"));
+        }
         button.connect_clicked(move |_| system::run_action(&action));
     }
 
