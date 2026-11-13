@@ -1,7 +1,15 @@
 [Unit]
 Description=Tiaki graphical session
 After=tiaki-ui-serve.service
-Requires=tiaki-ui-serve.service
+# Wants, not Requires: a broken tree API should cost the session its data,
+# not its existence. Requires here turns any upstream failure into "no
+# desktop at all", which is exactly what a session must never do.
+Wants=tiaki-ui-serve.service
+# A session that keeps dying is a bug to read, not a loop to spin: after five
+# failures in a minute systemd gives up and leaves the machine reachable
+# (serial console, ssh) instead of burning CPU respawning a broken compositor.
+StartLimitIntervalSec=60
+StartLimitBurst=5
 
 [Service]
 User=desktop
@@ -21,9 +29,18 @@ Environment=TIAKI_CGROUP_ROOT=/sys/fs/cgroup/tiaki
 Environment=GTK_THEME=Adwaita:dark
 Environment=XCURSOR_THEME=Adwaita
 Environment=XCURSOR_SIZE=24
+# The runtime dir must exist before dbus-run-session starts: it holds the
+# session bus socket and every client's XDG_RUNTIME_DIR.
 RuntimeDirectory=tiaki
+RuntimeDirectoryMode=0700
 ExecStart=/usr/bin/dbus-run-session -- /usr/local/bin/tiaki-session
-Restart=always
+# sched-launch moves its children into their own cgroups, outside this unit's
+# control group, so a restart would otherwise leave a stale shell behind.
+# Kill the surfaces first; -prefix keeps a fresh boot (nothing to kill) clean.
+ExecStartPre=-/usr/bin/pkill -x tiaki-shell
+# on-failure, not always: a clean exit (machine shutting down, session ended)
+# is not a reason to start a new one. A crash still restarts, briefly.
+Restart=on-failure
 RestartSec=2
 
 [Install]
