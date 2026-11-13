@@ -417,16 +417,6 @@
           }
         },
         {
-          "id": "bar.agents",
-          "kind": "button",
-          "props": {
-            "label": "",
-            "action": "agents.open",
-            "icon": "agents",
-            "variant": "status"
-          }
-        },
-        {
           "id": "bar.control",
           "kind": "button",
           "props": {

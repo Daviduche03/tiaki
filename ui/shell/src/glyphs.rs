@@ -310,7 +310,7 @@ fn draw_status(cr: &Context, name: &str, color: (f64, f64, f64)) {
             cr.curve_to(28.0, 44.0, 32.0, 40.0, 36.0, 43.0);
             let _ = cr.stroke();
         }
-        "agents" | "spark" => {
+        "spark" => {
             cr.set_source_rgba(white.0, white.1, white.2, white.3);
             cr.move_to(32.0, 10.0);
             cr.curve_to(35.0, 25.0, 39.0, 29.0, 54.0, 32.0);

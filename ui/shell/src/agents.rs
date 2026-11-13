@@ -55,62 +55,14 @@ fn assistants_from(root: &Node) -> Vec<Assistant> {
     }]
 }
 
-/// The default coding agent, from the agent center first
-/// (`tiaki-default-agent`, which reads ~/.config/tiaki/defaults/agent) and
-/// the control plane's older runtime pointer second. Read live so the app
-/// never disagrees with whichever store the user actually set.
+/// The default agent `agentd agent default` named, if any. Read live so the app
+/// never disagrees with the control plane.
 fn default_runtime() -> Option<String> {
-    let center = std::env::var("HOME")
-        .map(|home| format!("{home}/.config/tiaki/defaults/agent"))
-        .unwrap_or_default();
-    let from_center = std::fs::read_to_string(center).ok();
     let home = std::env::var("TIAKI_HOME").unwrap_or_else(|_| "/var/lib/tiaki".to_string());
-    let from_control = std::fs::read_to_string(format!("{home}/runtimes/default")).ok();
-    from_center
-        .or(from_control)
+    std::fs::read_to_string(format!("{home}/runtimes/default"))
+        .ok()
         .map(|text| text.trim().to_string())
         .filter(|id| !id.is_empty())
-}
-
-/// How many harnesses the agent center has usage records for, and the
-/// freshest one. The collectors write one JSON record per harness under
-/// ~/.local/state/tiaki/agents/usage; the panel only reads them.
-fn usage_summary() -> Option<(usize, String)> {
-    let state = std::env::var("XDG_STATE_HOME")
-        .map(std::path::PathBuf::from)
-        .or_else(|_| std::env::var("HOME").map(|home| std::path::PathBuf::from(home).join(".local/state")))
-        .ok()?;
-    let dir = state.join("tiaki/agents/usage");
-    let entries = std::fs::read_dir(dir).ok()?;
-    let mut count = 0usize;
-    let mut newest: Option<(std::time::SystemTime, String)> = None;
-    for entry in entries.flatten() {
-        let path = entry.path();
-        if path.extension().and_then(|ext| ext.to_str()) != Some("json") {
-            continue;
-        }
-        count += 1;
-        let id = path
-            .file_stem()
-            .and_then(|stem| stem.to_str())
-            .unwrap_or("")
-            .to_string();
-        let modified = entry
-            .metadata()
-            .and_then(|meta| meta.modified())
-            .unwrap_or(std::time::UNIX_EPOCH);
-        if newest.as_ref().map(|(when, _)| modified > *when).unwrap_or(true) {
-            newest = Some((modified, id));
-        }
-    }
-    if count == 0 {
-        return None;
-    }
-    let label = match newest {
-        Some((_, id)) => format!("{count} harnesses · last {id}"),
-        None => format!("{count} harnesses"),
-    };
-    Some((count, label))
 }
 
 pub fn run(root: &Node) {
@@ -204,15 +156,8 @@ pub fn run(root: &Node) {
 
     let runtime_row = detail_row("Runtime", "—");
     content.pack_start(&runtime_row.0, false, false, 0);
-    let usage_row = detail_row("Usage", "—");
-    content.pack_start(&usage_row.0, false, false, 0);
     let skill_row = detail_row("Skill", "tiaki");
     content.pack_start(&skill_row.0, false, false, 0);
-
-    match usage_summary() {
-        Some((_, label)) => usage_row.1.set_text(&label),
-        None => usage_row.1.set_text("no records yet — run tiaki-agent-usage-update"),
-    }
 
     let open = gtk::Button::with_label("Open terminal session");
     open.set_margin_top(24);
@@ -300,20 +245,22 @@ pub fn run(root: &Node) {
     match default_runtime() {
         Some(runtime) => {
             runtime_row.1.set_text(&runtime);
+            let open_runtime = runtime.clone();
             open.connect_clicked(move |_| {
-                // tiaki-agent knows each harness's unattended flags and the
-                // account pin, so it is the one launch path for the center.
-                system::spawn_app("tiaki-agent", "foreground");
+                system::spawn_app(
+                    &format!("foot -c /etc/tiaki/foot.ini -e {open_runtime}"),
+                    "session",
+                );
             });
             note.set_text(
-                "Opens the default agent in a terminal, scheduled in the foreground class. \
-                 Change it with: tiaki-default-agent <id>",
+                "Opens the default runtime in a terminal, scheduled in the session class. \
+                 Threads, approvals, and scheduled tasks land in later slices.",
             );
         }
         None => {
             runtime_row.1.set_text("none set");
             open.set_sensitive(false);
-            note.set_text("No default agent. Set one with: tiaki-default-agent <id>");
+            note.set_text("No default agent. Set one with: agentd agent default <id>");
         }
     }
 
