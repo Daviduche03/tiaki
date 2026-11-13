@@ -10,6 +10,7 @@ use std::rc::Rc;
 use std::time::Instant;
 
 use gtk::gdk;
+use gtk::gdk::prelude::GdkContextExt;
 use gtk::prelude::*;
 use gtk_layer_shell::{Edge, KeyboardMode, Layer, LayerShell};
 
@@ -132,7 +133,7 @@ pub fn run(root: &agentic_ui_tree::Node) {
             if pb_w > 0.0 {
                 let scale = cur_size / pb_w;
                 cr.scale(scale, scale);
-                gdk::cairo_set_source_pixbuf(cr, &item_clone.pixbuf, 0.0, 0.0);
+                cr.set_source_pixbuf(&item_clone.pixbuf, 0.0, 0.0);
                 let _ = cr.paint();
             }
             let _ = cr.restore();
