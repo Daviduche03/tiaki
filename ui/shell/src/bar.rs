@@ -1,5 +1,5 @@
-//! The top bar: brand, menus, the approval signal, machine facts, status, the
-//! agents door, and the clock.
+//! The top bar: brand, menus, the approval signal, machine facts, status, and
+//! the clock.
 //!
 //! Ink chrome on every wallpaper. One lamp signal, and it means something:
 //! the approval chip exists only while an approval is outstanding. Every
@@ -112,7 +112,7 @@ pub fn run(root: &agentic_ui_tree::Node) {
     if let Some(node) = bar_node
         .children
         .iter()
-        .find(|child| child.id == "bar.agents")
+        .find(|child| child.id == "bar.agent")
     {
         bar.pack_start(&status_button(node, &window), false, true, 0);
     }
@@ -315,10 +315,11 @@ fn status_button(node: &agentic_ui_tree::Node, window: &gtk::Window) -> gtk::Wid
             launch_popup("control", &x.to_string());
         });
     } else {
-        let icon = node.prop_str("icon").unwrap_or("agents").to_string();
+        // Every other status button draws the icon the model names.
+        let icon = node.prop_str("icon").unwrap_or("spark").to_string();
         button.add(&icons::status_icon(&icon, 22));
-        if action == "agents.open" {
-            button.set_tooltip_text(Some("Agents"));
+        if action == "t3.open" {
+            button.set_tooltip_text(Some("T3 Code — your agent app"));
         }
         button.connect_clicked(move |_| system::run_action(&action));
     }

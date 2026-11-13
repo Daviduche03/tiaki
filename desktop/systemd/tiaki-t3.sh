@@ -15,6 +15,11 @@ export TIAKI_HOME=/home/desktop/.tiaki
 export TIAKI_PRINCIPAL=user:ada
 export TIAKI_WORKSPACE=/home/desktop/.tiaki/workspace
 export T3_ACP_EXTRA_MCP_SERVERS='[{"name":"tiaki","command":"/usr/local/bin/agentd","args":["mcp","serve"],"env":[{"name":"TIAKI_HOME","value":"/home/desktop/.tiaki"},{"name":"TIAKI_PRINCIPAL","value":"user:ada"},{"name":"TIAKI_WORKSPACE","value":"/home/desktop/.tiaki/workspace"}]}]'
+# The dev runner derives its ports from the worktree path, and shifts them
+# again when one is taken. Pin both: the bar and dock open a fixed URL, so a
+# wandering port would look like a broken agent app.
+export PORT=5733
+export T3CODE_PORT=13773
 
 mkdir -p "$TIAKI_HOME/workspace"
 cd /opt/t3code-upstream

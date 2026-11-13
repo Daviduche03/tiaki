@@ -81,6 +81,9 @@ pub fn run_action(action: &str) {
         "files.open" => launch_self("files"),
         "trash.open" => spawn_app(&format!("{} files trash:", self_exe()), "foreground"),
         "browser.open" => spawn_app("epiphany", "foreground"),
+        // T3 Code is the agent app. The dev runner's ports are pinned in
+        // tiaki-t3.sh, so this URL is stable for the life of the image.
+        "t3.open" => spawn_app("epiphany http://127.0.0.1:5733", "foreground"),
         "editor.open" => spawn_app("mousepad /home/desktop/demo.rs", "foreground"),
         "monitor.open" => spawn_app("foot -c /etc/tiaki/foot.ini -e btop", "foreground"),
         "agents.open" => launch_self("agents"),

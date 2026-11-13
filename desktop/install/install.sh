@@ -25,7 +25,7 @@ set -eu
 
 # Run from the repository root: the script reads the staged payload/ tree
 # (see `make payload`).
-for required in payload/agentd payload/sched-launch payload/tiaki-firstboot payload/tiaki-notify payload/desktop.json payload/tiaki-agent payload/tiaki-default-agent; do
+for required in payload/agentd payload/sched-launch payload/tiaki-firstboot payload/tiaki-notify payload/desktop.json; do
   if [ ! -e "$required" ]; then
     echo "missing $required — run from the repo root after \`make payload\`" >&2
     exit 1
@@ -185,13 +185,6 @@ for gen in "$MNT" /tmp/tiaki-b; do
   if [ -e payload/tiaki-wm ]; then cp payload/tiaki-wm "$gen/usr/local/bin/" && chmod 0755 "$gen/usr/local/bin/tiaki-wm"; fi
   if [ -e payload/wm-assets ]; then mkdir -p "$gen/usr/share/tiaki/wm" && cp -r payload/wm-assets "$gen/usr/share/tiaki/wm/assets"; fi
   chmod 0755 "$gen/usr/local/bin/agentd" "$gen/usr/local/bin/tiaki-firstboot" "$gen/usr/local/bin/tiaki-session" "$gen/usr/local/bin/sched-launch" "$gen/usr/local/bin/tiaki-notify"
-  # Agent center: compositor-independent default-agent, account, usage, launch scripts.
-  for helper in payload/tiaki-agent*; do
-    cp "$helper" "$gen/usr/local/bin/$(basename "$helper")"
-  done
-  chmod 0755 "$gen"/usr/local/bin/tiaki-agent* "$gen/usr/local/bin/tiaki-default-agent" "$gen/usr/local/bin/tiaki-launch-"* "$gen/usr/local/bin/tiaki-cmd-"*
-  mkdir -p "$gen/usr/share/tiaki/agent"
-  cp payload/agent-lib/collectors.py "$gen/usr/share/tiaki/agent/"
   cp payload/desktop.json "$gen/usr/share/tiaki/"
   cp -r payload/icons payload/wallpapers "$gen/usr/share/tiaki/"
   mkdir -p "$gen/etc/tiaki"
