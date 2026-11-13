@@ -42,7 +42,6 @@ impl Keymap {
             ("super+space", "palette.open", "Command palette"),
             ("super+slash", "help.show", "Show keybindings"),
             ("super+r", "ui.reload", "Reload UI"),
-            ("super+t", "theme.toggle", "Toggle theme"),
             ("super+k", "clock.toggle_format", "Toggle clock format"),
             ("super+shift+e", "session.exit", "Exit session"),
         ];

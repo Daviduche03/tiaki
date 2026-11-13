@@ -4,7 +4,7 @@ use std::rc::Rc;
 
 use gtk::prelude::*;
 
-use super::data::{live_clock, live_theme, set_theme, set_wallpaper, wallpaper_dir};
+use super::data::{live_clock, set_wallpaper, wallpaper_dir};
 use super::Nav;
 use crate::{glyphs, system, theme};
 
@@ -381,16 +381,6 @@ pub(crate) fn device_row(
 }
 
 // ------------------------------------------------------------------- home
-
-pub(crate) fn theme_dropdown() -> gtk::MenuButton {
-    let live = live_theme();
-    let dark: Rc<dyn Fn()> = Rc::new(|| set_theme("dark"));
-    let light: Rc<dyn Fn()> = Rc::new(|| set_theme("light"));
-    dropdown(
-        if live == "light" { "Light" } else { "Dark" },
-        vec![("Dark".to_string(), dark), ("Light".to_string(), light)],
-    )
-}
 
 pub(crate) fn clock_dropdown(current: &str) -> gtk::MenuButton {
     let h12: Rc<dyn Fn()> = Rc::new(|| {

@@ -101,16 +101,6 @@ pub(crate) fn home_page(root: &Node, nav: &Nav) -> gtk::Box {
     wall_pad.pack_start(&grid, false, false, 0);
     wall_body.pack_start(&wall_pad, false, false, 0);
 
-    section(&main, "Color mode");
-    let (_mode_card, mode_body) = card(&main);
-    let (_, mode_right) = row(
-        &mode_body,
-        Some("moon"),
-        "Choose your mode",
-        "Change the colors of the desktop and apps",
-    );
-    mode_right.pack_start(&theme_dropdown(), false, false, 0);
-
     section(&side, "Recommended settings");
     let (_recommended_card, recommended_body) = card(&side);
     let recommended = [

@@ -23,7 +23,9 @@ mod icons;
 mod launcher;
 mod menu;
 mod model;
+pub mod motion;
 mod notify;
+mod overview;
 mod settings;
 mod setup;
 mod single;
@@ -94,6 +96,9 @@ fn main() -> ExitCode {
         "switcher" => {
             let rest = args.get(1..).unwrap_or(&[]);
             switcher::run(rest)
+        }
+        "overview" | "mission" => {
+            overview::run();
         }
         "version" => {
             println!("tiaki-shell {}", env!("CARGO_PKG_VERSION"));

@@ -124,6 +124,8 @@ fn dock_item(app: &model::AppItem) -> gtk::Button {
             .collect();
         match app_windows.len() {
             0 => {
+                // Try restoring from scratchpad in case window was hidden with Super+H
+                windows::sway_plain(&format!("[app_id=\"{app_id}\"] scratchpad show"));
                 if windows::is_action(&command) {
                     system::run_action(command.trim_start_matches("tiaki:"));
                 } else {
@@ -131,6 +133,8 @@ fn dock_item(app: &model::AppItem) -> gtk::Button {
                 }
             }
             1 => {
+                // Focus and bring forward; if in scratchpad, scratchpad show
+                windows::sway_plain(&format!("[con_id={}] scratchpad show", app_windows[0].id));
                 windows::sway_plain(&format!("[con_id={}] focus", app_windows[0].id));
             }
             _ => system::open_switcher(Some(&app_id)),

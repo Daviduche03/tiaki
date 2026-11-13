@@ -98,6 +98,7 @@ pub fn run() {
 
     let rows = gtk::Box::new(gtk::Orientation::Vertical, 0);
     rows.set_halign(gtk::Align::Center);
+    theme::class(&rows, "greet-row-wrap");
     content.pack_start(&rows, false, false, 0);
     draw_rows(&rows, &state.borrow());
 
@@ -106,6 +107,13 @@ pub fn run() {
     mode.set_margin_top(12);
     theme::class(&mode, "greet-mode");
     content.pack_start(&mode, false, false, 0);
+
+    let rule = gtk::Separator::new(gtk::Orientation::Horizontal);
+    theme::class(&rule, "greet-rule");
+    rule.set_margin_start(48);
+    rule.set_margin_end(48);
+    rule.set_margin_top(24);
+    content.pack_start(&rule, false, false, 0);
 
     let bottom = gtk::Box::new(gtk::Orientation::Vertical, 0);
     bottom.set_vexpand(true);

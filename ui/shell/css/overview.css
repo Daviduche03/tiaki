@@ -1,0 +1,70 @@
+/* Mission Control Overview: full-screen window grid across workspaces. */
+
+.overview-scrim {
+  background-color: rgba(21, 20, 19, 0.82);
+}
+
+.overview-header-bar {
+  margin-top: 24px;
+  margin-bottom: 24px;
+}
+
+.overview-title-main {
+  color: #e6e0d4;
+  font-family: "IBM Plex Sans", sans-serif;
+  font-size: 20px;
+  font-weight: 500;
+  letter-spacing: -0.01em;
+}
+
+.overview-count {
+  color: rgba(230, 224, 212, 0.45);
+  font-family: "IBM Plex Mono", monospace;
+  font-size: 11px;
+}
+
+.overview-card {
+  background-color: #1b1917;
+  border: 1px solid rgba(230, 224, 212, 0.12);
+  border-radius: 6px;
+  transition: all 180ms cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.overview-card:hover,
+.overview-card.selected {
+  border-color: rgba(208, 138, 44, 0.65);
+  background-color: #22201d;
+}
+
+.overview-card-header {
+  padding: 10px 14px;
+}
+
+.overview-card-title {
+  color: #e6e0d4;
+  font-family: "IBM Plex Sans", sans-serif;
+  font-size: 13px;
+  font-weight: 500;
+}
+
+.overview-card-badge {
+  color: rgba(230, 224, 212, 0.45);
+  font-family: "IBM Plex Mono", monospace;
+  font-size: 10px;
+  border: 1px solid rgba(230, 224, 212, 0.14);
+  border-radius: 3px;
+  padding: 2px 6px;
+}
+
+.overview-thumbnail {
+  background-color: #151413;
+  border-top: 1px solid rgba(230, 224, 212, 0.08);
+  min-width: 260px;
+  min-height: 160px;
+}
+
+.overview-empty {
+  color: rgba(230, 224, 212, 0.45);
+  font-family: "IBM Plex Sans", sans-serif;
+  font-size: 15px;
+}

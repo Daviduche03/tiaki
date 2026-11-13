@@ -116,7 +116,7 @@ pub fn run_action(action: &str) {
             spawn("wtype -M ctrl v -m ctrl");
             spawn("wtype -M shift Insert -m shift");
         }
-        "theme.toggle" | "clock.toggle_format" | "ui.reload" | "rollback" | "mode.guarded" => {
+        "clock.toggle_format" | "ui.reload" | "rollback" | "mode.guarded" => {
             let _ = agentic_action(action);
         }
         other if other.starts_with("tiaki:") => {

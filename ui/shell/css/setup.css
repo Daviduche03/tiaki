@@ -3,20 +3,26 @@
 
 .su-brand {
   color: #e6e0d4;
-  font-size: 13px;
+  font-size: 10px;
   font-weight: 500;
-  letter-spacing: -0.01em;
+  font-family: "IBM Plex Sans", sans-serif;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
 }
 
 .su-title {
   color: #e6e0d4;
-  font-size: 44px;
+  font-size: 40px;
   font-weight: 500;
+  font-family: "IBM Plex Sans", sans-serif;
+  letter-spacing: -0.02em;
 }
 
 .su-lede {
   color: rgba(230, 224, 212, 0.62);
   font-size: 15px;
+  font-family: "IBM Plex Sans", sans-serif;
+  line-height: 1.5;
 }
 
 .su-label {
@@ -28,6 +34,21 @@
 .su-field {
   color: #e6e0d4;
   font-size: 15px;
+  font-family: "IBM Plex Sans", sans-serif;
+}
+
+.su-entry {
+  background-color: #1b1917;
+  border: 1px solid rgba(230, 224, 212, 0.16);
+  border-radius: 3px;
+  color: #e6e0d4;
+  padding: 0 12px;
+  font-family: "IBM Plex Sans", sans-serif;
+  font-size: 15px;
+}
+
+.su-entry:focus {
+  border-color: rgba(208, 138, 44, 0.60);
 }
 
 .su-foot {
@@ -40,7 +61,8 @@
 .su-card {
   background-color: #1b1917;
   border: 1px solid rgba(230, 224, 212, 0.10);
-  border-radius: 3px;
+  border-radius: 6px;
+  padding: 20px 24px;
 }
 .su-card.on {
   border-color: rgba(208, 138, 44, 0.60);
@@ -49,6 +71,7 @@
   color: #e6e0d4;
   font-size: 15px;
   font-weight: 500;
+  font-family: "IBM Plex Sans", sans-serif;
 }
 .su-card-tag {
   color: #d08a2c;
@@ -61,6 +84,8 @@
 .su-card-body {
   color: rgba(230, 224, 212, 0.60);
   font-size: 12.5px;
+  font-family: "IBM Plex Sans", sans-serif;
+  line-height: 1.5;
 }
 
 /* the single commit action: paper fill, ink text */

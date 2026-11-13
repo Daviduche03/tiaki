@@ -117,6 +117,37 @@ pub fn sway_plain(command: &str) {
     let _ = sway_command().arg(command).spawn();
 }
 
+pub fn sway_query(query_type: &str) -> Option<Json> {
+    let output = sway_command().args(["-t", query_type]).output().ok()?;
+    agentic_json::parse(&String::from_utf8_lossy(&output.stdout)).ok()
+}
+
+/// Query the currently focused workspace number (defaults to 1).
+pub fn focused_workspace() -> i32 {
+    let Some(value) = sway_query("get_workspaces") else {
+        return 1;
+    };
+    if let Some(workspaces) = value.as_array() {
+        for ws in workspaces {
+            if let Some(object) = ws.as_object() {
+                if object.get("focused").and_then(Json::as_bool) == Some(true) {
+                    if let Some(num) = object.get("num").and_then(Json::as_f64) {
+                        if num > 0.0 {
+                            return num as i32;
+                        }
+                    }
+                    if let Some(name) = object.get("name").and_then(Json::as_str) {
+                        if let Ok(num) = name.parse::<i32>() {
+                            return num;
+                        }
+                    }
+                }
+            }
+        }
+    }
+    1
+}
+
 /// Which app has focus, lowercased: `foot`, `mousepad`, `thunar`,
 /// `epiphany`, or empty when the desktop has focus. The bar polls this;
 /// menu popups read it once at click time.
@@ -129,8 +160,7 @@ pub fn focused_app_id() -> String {
 }
 
 fn tree() -> Option<Json> {
-    let output = sway_command().args(["-t", "get_tree"]).output().ok()?;
-    agentic_json::parse(&String::from_utf8_lossy(&output.stdout)).ok()
+    sway_query("get_tree")
 }
 
 pub fn views() -> Vec<View> {

@@ -28,7 +28,18 @@ impl Instance {
                 if !replace {
                     return None;
                 }
-                std::thread::sleep(Duration::from_millis(120));
+                // Wait for the old process to exit and release its Wayland layer surface
+                for _ in 0..10 {
+                    std::thread::sleep(Duration::from_millis(30));
+                    let alive = std::process::Command::new("kill")
+                        .args(["-0", &pid.to_string()])
+                        .status()
+                        .map(|s| s.success())
+                        .unwrap_or(false);
+                    if !alive {
+                        break;
+                    }
+                }
             }
         }
 

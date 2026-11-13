@@ -66,6 +66,7 @@ pub fn run(root: &agentic_ui_tree::Node) {
     // brand: the beacon and the name, one hit target
     bar.pack_start(&brand_button(bar_node), false, true, 0);
     bar.pack_start(&divider(), false, true, 0);
+    bar.pack_start(&workspace_indicator(), false, true, 0);
 
     // App menus belong to the focused app, not the desktop. With no
     // window focused they hide, leaving brand + system cluster.
@@ -191,6 +192,51 @@ fn brand_button(bar: &agentic_ui_tree::Node) -> gtk::Button {
 
     button.connect_clicked(move |_| system::run_action(&action));
     button
+}
+
+fn workspace_indicator() -> gtk::Widget {
+    let box_widget = gtk::Box::new(gtk::Orientation::Horizontal, 0);
+    box_widget.set_valign(gtk::Align::Center);
+    theme::class(&box_widget, "bar-workspaces");
+
+    let initial_active = crate::windows::focused_workspace();
+    let mut dots = Vec::new();
+    for n in 1..=5 {
+        let dot = gtk::EventBox::new();
+        dot.set_visible_window(true);
+        dot.set_size_request(8, 8);
+        dot.set_valign(gtk::Align::Center);
+        theme::class(&dot, "bar-ws");
+        if n == initial_active {
+            dot.style_context().add_class("bar-ws-on");
+        }
+        dot.set_tooltip_text(Some(&format!("Workspace {n}")));
+        dot.connect_button_press_event(move |_, event| {
+            if event.button() == 1 {
+                crate::windows::sway_plain(&format!("workspace number {n}"));
+                glib::Propagation::Stop
+            } else {
+                glib::Propagation::Proceed
+            }
+        });
+        box_widget.pack_start(&dot, false, false, 0);
+        dots.push((n, dot));
+    }
+
+    let dots_for_timer = dots;
+    glib::timeout_add_seconds_local(1, move || {
+        let active = crate::windows::focused_workspace();
+        for (n, dot) in &dots_for_timer {
+            if *n == active {
+                dot.style_context().add_class("bar-ws-on");
+            } else {
+                dot.style_context().remove_class("bar-ws-on");
+            }
+        }
+        glib::ControlFlow::Continue
+    });
+
+    box_widget.upcast()
 }
 
 fn approval_chip() -> (gtk::Button, gtk::Label) {
