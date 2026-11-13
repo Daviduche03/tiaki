@@ -342,6 +342,13 @@ fn traffic_button(color: &str, command: &str, tooltip: &str) -> gtk::Button {
     button.set_tooltip_text(Some(tooltip));
     theme::class(&button, "traffic");
     theme::class(&button, color);
+
+    let dot = gtk::Box::new(gtk::Orientation::Horizontal, 0);
+    dot.set_size_request(12, 12);
+    theme::class(&dot, "traffic-dot");
+    theme::class(&dot, color);
+    button.add(&dot);
+
     let command = command.to_string();
     button.connect_clicked(move |_| windows::sway_plain(&command));
     button

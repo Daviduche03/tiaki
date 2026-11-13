@@ -21,7 +21,7 @@ pub const STYLE_SHEETS: &[&str] = &[include_str!("../css/dock.css")];
 
 const BASE_ICON_SIZE: f64 = 36.0;
 const PEAK_ICON_SIZE: f64 = 52.0;
-const MAGNIFY_RADIUS: f64 = 110.0;
+const MAGNIFY_RADIUS: f64 = 120.0;
 
 struct AppItemWidget {
     app: model::AppItem,
@@ -45,9 +45,9 @@ pub fn run(root: &agentic_ui_tree::Node) {
     let window = theme::base_window("dock-window");
     theme::setup_layer(&window, "tiaki-dock", Layer::Top, KeyboardMode::None, 0);
     theme::anchor(&window, Edge::Bottom);
-    window.set_layer_shell_margin(Edge::Bottom, 4);
+    window.set_layer_shell_margin(Edge::Bottom, 6);
 
-    let container = gtk::Box::new(gtk::Orientation::Vertical, 4);
+    let container = gtk::Box::new(gtk::Orientation::Vertical, 2);
     container.set_valign(gtk::Align::End);
     container.set_halign(gtk::Align::Center);
 
@@ -120,18 +120,23 @@ pub fn run(root: &agentic_ui_tree::Node) {
                 if elapsed < 0.85 {
                     let decay = (-3.2 * elapsed).exp();
                     let bounce = (elapsed * 18.0).sin().abs() * decay;
-                    y_bounce = -20.0 * bounce;
+                    y_bounce = -18.0 * bounce;
                 }
             }
 
             let _ = cr.save();
-            let x_off = (alloc_w - cur_size) / 2.0;
-            let y_off = (alloc_h - cur_size) + y_bounce;
-
-            cr.translate(x_off, y_off);
             let pb_w = item_clone.pixbuf.width() as f64;
-            if pb_w > 0.0 {
-                let scale = cur_size / pb_w;
+            let pb_h = item_clone.pixbuf.height() as f64;
+
+            if pb_w > 0.0 && pb_h > 0.0 {
+                let scale = cur_size / pb_w.max(pb_h);
+                let drawn_w = pb_w * scale;
+                let drawn_h = pb_h * scale;
+
+                let x_off = (alloc_w - drawn_w) / 2.0;
+                let y_off = (alloc_h - drawn_h) / 2.0 + y_bounce;
+
+                cr.translate(x_off, y_off);
                 cr.scale(scale, scale);
                 cr.set_source_pixbuf(&item_clone.pixbuf, 0.0, 0.0);
                 let _ = cr.paint();
@@ -166,13 +171,13 @@ pub fn run(root: &agentic_ui_tree::Node) {
                         item.current_size.set(new_size);
                         item.drawing_area.queue_draw();
                         item.button
-                            .set_size_request((new_size + 10.0) as i32, (PEAK_ICON_SIZE + 14.0) as i32);
+                            .set_size_request((new_size + 10.0) as i32, 60);
                         still_animating = true;
                     } else if (cur - tgt).abs() > 0.01 {
                         item.current_size.set(tgt);
                         item.drawing_area.queue_draw();
                         item.button
-                            .set_size_request((tgt + 10.0) as i32, (PEAK_ICON_SIZE + 14.0) as i32);
+                            .set_size_request((tgt + 10.0) as i32, 60);
                     }
 
                     if let Some(start) = item.bounce_start.get() {
@@ -226,7 +231,7 @@ pub fn run(root: &agentic_ui_tree::Node) {
                 }
             }
 
-            if min_dist < 40.0 {
+            if min_dist < 36.0 {
                 if let Some(lbl) = closest_label {
                     flabel.set_text(lbl);
                     flabel.set_opacity(1.0);
@@ -327,10 +332,11 @@ fn create_dock_item(app: &model::AppItem) -> Rc<AppItemWidget> {
     let button = gtk::Button::new();
     button.set_relief(gtk::ReliefStyle::None);
     theme::class(&button, "dock-item");
-    button.set_size_request((BASE_ICON_SIZE + 10.0) as i32, (PEAK_ICON_SIZE + 14.0) as i32);
+    button.set_size_request((BASE_ICON_SIZE + 10.0) as i32, 60);
 
     let content = gtk::Box::new(gtk::Orientation::Vertical, 0);
-    content.set_valign(gtk::Align::End);
+    content.set_valign(gtk::Align::Center);
+    content.set_halign(gtk::Align::Center);
 
     // High resolution pixbuf for smooth Cairo scaling
     let path = format!("/usr/share/tiaki/icons/{}.svg", app.art);
@@ -341,9 +347,10 @@ fn create_dock_item(app: &model::AppItem) -> Rc<AppItemWidget> {
         });
 
     let drawing_area = gtk::DrawingArea::new();
-    drawing_area.set_size_request(-1, (PEAK_ICON_SIZE + 4.0) as i32);
-    drawing_area.set_valign(gtk::Align::End);
-    content.pack_start(&drawing_area, true, true, 0);
+    drawing_area.set_size_request(54, 54);
+    drawing_area.set_valign(gtk::Align::Center);
+    drawing_area.set_halign(gtk::Align::Center);
+    content.pack_start(&drawing_area, false, false, 0);
 
     let dot = gtk::Label::new(Some("•"));
     theme::class(&dot, "run-dot");

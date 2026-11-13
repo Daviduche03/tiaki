@@ -647,6 +647,21 @@
           }
         },
         {
+          "id": "dock.settings",
+          "kind": "app",
+          "props": {
+            "label": "Settings",
+            "icon": "preferences-system-symbolic",
+            "art": "settings",
+            "command": "settings.open",
+            "category": "System",
+            "description": "System settings, wallpapers, display, sound, and accounts.",
+            "color": "slate",
+            "running": false,
+            "pinned": true
+          }
+        },
+        {
           "id": "dock.sep",
           "kind": "separator",
           "props": {
