@@ -37,36 +37,41 @@ pub fn run(root: &agentic_ui_tree::Node) {
     theme::anchor(&window, Edge::Right);
     window.set_size_request(-1, BAR_HEIGHT);
 
-    // A windowed surface: GtkBox backgrounds do not composite reliably on a
-    // non-focusable layer surface, but an EventBox does.
-    let shell = gtk::EventBox::new();
-    shell.set_visible_window(true);
-    shell.set_size_request(-1, BAR_HEIGHT);
-    theme::class(&shell, "bar");
-
     // Translucent frosted glass top bar
-    shell.connect_draw(|widget, cr| {
+    window.connect_draw(|widget, cr| {
         let width = widget.allocated_width() as f64;
         let height = widget.allocated_height() as f64;
+
+        // Clear to transparent so background is never opaque
+        cr.set_operator(gtk::cairo::Operator::Source);
+        cr.set_source_rgba(0.0, 0.0, 0.0, 0.0);
+        let _ = cr.paint();
+        cr.set_operator(gtk::cairo::Operator::Over);
+
+        // Subtle, airy frosted glass tint: mostly transparent (~85% transparent)
         let pattern = gtk::cairo::LinearGradient::new(0.0, 0.0, 0.0, height);
-        pattern.add_color_stop_rgba(0.0, 0.16, 0.15, 0.14, 0.72);
-        pattern.add_color_stop_rgba(0.5, 0.10, 0.09, 0.08, 0.65);
-        pattern.add_color_stop_rgba(1.0, 0.06, 0.05, 0.05, 0.78);
+        pattern.add_color_stop_rgba(0.0, 1.0, 1.0, 1.0, 0.18);
+        pattern.add_color_stop_rgba(0.5, 1.0, 1.0, 1.0, 0.06);
+        pattern.add_color_stop_rgba(1.0, 0.0, 0.0, 0.0, 0.10);
         let _ = cr.set_source(&pattern);
         let _ = cr.paint();
-        cr.set_source_rgba(1.0, 1.0, 1.0, 0.16);
+
+        // 1px bottom rim highlight
+        cr.set_source_rgba(1.0, 1.0, 1.0, 0.20);
         cr.set_line_width(1.0);
         cr.move_to(0.0, height - 0.5);
         cr.line_to(width, height - 0.5);
         let _ = cr.stroke();
+
         gtk::glib::Propagation::Proceed
     });
 
     let bar = gtk::Box::new(gtk::Orientation::Horizontal, 0);
     bar.set_size_request(-1, BAR_HEIGHT);
+    theme::class(&bar, "bar");
 
-    // 1. Apple logo button
-    bar.pack_start(&apple_button(bar_node), false, false, 0);
+    // 1. Tiaki brand mark button (beacon icon)
+    bar.pack_start(&tiaki_brand_button(bar_node), false, false, 0);
 
     // 2. Active application title in bold
     let (app_title_widget, app_title_label) = active_app_title();
@@ -134,8 +139,7 @@ pub fn run(root: &agentic_ui_tree::Node) {
     let clock = clock_button(bar_node);
     bar.pack_start(&clock, false, false, 0);
 
-    shell.add(&bar);
-    window.add(&shell);
+    window.add(&bar);
     window.show_all();
 
     // Check approvals periodically
@@ -161,7 +165,7 @@ pub fn run(root: &agentic_ui_tree::Node) {
     gtk::main();
 }
 
-fn apple_button(bar: &agentic_ui_tree::Node) -> gtk::Button {
+fn tiaki_brand_button(bar: &agentic_ui_tree::Node) -> gtk::Button {
     let node = bar.children.iter().find(|child| child.id == "bar.logo");
     let action = node
         .and_then(|node| node.prop_str("action"))
@@ -171,10 +175,10 @@ fn apple_button(bar: &agentic_ui_tree::Node) -> gtk::Button {
     let button = gtk::Button::new();
     button.set_relief(gtk::ReliefStyle::None);
     button.set_valign(gtk::Align::Center);
-    button.set_tooltip_text(Some("About Tiaki — System Menu"));
-    theme::class(&button, "apple-button");
+    button.set_tooltip_text(Some("Tiaki — System Menu"));
+    theme::class(&button, "brand-button");
 
-    button.add(&icons::app_icon("apple", 15));
+    button.add(&icons::logo_mark(18));
     button.connect_clicked(move |_| system::run_action(&action));
     button
 }

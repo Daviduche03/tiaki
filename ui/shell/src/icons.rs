@@ -16,8 +16,8 @@ pub fn logo_mark(size: i32) -> gtk::DrawingArea {
         }
         let _ = cr.save();
         cr.scale(side / 100.0, side / 100.0);
-        // paper #E6E0D4
-        cr.set_source_rgb(0.902, 0.878, 0.831);
+        // luminous white brand mark
+        cr.set_source_rgba(1.0, 1.0, 1.0, 0.95);
 
         // roof, lantern, gallery
         cr.move_to(50.0, 7.0);

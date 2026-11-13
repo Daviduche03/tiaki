@@ -6,7 +6,7 @@ window, window.background {
   font-family: "Aspekta", "SF Pro Display", "Plus Jakarta Sans", "IBM Plex Sans", -apple-system, sans-serif;
 }
 
-.dock-window, .launcher-window {
+.dock-window, .launcher-window, .bar-window {
   background-color: transparent;
 }
 

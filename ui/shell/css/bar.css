@@ -12,8 +12,8 @@
   font-weight: 500;
 }
 
-/* ---- Apple brand button ---- */
-.apple-button {
+/* ---- Tiaki brand button ---- */
+.brand-button {
   background: transparent;
   background-image: none;
   border: none;
@@ -23,11 +23,11 @@
   border-radius: 4px;
   min-height: 22px;
 }
-.apple-button:hover {
-  background-color: rgba(255, 255, 255, 0.12);
+.brand-button:hover {
+  background-color: rgba(255, 255, 255, 0.15);
 }
-.apple-button:active {
-  background-color: rgba(255, 255, 255, 0.18);
+.brand-button:active {
+  background-color: rgba(255, 255, 255, 0.22);
 }
 
 /* ---- Active app title (bold) ---- */
