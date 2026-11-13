@@ -1,11 +1,11 @@
-/* Floating application dock. Ink panel, paper hairline, lamp marks what runs. */
+/* Floating application dock with macOS-style physics. Ink panel, paper hairline, lamp marks what runs. */
 
 .dock {
-  background-color: #201D1A;
+  background-color: rgba(32, 29, 26, 0.90);
   background-image: none;
   border: 1px solid rgba(230, 224, 212, 0.18);
   border-radius: 9999px;
-  padding: 8px 10px;
+  padding: 4px 8px;
   box-shadow: 0 18px 44px rgba(0, 0, 0, 0.55);
 }
 
@@ -14,28 +14,31 @@
   background-image: none;
   border: none;
   box-shadow: none;
-  padding: 8px 10px;
+  padding: 2px 2px;
   border-radius: 8px;
+  transition: background-color 150ms ease-out;
 }
 .dock-item:hover {
-  background-color: rgba(230, 224, 212, 0.07);
+  background-color: rgba(230, 224, 212, 0.08);
 }
 
-.app-icon {
-  border-radius: 8px;
-  box-shadow: none;
-}
-.app-icon-image {
-  -gtk-icon-shadow: none;
-}
-.app-icon.no-tile {
-  box-shadow: none;
+.dock-label-pill {
+  background-color: #201D1A;
+  color: #E6E0D4;
+  font-family: "IBM Plex Sans", -apple-system, sans-serif;
+  font-size: 11px;
+  font-weight: 500;
+  border: 1px solid rgba(230, 224, 212, 0.22);
+  border-radius: 6px;
+  padding: 3px 8px;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.45);
+  margin-bottom: 2px;
 }
 
 .run-dot {
   color: #d08a2c;
   font-size: 10px;
-  margin-top: -8px;
+  margin-top: 1px;
   margin-bottom: -1px;
 }
 .run-dot.hidden {
@@ -43,6 +46,6 @@
 }
 .dock-sep {
   background-color: rgba(230, 224, 212, 0.14);
-  margin: 8px 6px;
+  margin: 12px 6px;
   min-width: 1px;
 }
