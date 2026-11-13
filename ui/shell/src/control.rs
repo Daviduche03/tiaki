@@ -106,7 +106,7 @@ pub fn run(_x: i32) {
 
     grid.attach(&tile(&window, "wifi", true, "Wi-Fi", "connected", "settings.page.network"), 0, 0, 1, 1);
     grid.attach(&tile(&window, "bluetooth", true, "Bluetooth", "on", "settings.page.bluetooth"), 1, 0, 1, 1);
-    grid.attach(&tile(&window, "spark", true, "Inference", "local broker", "agents.open"), 0, 1, 1, 1);
+    grid.attach(&tile(&window, "spark", true, "Inference", "local broker", "settings.open"), 0, 1, 1, 1);
     grid.attach(&tile(&window, "lock", true, "Sandbox", "guarded", "tiaki:mode.guarded"), 1, 1, 1, 1);
 
     content.pack_start(&grid, false, false, 0);
