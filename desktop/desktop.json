@@ -80,6 +80,15 @@
                   }
                 },
                 {
+                  "id": "menu.file.lock",
+                  "kind": "menuitem",
+                  "props": {
+                    "label": "Lock Screen",
+                    "action": "session.lock",
+                    "shortcut": "⌃⌘Q"
+                  }
+                },
+                {
                   "id": "menu.file.quit",
                   "kind": "menuitem",
                   "props": {
