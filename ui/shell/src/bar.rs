@@ -1,5 +1,5 @@
-//! The top bar: brand, menus, the approval signal, machine facts, status, and
-//! the clock.
+//! The top bar: brand, menus, the approval signal, machine facts, status, the
+//! agents door, and the clock.
 //!
 //! Ink chrome on every wallpaper. One lamp signal, and it means something:
 //! the approval chip exists only while an approval is outstanding. Every
@@ -108,6 +108,14 @@ pub fn run(root: &agentic_ui_tree::Node) {
 
     let (bell, badge) = notify::bell_button(&window);
     bar.pack_start(&bell, false, true, 0);
+
+    if let Some(node) = bar_node
+        .children
+        .iter()
+        .find(|child| child.id == "bar.agents")
+    {
+        bar.pack_start(&status_button(node, &window), false, true, 0);
+    }
 
     if let Some(node) = bar_node
         .children
@@ -293,10 +301,10 @@ fn status_button(node: &agentic_ui_tree::Node, window: &gtk::Window) -> gtk::Wid
     let button = gtk::Button::new();
     button.set_relief(gtk::ReliefStyle::None);
     button.set_valign(gtk::Align::Center);
-    button.add(&icons::status_icon("control", 22));
     theme::class(&button, "bar-icon-button");
 
     if action == "control.open" {
+        button.add(&icons::status_icon("control", 22));
         button.set_tooltip_text(Some("Control Center"));
         let window = window.clone();
         button.connect_clicked(move |button| {
@@ -307,6 +315,11 @@ fn status_button(node: &agentic_ui_tree::Node, window: &gtk::Window) -> gtk::Wid
             launch_popup("control", &x.to_string());
         });
     } else {
+        let icon = node.prop_str("icon").unwrap_or("agents").to_string();
+        button.add(&icons::status_icon(&icon, 22));
+        if action == "agents.open" {
+            button.set_tooltip_text(Some("Agents"));
+        }
         button.connect_clicked(move |_| system::run_action(&action));
     }
 
