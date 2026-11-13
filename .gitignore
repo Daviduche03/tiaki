@@ -8,6 +8,8 @@
 /.tiaki/
 .tmp/
 CLAUDE.md
+agent.md
+AGENTS.md
 
 
 # Build artifacts for images / bare-metal installs
