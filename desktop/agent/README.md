@@ -44,9 +44,15 @@ scripts on PATH, no compositor, no menu server, no installer framework.
 
 ## Test log
 
-- `bash -n` clean on all 17 bash scripts; `py_compile` clean on the
-  24 python collectors + registry + shared lib.
-- Rig (Sway, headless-safe paths only): `tiaki-default-agent` get/set
-  round-trips; `tiaki-agent --agent bogus` errors; `--pick` picks from
-  piped input; `account-state list` shows primaries unsigned-in;
-  `usage-update` writes empty-but-valid records for all 22 collectors.
+- `bash -n` clean on all 17 bash scripts (portable constructs only; the one
+  `[[ -v ]]` was rewritten as `${var+x}` so even bash 3 checks pass);
+  `py_compile` clean on the 24 python collectors + registry + shared lib.
+- Rig (Debian bash 5, Sway): `tiaki-default-agent` get/set round-trips and
+  the not-installed error path; `--pick` lists all 21 agents and picks from
+  piped input; `tiaki-agent --agent bogus` errors via `tiaki-notify`;
+  `account-state list` returns primaries unsigned-in; `tiaki-agent-instructions`
+  links `~/.agents/AGENTS.md`; `tiaki-agent-usage-update` writes all 23 usage
+  records, schema-valid (claude record verified key by key).
+- NOT runtime-verified: launching any real harness (needs its CLI +
+  credentials), `account add` login flows, the local-model overlay (dropped),
+  toast click actions (unsupported by `tiaki-notify`).
