@@ -7,7 +7,6 @@
   font-weight: 500;
   font-family: "IBM Plex Sans", sans-serif;
   letter-spacing: 0.08em;
-  text-transform: uppercase;
 }
 
 .su-title {
@@ -22,7 +21,6 @@
   color: rgba(230, 224, 212, 0.62);
   font-size: 15px;
   font-family: "IBM Plex Sans", sans-serif;
-  line-height: 1.5;
 }
 
 .su-label {
@@ -85,7 +83,6 @@
   color: rgba(230, 224, 212, 0.60);
   font-size: 12.5px;
   font-family: "IBM Plex Sans", sans-serif;
-  line-height: 1.5;
 }
 
 /* the single commit action: paper fill, ink text */
