@@ -86,8 +86,6 @@ pub fn run_action(action: &str) {
         "t3.open" => spawn_app("epiphany http://127.0.0.1:5733", "foreground"),
         "editor.open" => spawn_app("mousepad /home/desktop/demo.rs", "foreground"),
         "monitor.open" => spawn_app("foot -c /etc/tiaki/foot.ini -e btop", "foreground"),
-        "agents.open" => launch_self("agents"),
-        other if other.starts_with("agents.thread.") => launch_self("agents"),
         "update.check" => launch_self("settings"),
         "transactions.open" => spawn_app(
             "foot -c /etc/tiaki/foot.ini -e /usr/local/bin/agentd log",

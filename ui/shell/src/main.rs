@@ -10,7 +10,6 @@
 //!   tiaki-shell dock      floating application dock
 //!   tiaki-shell launcher  Spotlight-style launcher
 
-mod agents;
 mod bar;
 mod chrome;
 mod clock;
@@ -82,7 +81,6 @@ fn main() -> ExitCode {
                 .unwrap_or(0);
             control::run(x)
         }
-        "agents" => agents::run(&tree),
         "settings" => {
             let page = args.get(1).cloned().unwrap_or_default();
             settings::run(&tree, (!page.is_empty()).then_some(page.as_str()))
@@ -100,7 +98,7 @@ fn main() -> ExitCode {
             return ExitCode::SUCCESS;
         }
         other => {
-            eprintln!("tiaki-shell: unknown mode '{other}' (bar, dock, launcher, menu, control, agents, settings, switcher, chrome, files)");
+            eprintln!("tiaki-shell: unknown mode '{other}' (bar, dock, launcher, menu, control, settings, switcher, chrome, files)");
             return ExitCode::FAILURE;
         }
     }

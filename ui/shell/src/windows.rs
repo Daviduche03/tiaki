@@ -295,7 +295,7 @@ pub fn is_action(command: &str) -> bool {
             | "editor.open"
             | "monitor.open"
             | "settings.open"
-            | "agents.open"
+            | "t3.open"
             | "transactions.open"
             | "palette.open"
             | "wallpaper.next"
