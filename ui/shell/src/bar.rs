@@ -67,6 +67,7 @@ pub fn run(root: &agentic_ui_tree::Node) {
     bar.pack_start(&brand_button(bar_node), false, true, 0);
     bar.pack_start(&divider(), false, true, 0);
     bar.pack_start(&workspace_indicator(), false, true, 0);
+    bar.pack_start(&divider(), false, true, 0);
 
     // App menus belong to the focused app, not the desktop. With no
     // window focused they hide, leaving brand + system cluster.

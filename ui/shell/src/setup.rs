@@ -429,7 +429,6 @@ fn draw(ui: &std::rc::Rc<std::cell::RefCell<Ui>>) {
             title(&body, "Who owns\nthis machine?");
             lede(&body, "This principal signs every transaction. Others can be added later, each with their own authority.");
             let entry = field(&body, "Name", &name);
-            theme::class(&entry, "su-entry");
             ui.borrow_mut().name_entry = Some(entry);
             primary_button(ui, &body, "Continue");
             footer(ui, "the name becomes user:<name> · owner");
@@ -491,7 +490,6 @@ fn draw(ui: &std::rc::Rc<std::cell::RefCell<Ui>>) {
             let _ = remote_url;
             if selected == 1 {
                 let entry = field(&body, "Endpoint URL", "");
-                theme::class(&entry, "su-entry");
                 ui.borrow_mut().url_entry = Some(entry);
             }
             primary_button(ui, &body, "Continue");
