@@ -576,7 +576,7 @@
             "category": "System",
             "description": "Browse the filesystem with two-tone macOS Finder.",
             "color": "blue",
-            "running": false,
+            "running": true,
             "pinned": true
           }
         },
@@ -591,6 +591,36 @@
             "category": "System",
             "description": "Open Applications grid overlay.",
             "color": "blue",
+            "running": false,
+            "pinned": true
+          }
+        },
+        {
+          "id": "dock.mail",
+          "kind": "app",
+          "props": {
+            "label": "Mail",
+            "icon": "mail-send-symbolic",
+            "art": "mail",
+            "command": "epiphany https://mail.google.com",
+            "category": "Internet",
+            "description": "Electronic mail and communication client.",
+            "color": "blue",
+            "running": false,
+            "pinned": true
+          }
+        },
+        {
+          "id": "dock.maps",
+          "kind": "app",
+          "props": {
+            "label": "Maps",
+            "icon": "find-location-symbolic",
+            "art": "maps",
+            "command": "epiphany https://maps.google.com",
+            "category": "Utilities",
+            "description": "World maps, satellite imagery, and navigation.",
+            "color": "orange",
             "running": false,
             "pinned": true
           }
@@ -621,7 +651,7 @@
             "category": "Internet",
             "description": "Browse the web in a sandboxed session.",
             "color": "cyan",
-            "running": false,
+            "running": true,
             "pinned": true
           }
         },
@@ -652,6 +682,96 @@
             "description": "A lined text editor for quick thoughts and notes.",
             "color": "orange",
             "running": true,
+            "pinned": true
+          }
+        },
+        {
+          "id": "dock.music",
+          "kind": "app",
+          "props": {
+            "label": "Music",
+            "icon": "audio-x-generic-symbolic",
+            "art": "music",
+            "command": "epiphany https://music.youtube.com",
+            "category": "Media",
+            "description": "High-fidelity audio and music streaming.",
+            "color": "red",
+            "running": false,
+            "pinned": true
+          }
+        },
+        {
+          "id": "dock.calendar",
+          "kind": "app",
+          "props": {
+            "label": "Calendar",
+            "icon": "x-office-calendar-symbolic",
+            "art": "calendar",
+            "command": "epiphany https://calendar.google.com",
+            "category": "Productivity",
+            "description": "Personal schedule and event management.",
+            "color": "red",
+            "running": false,
+            "pinned": true
+          }
+        },
+        {
+          "id": "dock.calc",
+          "kind": "app",
+          "props": {
+            "label": "Calculator",
+            "icon": "accessories-calculator-symbolic",
+            "art": "calc",
+            "command": "foot -c /etc/tiaki/foot.ini -e python3",
+            "category": "Utilities",
+            "description": "Desktop calculator and unit converter.",
+            "color": "orange",
+            "running": false,
+            "pinned": true
+          }
+        },
+        {
+          "id": "dock.docker",
+          "kind": "app",
+          "props": {
+            "label": "Docker",
+            "icon": "application-x-executable-symbolic",
+            "art": "docker",
+            "command": "foot -c /etc/tiaki/foot.ini -e docker ps",
+            "category": "Developer",
+            "description": "Container engine and orchestration suite.",
+            "color": "blue",
+            "running": false,
+            "pinned": true
+          }
+        },
+        {
+          "id": "dock.github",
+          "kind": "app",
+          "props": {
+            "label": "GitHub",
+            "icon": "emblem-favorite-symbolic",
+            "art": "github",
+            "command": "epiphany https://github.com",
+            "category": "Developer",
+            "description": "Git repository management and code collaboration.",
+            "color": "purple",
+            "running": false,
+            "pinned": true
+          }
+        },
+        {
+          "id": "dock.discord",
+          "kind": "app",
+          "props": {
+            "label": "Discord",
+            "icon": "chat-symbolic",
+            "art": "discord",
+            "command": "epiphany https://discord.com/app",
+            "category": "Social",
+            "description": "Voice, video, and text communication channel.",
+            "color": "purple",
+            "running": false,
             "pinned": true
           }
         },
@@ -696,8 +816,15 @@
             "category": "Tiaki",
             "description": "Configure autonomous agent engines, models, and ledger verification.",
             "color": "pink",
-            "running": false,
+            "running": true,
             "pinned": true
+          }
+        },
+        {
+          "id": "dock.sep",
+          "kind": "separator",
+          "props": {
+            "orientation": "vertical"
           }
         },
         {
@@ -713,13 +840,6 @@
             "color": "blue",
             "running": false,
             "pinned": true
-          }
-        },
-        {
-          "id": "dock.sep",
-          "kind": "separator",
-          "props": {
-            "orientation": "vertical"
           }
         },
         {

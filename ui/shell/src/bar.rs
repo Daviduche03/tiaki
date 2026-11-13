@@ -50,9 +50,14 @@ pub fn run(root: &agentic_ui_tree::Node) {
     shell.connect_draw(|widget, cr| {
         let width = widget.allocated_width() as f64;
         let height = widget.allocated_height() as f64;
-        cr.set_source_rgb(0.082, 0.078, 0.074); // #151413
+        // Authentic translucent frosted glass top bar
+        let pattern = gtk::cairo::LinearGradient::new(0.0, 0.0, 0.0, height);
+        pattern.add_color_stop_rgba(0.0, 0.16, 0.15, 0.14, 0.72);
+        pattern.add_color_stop_rgba(0.5, 0.10, 0.09, 0.08, 0.65);
+        pattern.add_color_stop_rgba(1.0, 0.06, 0.05, 0.05, 0.78);
+        let _ = cr.set_source(&pattern);
         let _ = cr.paint();
-        cr.set_source_rgba(0.902, 0.878, 0.831, 0.14);
+        cr.set_source_rgba(1.0, 1.0, 1.0, 0.16);
         cr.set_line_width(1.0);
         cr.move_to(0.0, height - 0.5);
         cr.line_to(width, height - 0.5);
