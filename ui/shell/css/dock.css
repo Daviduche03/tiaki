@@ -1,12 +1,21 @@
-/* Floating application dock with macOS-style physics. Ink panel, paper hairline, lamp marks what runs. */
+/* Floating application dock with authentic macOS frosted glass physics and material. */
 
 .dock {
-  background-color: rgba(28, 26, 24, 0.80);
-  background-image: none;
-  border: 1px solid rgba(255, 255, 255, 0.16);
-  border-radius: 18px;
-  padding: 4px 6px;
-  box-shadow: 0 16px 36px rgba(0, 0, 0, 0.45), inset 0 1px 0 rgba(255, 255, 255, 0.12);
+  background: linear-gradient(
+    to bottom,
+    rgba(255, 255, 255, 0.28) 0%,
+    rgba(255, 255, 255, 0.12) 4%,
+    rgba(28, 26, 24, 0.65) 14%,
+    rgba(18, 16, 15, 0.82) 100%
+  );
+  border: 1px solid rgba(255, 255, 255, 0.25);
+  border-radius: 22px;
+  padding: 3px 6px;
+  box-shadow:
+    inset 0 1px 1px rgba(255, 255, 255, 0.55),
+    inset 0 0 0 1px rgba(255, 255, 255, 0.08),
+    0 20px 48px rgba(0, 0, 0, 0.55),
+    0 4px 12px rgba(0, 0, 0, 0.35);
 }
 
 .dock-item {
@@ -15,6 +24,7 @@
   border: none;
   box-shadow: none;
   padding: 0;
+  margin: 0 1px;
   border-radius: 12px;
   transition: background-color 150ms ease-out;
 }
@@ -23,29 +33,32 @@
 }
 
 .dock-label-pill {
-  background-color: rgba(22, 20, 18, 0.92);
-  color: #E6E0D4;
-  font-family: "IBM Plex Sans", -apple-system, sans-serif;
+  background-color: rgba(20, 18, 17, 0.92);
+  color: #f5f0e6;
+  font-family: "Aspekta", "SF Pro Display", "Plus Jakarta Sans", "IBM Plex Sans", -apple-system, sans-serif;
   font-size: 11px;
   font-weight: 500;
-  border: 1px solid rgba(255, 255, 255, 0.16);
-  border-radius: 6px;
-  padding: 2px 8px;
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.35);
-  margin-bottom: 2px;
+  border: 1px solid rgba(255, 255, 255, 0.18);
+  border-radius: 7px;
+  padding: 3px 10px;
+  box-shadow: 0 6px 18px rgba(0, 0, 0, 0.45);
+  margin-bottom: 4px;
 }
 
 .run-dot {
-  color: rgba(230, 224, 212, 0.85);
-  font-size: 8px;
-  margin-top: 1px;
-  margin-bottom: -1px;
+  color: rgba(255, 255, 255, 0.92);
+  font-size: 7px;
+  margin-top: 0px;
+  margin-bottom: 0px;
+  text-shadow: 0 0 3px rgba(255, 255, 255, 0.6);
 }
 .run-dot.hidden {
   opacity: 0;
 }
+
 .dock-sep {
-  background-color: rgba(255, 255, 255, 0.16);
-  margin: 10px 4px;
+  background-color: rgba(255, 255, 255, 0.22);
+  margin: 8px 6px;
   min-width: 1px;
+  box-shadow: 1px 0 0 rgba(0, 0, 0, 0.25);
 }

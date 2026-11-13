@@ -19,8 +19,8 @@ use crate::{icons, model, single, system, theme, windows};
 /// Stylesheets owned by this module, in cascade order.
 pub const STYLE_SHEETS: &[&str] = &[include_str!("../css/dock.css")];
 
-const BASE_ICON_SIZE: f64 = 40.0;
-const PEAK_ICON_SIZE: f64 = 50.0;
+const BASE_ICON_SIZE: f64 = 42.0;
+const PEAK_ICON_SIZE: f64 = 52.0;
 const MAGNIFY_RADIUS: f64 = 110.0;
 
 struct AppItemWidget {
@@ -361,7 +361,7 @@ fn create_dock_item(app: &model::AppItem) -> Rc<AppItemWidget> {
     let button = gtk::Button::new();
     button.set_relief(gtk::ReliefStyle::None);
     theme::class(&button, "dock-item");
-    button.set_size_request(52, 60);
+    button.set_size_request(48, 56);
 
     let content = gtk::Box::new(gtk::Orientation::Vertical, 0);
     content.set_valign(gtk::Align::Center);
@@ -376,7 +376,7 @@ fn create_dock_item(app: &model::AppItem) -> Rc<AppItemWidget> {
         });
 
     let drawing_area = gtk::DrawingArea::new();
-    drawing_area.set_size_request(50, 50);
+    drawing_area.set_size_request(48, 48);
     drawing_area.set_valign(gtk::Align::Center);
     drawing_area.set_halign(gtk::Align::Center);
     content.pack_start(&drawing_area, false, false, 0);

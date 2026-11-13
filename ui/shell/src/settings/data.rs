@@ -46,6 +46,30 @@ pub(crate) fn set_wallpaper(name: &str) {
     system::spawn(&format!("/usr/local/bin/tiaki-wallpaper {name}"));
 }
 
+pub(crate) fn system_fonts() -> Vec<(&'static str, &'static str)> {
+    vec![
+        ("Aspekta", "Modern European Neo-Grotesque (Default)"),
+        ("SF Pro Display", "Apple System"),
+        ("Plus Jakarta Sans", "Geometric Contemporary"),
+        ("IBM Plex Sans", "Industrial Monoline"),
+    ]
+}
+
+pub(crate) fn current_font() -> String {
+    let home = std::env::var("HOME").unwrap_or_else(|_| "/home/desktop".to_string());
+    std::fs::read_to_string(format!("{home}/.config/tiaki/font"))
+        .ok()
+        .map(|value| value.trim().to_string())
+        .filter(|value| !value.is_empty())
+        .unwrap_or_else(|| "Aspekta".to_string())
+}
+
+pub(crate) fn set_font(font: &str) {
+    let home = std::env::var("HOME").unwrap_or_else(|_| "/home/desktop".to_string());
+    let _ = std::fs::create_dir_all(format!("{home}/.config/tiaki"));
+    let _ = std::fs::write(format!("{home}/.config/tiaki/font"), font);
+}
+
 pub(crate) fn live_clock() -> String {
     let Some(body) = model::http_get(
         "http://127.0.0.1:8787/tree.json",

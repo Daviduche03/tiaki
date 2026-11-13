@@ -566,6 +566,36 @@
       },
       "children": [
         {
+          "id": "dock.files",
+          "kind": "app",
+          "props": {
+            "label": "Finder",
+            "icon": "system-file-manager-symbolic",
+            "art": "files",
+            "command": "files.open",
+            "category": "System",
+            "description": "Browse the filesystem with two-tone macOS Finder.",
+            "color": "blue",
+            "running": false,
+            "pinned": true
+          }
+        },
+        {
+          "id": "dock.launcher",
+          "kind": "app",
+          "props": {
+            "label": "Launchpad",
+            "icon": "view-app-grid-symbolic",
+            "art": "launcher",
+            "command": "tiaki-shell launcher",
+            "category": "System",
+            "description": "Open Applications grid overlay.",
+            "color": "blue",
+            "running": false,
+            "pinned": true
+          }
+        },
+        {
           "id": "dock.terminal",
           "kind": "app",
           "props": {
@@ -574,38 +604,8 @@
             "art": "terminal",
             "command": "foot -c /etc/tiaki/foot.ini",
             "category": "System",
-            "description": "A Wayland terminal with the Tiaki prompt, JetBrains Mono, and Tokyo Night.",
+            "description": "Wayland terminal with prompt, IBM Plex Mono, and Tokyo Night.",
             "color": "green",
-            "running": true,
-            "pinned": true
-          }
-        },
-        {
-          "id": "dock.files",
-          "kind": "app",
-          "props": {
-            "label": "Files",
-            "icon": "system-file-manager-symbolic",
-            "art": "files",
-            "command": "files.open",
-            "category": "System",
-            "description": "Browse the filesystem. Every write goes through the authority layer.",
-            "color": "blue",
-            "running": false,
-            "pinned": true
-          }
-        },
-        {
-          "id": "dock.editor",
-          "kind": "app",
-          "props": {
-            "label": "Editor",
-            "icon": "accessories-text-editor-symbolic",
-            "art": "editor",
-            "command": "mousepad /home/desktop/demo.rs",
-            "category": "Create",
-            "description": "A text editor with the desktop tree open, ready to edit.",
-            "color": "orange",
             "running": true,
             "pinned": true
           }
@@ -614,7 +614,7 @@
           "id": "dock.browser",
           "kind": "app",
           "props": {
-            "label": "Browser",
+            "label": "Safari",
             "icon": "web-browser-symbolic",
             "art": "browser",
             "command": "epiphany",
@@ -626,31 +626,46 @@
           }
         },
         {
-          "id": "dock.monitor",
+          "id": "dock.code",
           "kind": "app",
           "props": {
-            "label": "Monitor",
-            "icon": "computer-symbolic",
-            "art": "monitor",
-            "command": "foot -c /etc/tiaki/foot.ini -a btop -w 940x560 -e btop",
-            "category": "System",
-            "description": "CPU, memory, disks, and processes in a tiled terminal.",
-            "color": "purple",
+            "label": "Code",
+            "icon": "accessories-text-editor-symbolic",
+            "art": "code",
+            "command": "mousepad /home/desktop/demo.rs",
+            "category": "Developer",
+            "description": "Visual Studio Code editor.",
+            "color": "blue",
             "running": false,
             "pinned": true
           }
         },
         {
-          "id": "dock.agents",
+          "id": "dock.editor",
           "kind": "app",
           "props": {
-            "label": "Agents",
-            "icon": "system-run-symbolic",
-            "art": "agents",
-            "command": "foot -c /etc/tiaki/foot.ini -e /usr/local/bin/agentd state",
-            "category": "Tiaki",
-            "description": "Inspect what the agent can do and how a change would be explained.",
-            "color": "pink",
+            "label": "Notes",
+            "icon": "accessories-text-editor-symbolic",
+            "art": "editor",
+            "command": "mousepad /home/desktop/notes.txt",
+            "category": "Create",
+            "description": "A lined text editor for quick thoughts and notes.",
+            "color": "orange",
+            "running": true,
+            "pinned": true
+          }
+        },
+        {
+          "id": "dock.monitor",
+          "kind": "app",
+          "props": {
+            "label": "Activity Monitor",
+            "icon": "computer-symbolic",
+            "art": "monitor",
+            "command": "foot -c /etc/tiaki/foot.ini -a btop -w 940x560 -e btop",
+            "category": "System",
+            "description": "CPU, memory, disks, and processes in a live ECG monitor.",
+            "color": "purple",
             "running": false,
             "pinned": true
           }
@@ -659,13 +674,43 @@
           "id": "dock.settings",
           "kind": "app",
           "props": {
-            "label": "Settings",
+            "label": "System Settings",
             "icon": "preferences-system-symbolic",
             "art": "settings",
             "command": "settings.open",
             "category": "System",
-            "description": "System settings, wallpapers, display, sound, and accounts.",
+            "description": "System settings, Wi-Fi, displays, keyboard, and agent autonomy.",
             "color": "slate",
+            "running": false,
+            "pinned": true
+          }
+        },
+        {
+          "id": "dock.agents",
+          "kind": "app",
+          "props": {
+            "label": "AI Agents",
+            "icon": "system-run-symbolic",
+            "art": "agents",
+            "command": "tiaki-shell agents",
+            "category": "Tiaki",
+            "description": "Configure autonomous agent engines, models, and ledger verification.",
+            "color": "pink",
+            "running": false,
+            "pinned": true
+          }
+        },
+        {
+          "id": "dock.downloads",
+          "kind": "app",
+          "props": {
+            "label": "Downloads",
+            "icon": "folder-download-symbolic",
+            "art": "downloads",
+            "command": "files.open",
+            "category": "System",
+            "description": "Downloads folder stack.",
+            "color": "blue",
             "running": false,
             "pinned": true
           }

@@ -415,6 +415,18 @@ pub(crate) fn clock_dropdown(current: &str) -> gtk::MenuButton {
     )
 }
 
+pub(crate) fn font_dropdown(current: &str) -> gtk::MenuButton {
+    let mut options = Vec::new();
+    for (name, desc) in system_fonts() {
+        let n = name.to_string();
+        let cb: Rc<dyn Fn()> = Rc::new(move || {
+            set_font(&n);
+        });
+        options.push((format!("{name} — {desc}"), cb));
+    }
+    dropdown(current, options)
+}
+
 // ------------------------------------------------------------------- apps
 
 pub(crate) fn wallpaper_grid(

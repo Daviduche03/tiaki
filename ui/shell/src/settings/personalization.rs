@@ -36,6 +36,17 @@ pub(crate) fn personalization_page(root: &Node, nav: &Nav) -> gtk::Box {
     holder.pack_start(&caption, false, false, 0);
     background_body.pack_start(&holder, false, false, 0);
 
+    section(&page, "Typography");
+    let (_typo_card, typo_body) = card(&page);
+    let cur_font = current_font();
+    let (_, typo_right) = row(
+        &typo_body,
+        Some("settings"),
+        "System Typeface",
+        "Select primary UI font (Aspekta, SF Pro, Plus Jakarta Sans, IBM Plex)",
+    );
+    typo_right.pack_start(&font_dropdown(&cur_font), false, false, 0);
+
     section(&page, "Time");
     let (_time_card, time_body) = card(&page);
     let format = clock_format(root);

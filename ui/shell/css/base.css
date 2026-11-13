@@ -2,8 +2,8 @@
    and the click-catcher scrim every overlay uses. */
 window, window.background {
   background-color: transparent;
-  color: #e6e0d4;
-  font-family: "IBM Plex Sans", "DejaVu Sans", sans-serif;
+  color: #f0ebe1;
+  font-family: "Aspekta", "SF Pro Display", "Plus Jakarta Sans", "IBM Plex Sans", -apple-system, sans-serif;
 }
 
 .dock-window, .launcher-window {
