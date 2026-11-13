@@ -5,8 +5,6 @@
 //! Surfaces request transitions; this module drives them and stops ticking
 //! once elements settle to preserve zero idle repaints.
 
-use std::cell::RefCell;
-use std::rc::Rc;
 use std::time::Instant;
 
 use gtk::glib;
