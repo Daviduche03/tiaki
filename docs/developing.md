@@ -94,6 +94,14 @@ the session renders without one:
 
 Needs `t3code-upstream/` present (fork clone above) — the image does `pnpm install` there. Screenshots are in `desktop/screenshots/`.
 
+## Run natively on Linux (Zorin OS / Ubuntu / Debian)
+
+If you are developing directly on a Linux workstation or dual-boot PC (such as Zorin OS or Ubuntu), you can run Tiaki natively without Docker or VNC latency:
+* **Nested in a Window:** `sway -c desktop/wayland/sway.conf` after building `agentd` and `ui/shell`.
+* **Bare-metal Session:** Launch via GDM/LightDM with `/usr/share/wayland-sessions/tiaki.desktop`.
+
+See [Local Linux & Zorin OS Setup Runbook](runbooks/local-linux-setup.md) for complete copy-paste commands.
+
 ## Payload / bare-metal install
 
 ```bash

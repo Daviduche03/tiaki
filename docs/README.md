@@ -3,6 +3,8 @@
 - [Architecture source of truth](../TIAKI.md)
 - [ADRs](adr/) — decisions that shaped the design
 - [Specs](specs/) — per-subsystem contracts
+- [Runbooks](runbooks/) — operational and execution runbooks
+  - [Local Linux & Zorin OS Setup](runbooks/local-linux-setup.md) — running native or nested on Linux bare metal
 
 ## ADRs
 
