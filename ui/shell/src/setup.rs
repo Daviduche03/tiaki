@@ -161,6 +161,12 @@ pub fn run() {
 
     let shell = gtk::Overlay::new();
     shell.add(&columns);
+    // Pin the layout to the screen. Left to its natural width the contents
+    // rail moved sideways every time the step's text changed length.
+    let (screen_width, screen_height) = screen_size();
+    shell.set_size_request(screen_width, screen_height);
+    shell.set_halign(gtk::Align::Fill);
+    shell.set_valign(gtk::Align::Fill);
     backdrop.add_overlay(&shell);
     window.add(&backdrop);
 

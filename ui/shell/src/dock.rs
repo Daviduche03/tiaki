@@ -282,43 +282,74 @@ pub fn run(root: &agentic_ui_tree::Node) {
         }
     };
 
-    // Track mouse motion across event_box
+    // Pointer tracking. A button has its own input window, so its motion
+    // events carry button-relative coordinates: each button translates to
+    // shelf coordinates and stops the event there. Letting it bubble made the
+    // shelf read "x = 20" as "over the first icon".
+    let last_motion = Rc::new(Cell::new(Instant::now()));
     {
         let update_mag = update_magnification.clone();
+        let last_motion = last_motion.clone();
         event_box.connect_motion_notify_event(move |_, event| {
+            last_motion.set(Instant::now());
             let (mouse_x, _) = event.position();
             update_mag(mouse_x);
-            gtk::glib::Propagation::Proceed
+            gtk::glib::Propagation::Stop
         });
     }
-
-    // Also connect motion notify on every button so child hover propagates seamlessly
     for item in items_rc.iter() {
         let panel_ref = panel.clone();
         let update_mag = update_magnification.clone();
+        let last_motion = last_motion.clone();
         item.button.add_events(gdk::EventMask::POINTER_MOTION_MASK);
         item.button.connect_motion_notify_event(move |btn, event| {
+            last_motion.set(Instant::now());
             let (bx, by) = event.position();
             if let Some((px, _)) = btn.translate_coordinates(&panel_ref, bx as i32, by as i32) {
                 update_mag(px as f64);
             }
-            gtk::glib::Propagation::Proceed
+            gtk::glib::Propagation::Stop
         });
     }
 
-    // When pointer leaves the dock, reset all target sizes back to base
-    {
+    // Leaving. Crossing from the shelf onto a button also raises a leave, so
+    // wait a moment: if no motion followed, the pointer really left the dock.
+    let schedule_rest = {
         let items = items_rc.clone();
         let start_tick = start_animation_tick.clone();
         let flabel = floating_label.clone();
+        let last_motion = last_motion.clone();
+        move || {
+            let items = items.clone();
+            let start_tick = start_tick.clone();
+            let flabel = flabel.clone();
+            let last_motion = last_motion.clone();
+            let left_at = Instant::now();
+            gtk::glib::timeout_add_local_once(std::time::Duration::from_millis(60), move || {
+                if last_motion.get() > left_at {
+                    return;
+                }
+                for item in items.iter() {
+                    let mut spring = item.size.get();
+                    spring.target = BASE_ICON_SIZE;
+                    item.size.set(spring);
+                }
+                flabel.set_opacity(0.0);
+                start_tick();
+            });
+        }
+    };
+    {
+        let schedule_rest = schedule_rest.clone();
         event_box.connect_leave_notify_event(move |_, _| {
-            for item in items.iter() {
-                let mut spring = item.size.get();
-                spring.target = BASE_ICON_SIZE;
-                item.size.set(spring);
-            }
-            flabel.set_opacity(0.0);
-            start_tick();
+            schedule_rest();
+            gtk::glib::Propagation::Proceed
+        });
+    }
+    for item in items_rc.iter() {
+        let schedule_rest = schedule_rest.clone();
+        item.button.connect_leave_notify_event(move |_, _| {
+            schedule_rest();
             gtk::glib::Propagation::Proceed
         });
     }
