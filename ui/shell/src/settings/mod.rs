@@ -24,7 +24,7 @@ mod accounts;
 mod agents;
 mod apps;
 mod bluetooth;
-mod data;
+pub(crate) mod data;
 mod display;
 mod gaming;
 mod home;

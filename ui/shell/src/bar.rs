@@ -1,7 +1,8 @@
-//! The top bar: authentic macOS frosted glass menu bar.
-//! Left: Apple logo, Active App Title (bold), Menus (File, Edit, View, Window, Assistant)
-//! Right: Orange privacy/agent chip, Sparkle AI Copilot, Bluetooth, Wi-Fi, Battery (61% [== ]),
-//!        Spotlight Search, Control Center, and Clock (Fri Nov 13  15:01).
+//! The top bar: one ink surface with a hairline under it.
+//! Left: the Tiaki mark, the focused app's name, then its menus.
+//! Right: pending approvals (only when there are some), then whatever
+//! hardware the machine really has, search, Control Center, and the clock.
+//! Nothing here shows a value it did not read from the system.
 
 use gtk::glib;
 use gtk::prelude::*;
@@ -12,7 +13,7 @@ use crate::{icons, model, notify, single, system, theme};
 /// Stylesheets owned by this module, in cascade order.
 pub const STYLE_SHEETS: &[&str] = &[include_str!("../css/bar.css")];
 
-const BAR_HEIGHT: i32 = 28;
+const BAR_HEIGHT: i32 = theme::BAR_HEIGHT;
 
 pub fn run(root: &agentic_ui_tree::Node) {
     // One bar process; a relaunch replaces it rather than stacking two.
@@ -37,31 +38,22 @@ pub fn run(root: &agentic_ui_tree::Node) {
     theme::anchor(&window, Edge::Right);
     window.set_size_request(-1, BAR_HEIGHT);
 
-    // Translucent frosted glass top bar
+    // Ink, slightly translucent so the wallpaper reads through, and one
+    // hairline. No gradient, no highlight.
     window.connect_draw(|widget, cr| {
         let width = widget.allocated_width() as f64;
         let height = widget.allocated_height() as f64;
+        let (ir, ig, ib) = theme::INK;
+        let (pr, pg, pb) = theme::PAPER;
 
-        // Clear to transparent so background is never opaque
         cr.set_operator(gtk::cairo::Operator::Source);
-        cr.set_source_rgba(0.0, 0.0, 0.0, 0.0);
+        cr.set_source_rgba(ir, ig, ib, 0.88);
         let _ = cr.paint();
         cr.set_operator(gtk::cairo::Operator::Over);
 
-        // Translucent frosted glass tint (showing ~60% wallpaper through with solid contrast)
-        let pattern = gtk::cairo::LinearGradient::new(0.0, 0.0, 0.0, height);
-        pattern.add_color_stop_rgba(0.0, 1.0, 1.0, 1.0, 0.22); // subtle top rim specular
-        pattern.add_color_stop_rgba(0.15, 0.12, 0.10, 0.09, 0.35); // translucent glass body
-        pattern.add_color_stop_rgba(1.0, 0.08, 0.07, 0.06, 0.48); // bottom glass depth
-        let _ = cr.set_source(&pattern);
-        let _ = cr.paint();
-
-        // 1px bottom rim highlight
-        cr.set_source_rgba(1.0, 1.0, 1.0, 0.20);
-        cr.set_line_width(1.0);
-        cr.move_to(0.0, height - 0.5);
-        cr.line_to(width, height - 0.5);
-        let _ = cr.stroke();
+        cr.set_source_rgba(pr, pg, pb, 0.12);
+        cr.rectangle(0.0, height - 1.0, width, 1.0);
+        let _ = cr.fill();
 
         gtk::glib::Propagation::Proceed
     });
@@ -91,8 +83,8 @@ pub fn run(root: &agentic_ui_tree::Node) {
             "foot" => "Terminal",
             "mousepad" => "Editor",
             "thunar" => "Files",
-            "epiphany" => "Safari",
-            "btop" => "Activity Monitor",
+            "epiphany" => "Browser",
+            "btop" => "Monitor",
             "tiaki-shell" => "Settings",
             other if !other.is_empty() => other,
             _ => "Tiaki",
@@ -111,31 +103,28 @@ pub fn run(root: &agentic_ui_tree::Node) {
     let (chip, chip_label) = approval_chip();
     bar.pack_start(&chip, false, false, 0);
 
-    // b. AI Copilot / Assistant Sparkle
-    let spark = icon_action_button("spark", 16, "palette.open", "AI Copilot (⌘Space)");
-    bar.pack_start(&spark, false, false, 0);
+    // b. Radios and battery, each only if the hardware exists.
+    if has_bluetooth() {
+        let bt = icon_spawn_button("bluetooth", 16, "tiaki-shell settings bluetooth", "Bluetooth");
+        bar.pack_start(&bt, false, false, 0);
+    }
+    if has_wifi() {
+        let wifi = icon_spawn_button("wifi", 16, "tiaki-shell settings wifi", "Wi-Fi");
+        bar.pack_start(&wifi, false, false, 0);
+    }
+    if let Some(battery) = battery_widget() {
+        bar.pack_start(&battery, false, false, 0);
+    }
 
-    // c. Bluetooth status
-    let bt = icon_spawn_button("bluetooth", 16, "tiaki-shell settings bluetooth", "Bluetooth");
-    bar.pack_start(&bt, false, false, 0);
-
-    // d. Wi-Fi status
-    let wifi = icon_spawn_button("wifi", 16, "tiaki-shell settings wifi", "Wi-Fi");
-    bar.pack_start(&wifi, false, false, 0);
-
-    // e. Battery percentage & horizontal icon
-    let battery = battery_widget();
-    bar.pack_start(&battery, false, false, 0);
-
-    // f. Spotlight search (magnifying glass)
-    let search = icon_action_button("search", 16, "palette.open", "Spotlight Search (⌘Space)");
+    // c. Search
+    let search = icon_action_button("search", 16, "palette.open", "Search (⌘Space)");
     bar.pack_start(&search, false, false, 0);
 
-    // g. Control Center
+    // d. Control Center
     let control = control_center_button(bar_node, &window);
     bar.pack_start(&control, false, false, 0);
 
-    // h. Clock & Notification Center (Fri Nov 13  15:01)
+    // e. Clock and Notification Center
     let clock = clock_button(bar_node);
     bar.pack_start(&clock, false, false, 0);
 
@@ -175,7 +164,7 @@ fn tiaki_brand_button(bar: &agentic_ui_tree::Node) -> gtk::Button {
     let button = gtk::Button::new();
     button.set_relief(gtk::ReliefStyle::None);
     button.set_valign(gtk::Align::Center);
-    button.set_tooltip_text(Some("Tiaki — System Menu"));
+    button.set_tooltip_text(Some("Tiaki"));
     theme::class(&button, "brand-button");
 
     button.add(&icons::logo_mark(18));
@@ -217,14 +206,13 @@ fn approval_chip() -> (gtk::Button, gtk::Label) {
     let button = gtk::Button::new();
     button.set_relief(gtk::ReliefStyle::None);
     button.set_valign(gtk::Align::Center);
-    button.set_tooltip_text(Some("Approvals & Agent Privacy"));
+    button.set_tooltip_text(Some("Agent actions waiting for your approval"));
     theme::class(&button, "bar-chip");
     button.set_no_show_all(true);
     button.hide();
 
-    let row = gtk::Box::new(gtk::Orientation::Horizontal, 5);
+    let row = gtk::Box::new(gtk::Orientation::Horizontal, 0);
     row.set_valign(gtk::Align::Center);
-    row.pack_start(&icons::status_icon("mic", 13), false, false, 0);
 
     let label = gtk::Label::new(Some("1 approval"));
     label.set_valign(gtk::Align::Center);
@@ -262,41 +250,64 @@ fn icon_spawn_button(icon: &str, size: i32, cmd: &str, tooltip: &str) -> gtk::Bu
     button
 }
 
-fn battery_widget() -> gtk::Widget {
-    let container = gtk::Box::new(gtk::Orientation::Horizontal, 3);
+/// The battery readout, or nothing on a machine without one.
+fn battery_widget() -> Option<gtk::Widget> {
+    let pct = battery_capacity()?;
+
+    let container = gtk::Box::new(gtk::Orientation::Horizontal, 0);
     container.set_valign(gtk::Align::Center);
     theme::class(&container, "bar-battery-box");
-    container.set_tooltip_text(Some("Battery: 61% (Power Adapter Connected)"));
 
-    let label = gtk::Label::new(Some("61%"));
+    let label = gtk::Label::new(Some(&format!("{pct}%")));
     label.set_valign(gtk::Align::Center);
     theme::class(&label, "bar-battery-pct");
     container.pack_start(&label, false, false, 0);
 
-    let icon = icons::status_icon("battery", 22);
+    let icon = icons::status_icon("battery", 20);
     icon.set_valign(gtk::Align::Center);
     container.pack_start(&icon, false, false, 0);
 
-    let label_timer = label;
-    glib::timeout_add_seconds_local(10, move || {
-        let pct = battery_capacity();
-        label_timer.set_text(&format!("{pct}%"));
+    glib::timeout_add_seconds_local(30, move || {
+        if let Some(pct) = battery_capacity() {
+            label.set_text(&format!("{pct}%"));
+        }
         glib::ControlFlow::Continue
     });
 
-    container.upcast()
+    Some(container.upcast())
 }
 
-fn battery_capacity() -> u32 {
-    for bat in &["BAT0", "BAT1", "macsmc-battery"] {
-        let path = format!("/sys/class/power_supply/{bat}/capacity");
-        if let Ok(content) = std::fs::read_to_string(path) {
-            if let Ok(pct) = content.trim().parse::<u32>() {
-                return pct;
+fn battery_capacity() -> Option<u32> {
+    let entries = std::fs::read_dir("/sys/class/power_supply").ok()?;
+    for entry in entries.flatten() {
+        let path = entry.path();
+        let kind = std::fs::read_to_string(path.join("type")).unwrap_or_default();
+        if kind.trim() != "Battery" {
+            continue;
+        }
+        if let Ok(text) = std::fs::read_to_string(path.join("capacity")) {
+            if let Ok(pct) = text.trim().parse::<u32>() {
+                return Some(pct);
             }
         }
     }
-    61
+    None
+}
+
+fn has_wifi() -> bool {
+    std::fs::read_dir("/sys/class/net")
+        .map(|entries| {
+            entries
+                .flatten()
+                .any(|entry| entry.path().join("wireless").exists())
+        })
+        .unwrap_or(false)
+}
+
+fn has_bluetooth() -> bool {
+    std::fs::read_dir("/sys/class/bluetooth")
+        .map(|mut entries| entries.next().is_some())
+        .unwrap_or(false)
 }
 
 fn control_center_button(bar: &agentic_ui_tree::Node, window: &gtk::Window) -> gtk::Button {
@@ -306,7 +317,7 @@ fn control_center_button(bar: &agentic_ui_tree::Node, window: &gtk::Window) -> g
     button.set_valign(gtk::Align::Center);
     button.set_tooltip_text(Some("Control Center"));
     theme::class(&button, "bar-icon-button");
-    button.add(&icons::status_icon("control", 18));
+    button.add(&icons::status_icon("control", 16));
 
     let window = window.clone();
     button.connect_clicked(move |button| {

@@ -1,91 +1,56 @@
+//! Network: every interface the kernel lists, with its real state, address,
+//! link speed and hardware address, then the resolvers in use.
 use super::{data::*, widgets::*};
-use gtk::prelude::*;
 
 pub(crate) fn network_page() -> gtk::Box {
     let page = page_shell();
 
-    // 1. Wired Ethernet
-    section(&page, "Wired");
-    let (_wired_card, wired_body) = card(&page);
+    section(&page, "Interfaces");
     let interfaces = network_interfaces();
-    let wired = interfaces.iter().find(|i| !i.wireless);
-
-    let (_, wired_right) = row(
-        &wired_body,
-        Some("fluent:ethernet"),
-        wired.map(|i| i.name.as_str()).unwrap_or("Wired (eth0)"),
-        if wired.map(|i| i.connected).unwrap_or(true) {
-            "Connected · 1000 Mb/s · Full Duplex"
+    if interfaces.is_empty() {
+        let (_card, body) = card(&page);
+        row(
+            &body,
+            Some("fluent:ethernet"),
+            "No network interfaces",
+            "The kernel reports no network hardware.",
+        );
+    }
+    for interface in &interfaces {
+        let (_card, body) = card_spaced(&page);
+        let icon = if interface.wireless {
+            "fluent:wifi"
         } else {
-            "Cable disconnected"
-        },
-    );
-    let wired_switch = toggle_switch(wired.map(|i| i.connected).unwrap_or(true), |_| {});
-    wired_right.pack_start(&wired_switch, false, false, 0);
+            "fluent:ethernet"
+        };
+        let sys = std::path::PathBuf::from("/sys/class/net").join(interface.name.to_lowercase());
+        let speed = read_trim(sys.join("speed"))
+            .and_then(|value| value.parse::<i64>().ok())
+            .filter(|value| *value > 0)
+            .map(|value| format!(" · {value} Mb/s"))
+            .unwrap_or_default();
+        let (_, right) = row(
+            &body,
+            Some(icon),
+            &interface.name,
+            &format!("{}{speed}", interface.state),
+        );
+        value_text(&right, &interface.address);
 
-    let (_, ip_right) = row(
-        &wired_body,
-        None,
-        "IPv4 Address",
-        "Interface IPv4 address and subnet",
-    );
-    value_text(
-        &ip_right,
-        wired.map(|i| i.address.as_str()).unwrap_or("10.0.2.15/24"),
-    );
+        // Without an IPv4 address the row above already shows the MAC.
+        if let Some(mac) = read_trim(sys.join("address")).filter(|mac| *mac != interface.address) {
+            let (_, right) = row(&body, None, "Hardware address", "");
+            value_text(&right, &mac);
+        }
+    }
 
-    let (_, mac_right) = row(
-        &wired_body,
-        None,
-        "Hardware Address",
-        "Permanent hardware MAC",
-    );
-    value_text(
-        &mac_right,
-        &network_properties()
-            .into_iter()
-            .find(|(k, _)| k.contains("MAC") || k.contains("Address"))
-            .map(|(_, v)| v)
-            .unwrap_or_else(|| "52:54:00:12:34:56".to_string()),
-    );
+    section(&page, "DNS");
+    let (_card, body) = card(&page);
+    let (_, right) = row(&body, None, "Name servers", "From /etc/resolv.conf");
+    value_text(&right, &dns_servers());
 
-    // 2. VPN (Parity with Zorin OS Settings reference)
-    section(&page, "VPN");
-    let (_vpn_card, vpn_body) = card(&page);
-    let (_, vpn_right) = row(
-        &vpn_body,
-        Some("fluent:shield"),
-        "VPN",
-        "Not set up · WireGuard, OpenVPN, IPsec",
-    );
-    let add_vpn_btn = pill_button("+");
-    vpn_right.pack_start(&add_vpn_btn, false, false, 0);
-
-    // 3. Network Proxy (Parity with Zorin OS Settings reference)
-    section(&page, "Network Proxy");
-    let (_proxy_card, proxy_body) = card(&page);
-    let (_, proxy_right) = row(
-        &proxy_body,
-        Some("fluent:globe"),
-        "Network Proxy",
-        "Configure proxy method for system HTTP/HTTPS requests",
-    );
-    value_text(&proxy_right, "Disabled");
-    chevron_right(&proxy_right);
-
-    // 4. DNS & System Properties
-    section(&page, "DNS & Routing");
-    let (_props_card, props_body) = card(&page);
-    let (_, dns_right) = row(&props_body, None, "DNS Name Servers", "System resolvers");
-    value_text(&dns_right, &dns_servers());
-
-    let (_, cli_right) = row(
-        &props_body,
-        Some("fluent:keyboard"),
-        "Command Line Interface",
-        "Inspect and configure interfaces via terminal",
-    );
-    value_text(&cli_right, "ip link | ip addr | nmcli");
+    let (_, right) = row(&body, None, "Hostname", "");
+    value_text(&right, &hostname());
 
     page
 }

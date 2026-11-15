@@ -83,6 +83,8 @@ pub fn run() {
         let card = gtk::EventBox::new();
         card.set_visible_window(true);
         theme::class(&card, "overview-card");
+        // Cards arrive as a cascade, not as one block.
+        crate::motion::enter_after(&card, crate::motion::stagger_ms(index.min(12), 25));
 
         let card_box = gtk::Box::new(gtk::Orientation::Vertical, 0);
 

@@ -23,7 +23,11 @@ pub fn run(root: &agentic_ui_tree::Node) {
         return;
     };
 
-    let all_apps = model::launcher_apps(root);
+    let all_apps: Vec<model::AppItem> = model::launcher_apps(root)
+        .into_iter()
+        // The launcher does not list itself.
+        .filter(|app| !app.command.ends_with("tiaki-shell launcher"))
+        .collect();
     let current_cat: Rc<RefCell<String>> = Rc::new(RefCell::new("All".to_string()));
     let search_query: Rc<RefCell<String>> = Rc::new(RefCell::new(String::new()));
     let filtered: Rc<RefCell<Vec<model::AppItem>>> = Rc::new(RefCell::new(all_apps.clone()));
@@ -77,15 +81,13 @@ pub fn run(root: &agentic_ui_tree::Node) {
     tabs_box.set_valign(gtk::Align::Center);
     theme::class(&tabs_box, "app-tabs");
 
-    let categories = [
-        "All",
-        "Developer Tools",
-        "Productivity & Finance",
-        "Social",
-        "Utilities",
-        "Creativity",
-        "Information & Reading",
-    ];
+    // Tabs are the categories the installed apps really have, nothing more.
+    let mut categories: Vec<String> = vec!["All".to_string()];
+    for app in &all_apps {
+        if !categories.contains(&app.category) && categories.len() < 7 {
+            categories.push(app.category.clone());
+        }
+    }
 
     let tab_buttons: Rc<RefCell<Vec<(String, gtk::Button)>>> = Rc::new(RefCell::new(Vec::new()));
 
@@ -176,7 +178,7 @@ pub fn run(root: &agentic_ui_tree::Node) {
     };
 
     // Build Category Tabs
-    for category in categories {
+    for category in &categories {
         let btn = gtk::Button::with_label(category);
         btn.set_relief(gtk::ReliefStyle::None);
         theme::class(&btn, "app-tab");
@@ -263,6 +265,7 @@ pub fn run(root: &agentic_ui_tree::Node) {
     apply_filters();
 
     window.show_all();
+    crate::motion::enter(&modal);
     entry.grab_focus();
     window.present();
     gtk::main();

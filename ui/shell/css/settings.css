@@ -32,7 +32,7 @@
 }
 .settings-profile-name {
   font-size: 15px;
-  font-weight: 600;
+  font-weight: 500;
   color: #e6e0d4;
 }
 .settings-profile-sub {
@@ -93,18 +93,18 @@
   color: rgba(230, 224, 212, 0.85);
 }
 .settings-nav.active .settings-nav-label {
-  color: #ffffff;
-  font-weight: 600;
+  color: @paper;
+  font-weight: 500;
 }
 
 .settings-title {
   font-size: 24px;
-  font-weight: 600;
+  font-weight: 500;
   color: #e6e0d4;
 }
 .settings-section {
   font-size: 13px;
-  font-weight: 600;
+  font-weight: 500;
   color: #e6e0d4;
 }
 .settings-card {
@@ -135,12 +135,12 @@
 }
 .settings-device-name {
   font-size: 17px;
-  font-weight: 600;
+  font-weight: 500;
   color: #e6e0d4;
 }
 .settings-card-title {
   font-size: 15px;
-  font-weight: 600;
+  font-weight: 500;
   color: #e6e0d4;
 }
 .settings-card-sub {
@@ -181,7 +181,7 @@
   border: 1px solid #d08a2c;
   border-radius: 6px;
   font-size: 12.5px;
-  font-weight: 600;
+  font-weight: 500;
   color: #151413;
   padding: 7px 16px;
   box-shadow: none;
@@ -214,7 +214,6 @@ popover.settings-popover.background {
   border: 1px solid rgba(230, 224, 212, 0.14);
   border-radius: 8px;
   padding: 4px;
-  box-shadow: 0 18px 42px rgba(0, 0, 0, 0.55);
 }
 popover.settings-popover > contents {
   background-color: transparent;
@@ -318,7 +317,7 @@ popover.settings-popover > contents {
   box-shadow: none;
 }
 .win-scale slider:hover {
-  background-color: #ffffff;
+  background-color: @paper;
 }
 .win-scale:disabled {
   opacity: 1;

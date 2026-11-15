@@ -42,8 +42,8 @@ pub(crate) fn personalization_page(root: &Node, nav: &Nav) -> gtk::Box {
     let (_, typo_right) = row(
         &typo_body,
         Some("settings"),
-        "System Typeface",
-        "Select primary UI font (Aspekta, SF Pro, Plus Jakarta Sans, IBM Plex)",
+        "Typeface",
+        "Font used by application windows",
     );
     typo_right.pack_start(&font_dropdown(&cur_font), false, false, 0);
 

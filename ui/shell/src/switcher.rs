@@ -165,6 +165,7 @@ pub fn run(args: &[String]) {
 
     window.connect_destroy(|_| gtk::main_quit());
     window.show_all();
+    crate::motion::enter(&panel);
     window.present();
     scrim.grab_focus();
     gtk::main();

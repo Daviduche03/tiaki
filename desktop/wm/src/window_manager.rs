@@ -120,21 +120,37 @@ pub static WINDOW_STATE_SNAP_ZONE: WindowStateKey<Option<SnapZone>> =
 pub static WINDOW_STATE_SNAP_MONITOR: WindowStateKey<Option<String>> =
     WindowStateKey::new("snapMonitor", |_| None);
 
-pub const OPEN_CLOSE_ANIMATION_DURATION: f64 = 500.0;
+// Motion budget (CLAUDE.md §3.1): 150 to 300ms, decelerating, nothing that
+// makes the user wait. ShojiWM eases with cubic beziers only, so the spring
+// feel is a bezier that overshoots its target slightly and settles.
+pub const OPEN_CLOSE_ANIMATION_DURATION: f64 = 240.0;
 pub const INITIAL_TILEABILITY_SETTLE_DURATION: f64 = 1000.0;
-pub const WINDOW_MANAGEMENT_ANIMATION_DURATION: f64 = 300.0;
+pub const WINDOW_MANAGEMENT_ANIMATION_DURATION: f64 = 260.0;
 const UNMAXIMIZE_GRAB_ANIMATION_DURATION: f64 = 90.0;
 /// A restore and an activate closer together than this are one taskbar click.
 const RESTORE_ACTIVATE_GRACE_MS: f64 = 100.0;
-pub const WINDOW_MANAGEMENT_EASING: Easing = cubic_bezier(0.1, 0.9, 0.2, 1.0);
-const WINDOW_OPEN_EASING: Easing = cubic_bezier(0.1, 1.1, 0.1, 1.1);
-const WINDOW_CLOSE_EASING: Easing = cubic_bezier(0.3, -0.3, 0.0, 1.0);
-const WINDOW_MINIMIZE_RECT_EASING: Easing = cubic_bezier(0.3, -0.3, 0.0, 1.0);
-const WINDOW_UNMINIMIZE_RECT_EASING: Easing = cubic_bezier(0.1, 1.1, 0.1, 1.1);
-const WINDOW_MINIMIZE_OPACITY_EASING: Easing = cubic_bezier(0.3, -0.3, 0.0, 1.0);
-const WINDOW_UNMINIMIZE_OPACITY_EASING: Easing = cubic_bezier(0.1, 1.1, 0.1, 1.1);
-pub const TILE_ANIMATION_DURATION: f64 = 500.0;
-pub const WORKSPACE_SWITCH_ANIMATION_DURATION: f64 = 500.0;
+/// Zoom, snap, restore and tile moves. Decelerates onto the target without
+/// overshoot: a resizing window that overshoots makes its client relayout
+/// twice.
+pub const WINDOW_MANAGEMENT_EASING: Easing = cubic_bezier(0.16, 1.0, 0.3, 1.0);
+/// Arrivals: fast start, a few percent past the target, then settle.
+const WINDOW_SETTLE_EASING: Easing = cubic_bezier(0.22, 1.25, 0.36, 1.0);
+/// Departures: accelerate away. No wind-up before leaving.
+const WINDOW_LEAVE_EASING: Easing = cubic_bezier(0.4, 0.0, 1.0, 1.0);
+const WINDOW_OPEN_EASING: Easing = WINDOW_SETTLE_EASING;
+const WINDOW_CLOSE_EASING: Easing = WINDOW_LEAVE_EASING;
+const WINDOW_MINIMIZE_RECT_EASING: Easing = WINDOW_LEAVE_EASING;
+const WINDOW_UNMINIMIZE_RECT_EASING: Easing = WINDOW_SETTLE_EASING;
+// Opacity never overshoots: it would clamp and read as a flicker.
+const WINDOW_MINIMIZE_OPACITY_EASING: Easing = WINDOW_LEAVE_EASING;
+const WINDOW_UNMINIMIZE_OPACITY_EASING: Easing = Easing::EASE_OUT_CUBIC;
+/// How far a window rises into place when it opens, and drops when closed.
+const OPEN_RISE_PX: f64 = 24.0;
+const CLOSE_DROP_PX: f64 = 12.0;
+/// A minimized window travels further: it is going down to the dock.
+const MINIMIZE_DROP_PX: f64 = 160.0;
+pub const TILE_ANIMATION_DURATION: f64 = 300.0;
+pub const WORKSPACE_SWITCH_ANIMATION_DURATION: f64 = 300.0;
 const WORKSPACE_GESTURE_FINGERS: u32 = 3;
 const WORKSPACE_GESTURE_AXIS_LOCK_PX: f64 = 8.0;
 const WORKSPACE_GESTURE_THRESHOLD_RATIO: f64 = 0.22;
@@ -3206,7 +3222,7 @@ fn schedule_open_animation(window: Window) {
     window.schedule_animation(
         ManagedAnimation::new(OPEN_ANIMATION_CHANNEL)
             .rect(
-                Some(delta(200.0)),
+                Some(delta(OPEN_RISE_PX)),
                 delta(0.0),
                 duration,
                 WINDOW_OPEN_EASING,
@@ -3216,7 +3232,7 @@ fn schedule_open_animation(window: Window) {
                 Some(0.0),
                 1.0,
                 duration,
-                WINDOW_OPEN_EASING,
+                Easing::EASE_OUT_CUBIC,
                 AnimationMode::Multiply,
             ),
     );
@@ -3228,7 +3244,7 @@ fn schedule_close_animation(window: Window) {
         ManagedAnimation::new(CLOSE_ANIMATION_CHANNEL)
             .rect(
                 Some(delta(0.0)),
-                delta(120.0),
+                delta(CLOSE_DROP_PX),
                 duration,
                 WINDOW_CLOSE_EASING,
                 AnimationMode::Add,
@@ -3246,7 +3262,7 @@ fn schedule_close_animation(window: Window) {
 fn schedule_minimize_animation(window: Window, minimized: bool, instant: bool) {
     if instant {
         // Replace whatever the channel holds with its end pose.
-        let rest = delta(if minimized { 120.0 } else { 0.0 });
+        let rest = delta(if minimized { MINIMIZE_DROP_PX } else { 0.0 });
         let opacity = if minimized { 0.0 } else { 1.0 };
         window.schedule_animation(
             ManagedAnimation::new(MINIMIZE_ANIMATION_CHANNEL)
@@ -3263,9 +3279,9 @@ fn schedule_minimize_animation(window: Window, minimized: bool, instant: bool) {
     }
     let duration = OPEN_CLOSE_ANIMATION_DURATION as u64;
     let (rect_from, rect_to, rect_easing) = if minimized {
-        (delta(0.0), delta(120.0), WINDOW_MINIMIZE_RECT_EASING)
+        (delta(0.0), delta(MINIMIZE_DROP_PX), WINDOW_MINIMIZE_RECT_EASING)
     } else {
-        (delta(200.0), delta(0.0), WINDOW_UNMINIMIZE_RECT_EASING)
+        (delta(MINIMIZE_DROP_PX), delta(0.0), WINDOW_UNMINIMIZE_RECT_EASING)
     };
     let (opacity_from, opacity_to, opacity_easing) = if minimized {
         (1.0, 0.0, WINDOW_MINIMIZE_OPACITY_EASING)

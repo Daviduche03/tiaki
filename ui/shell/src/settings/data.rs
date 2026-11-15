@@ -48,10 +48,9 @@ pub(crate) fn set_wallpaper(name: &str) {
 
 pub(crate) fn system_fonts() -> Vec<(&'static str, &'static str)> {
     vec![
-        ("Aspekta", "Modern European Neo-Grotesque (Default)"),
-        ("SF Pro Display", "Apple System"),
-        ("Plus Jakarta Sans", "Geometric Contemporary"),
-        ("IBM Plex Sans", "Industrial Monoline"),
+        ("IBM Plex Sans", "Default"),
+        ("Aspekta", "Neo-grotesque"),
+        ("Plus Jakarta Sans", "Geometric"),
     ]
 }
 
@@ -61,7 +60,7 @@ pub(crate) fn current_font() -> String {
         .ok()
         .map(|value| value.trim().to_string())
         .filter(|value| !value.is_empty())
-        .unwrap_or_else(|| "Aspekta".to_string())
+        .unwrap_or_else(|| "IBM Plex Sans".to_string())
 }
 
 pub(crate) fn set_font(font: &str) {

@@ -569,14 +569,14 @@
           "id": "dock.files",
           "kind": "app",
           "props": {
-            "label": "Finder",
+            "label": "Files",
             "icon": "system-file-manager-symbolic",
             "art": "files",
             "command": "files.open",
             "category": "System",
-            "description": "Browse the filesystem with two-tone macOS Finder.",
+            "description": "Browse and manage files.",
             "color": "blue",
-            "running": true,
+            "running": false,
             "pinned": true
           }
         },
@@ -584,43 +584,13 @@
           "id": "dock.launcher",
           "kind": "app",
           "props": {
-            "label": "Launchpad",
+            "label": "Apps",
             "icon": "view-app-grid-symbolic",
             "art": "launcher",
             "command": "tiaki-shell launcher",
             "category": "System",
-            "description": "Open Applications grid overlay.",
+            "description": "Every application on this machine.",
             "color": "blue",
-            "running": false,
-            "pinned": true
-          }
-        },
-        {
-          "id": "dock.mail",
-          "kind": "app",
-          "props": {
-            "label": "Mail",
-            "icon": "mail-send-symbolic",
-            "art": "mail",
-            "command": "epiphany https://mail.google.com",
-            "category": "Internet",
-            "description": "Electronic mail and communication client.",
-            "color": "blue",
-            "running": false,
-            "pinned": true
-          }
-        },
-        {
-          "id": "dock.maps",
-          "kind": "app",
-          "props": {
-            "label": "Maps",
-            "icon": "find-location-symbolic",
-            "art": "maps",
-            "command": "epiphany https://maps.google.com",
-            "category": "Utilities",
-            "description": "World maps, satellite imagery, and navigation.",
-            "color": "orange",
             "running": false,
             "pinned": true
           }
@@ -634,9 +604,9 @@
             "art": "terminal",
             "command": "foot -c /etc/tiaki/foot.ini",
             "category": "System",
-            "description": "Wayland terminal with prompt, IBM Plex Mono, and Tokyo Night.",
+            "description": "A shell.",
             "color": "green",
-            "running": true,
+            "running": false,
             "pinned": true
           }
         },
@@ -644,28 +614,13 @@
           "id": "dock.browser",
           "kind": "app",
           "props": {
-            "label": "Safari",
+            "label": "Browser",
             "icon": "web-browser-symbolic",
             "art": "browser",
             "command": "epiphany",
             "category": "Internet",
             "description": "Browse the web in a sandboxed session.",
             "color": "cyan",
-            "running": true,
-            "pinned": true
-          }
-        },
-        {
-          "id": "dock.code",
-          "kind": "app",
-          "props": {
-            "label": "Code",
-            "icon": "accessories-text-editor-symbolic",
-            "art": "code",
-            "command": "mousepad /home/desktop/demo.rs",
-            "category": "Developer",
-            "description": "Visual Studio Code editor.",
-            "color": "blue",
             "running": false,
             "pinned": true
           }
@@ -674,103 +629,13 @@
           "id": "dock.editor",
           "kind": "app",
           "props": {
-            "label": "Notes",
+            "label": "Editor",
             "icon": "accessories-text-editor-symbolic",
             "art": "editor",
-            "command": "mousepad /home/desktop/notes.txt",
+            "command": "mousepad",
             "category": "Create",
-            "description": "A lined text editor for quick thoughts and notes.",
+            "description": "A plain text editor.",
             "color": "orange",
-            "running": true,
-            "pinned": true
-          }
-        },
-        {
-          "id": "dock.music",
-          "kind": "app",
-          "props": {
-            "label": "Music",
-            "icon": "audio-x-generic-symbolic",
-            "art": "music",
-            "command": "epiphany https://music.youtube.com",
-            "category": "Media",
-            "description": "High-fidelity audio and music streaming.",
-            "color": "red",
-            "running": false,
-            "pinned": true
-          }
-        },
-        {
-          "id": "dock.calendar",
-          "kind": "app",
-          "props": {
-            "label": "Calendar",
-            "icon": "x-office-calendar-symbolic",
-            "art": "calendar",
-            "command": "epiphany https://calendar.google.com",
-            "category": "Productivity",
-            "description": "Personal schedule and event management.",
-            "color": "red",
-            "running": false,
-            "pinned": true
-          }
-        },
-        {
-          "id": "dock.calc",
-          "kind": "app",
-          "props": {
-            "label": "Calculator",
-            "icon": "accessories-calculator-symbolic",
-            "art": "calc",
-            "command": "foot -c /etc/tiaki/foot.ini -e python3",
-            "category": "Utilities",
-            "description": "Desktop calculator and unit converter.",
-            "color": "orange",
-            "running": false,
-            "pinned": true
-          }
-        },
-        {
-          "id": "dock.docker",
-          "kind": "app",
-          "props": {
-            "label": "Docker",
-            "icon": "application-x-executable-symbolic",
-            "art": "docker",
-            "command": "foot -c /etc/tiaki/foot.ini -e docker ps",
-            "category": "Developer",
-            "description": "Container engine and orchestration suite.",
-            "color": "blue",
-            "running": false,
-            "pinned": true
-          }
-        },
-        {
-          "id": "dock.github",
-          "kind": "app",
-          "props": {
-            "label": "GitHub",
-            "icon": "emblem-favorite-symbolic",
-            "art": "github",
-            "command": "epiphany https://github.com",
-            "category": "Developer",
-            "description": "Git repository management and code collaboration.",
-            "color": "purple",
-            "running": false,
-            "pinned": true
-          }
-        },
-        {
-          "id": "dock.discord",
-          "kind": "app",
-          "props": {
-            "label": "Discord",
-            "icon": "chat-symbolic",
-            "art": "discord",
-            "command": "epiphany https://discord.com/app",
-            "category": "Social",
-            "description": "Voice, video, and text communication channel.",
-            "color": "purple",
             "running": false,
             "pinned": true
           }
@@ -779,12 +644,12 @@
           "id": "dock.monitor",
           "kind": "app",
           "props": {
-            "label": "Activity Monitor",
+            "label": "Monitor",
             "icon": "computer-symbolic",
             "art": "monitor",
             "command": "foot -c /etc/tiaki/foot.ini -a btop -w 940x560 -e btop",
             "category": "System",
-            "description": "CPU, memory, disks, and processes in a live ECG monitor.",
+            "description": "CPU, memory, disks and processes.",
             "color": "purple",
             "running": false,
             "pinned": true
@@ -794,12 +659,12 @@
           "id": "dock.settings",
           "kind": "app",
           "props": {
-            "label": "System Settings",
+            "label": "Settings",
             "icon": "preferences-system-symbolic",
             "art": "settings",
             "command": "settings.open",
             "category": "System",
-            "description": "System settings, Wi-Fi, displays, keyboard, and agent autonomy.",
+            "description": "Displays, sound, network, and agent autonomy.",
             "color": "slate",
             "running": false,
             "pinned": true
@@ -809,14 +674,14 @@
           "id": "dock.agents",
           "kind": "app",
           "props": {
-            "label": "AI Agents",
+            "label": "Agents",
             "icon": "system-run-symbolic",
             "art": "agents",
             "command": "tiaki-shell agents",
             "category": "Tiaki",
-            "description": "Configure autonomous agent engines, models, and ledger verification.",
+            "description": "Agent sessions and what they are allowed to do.",
             "color": "pink",
-            "running": true,
+            "running": false,
             "pinned": true
           }
         },
@@ -825,21 +690,6 @@
           "kind": "separator",
           "props": {
             "orientation": "vertical"
-          }
-        },
-        {
-          "id": "dock.downloads",
-          "kind": "app",
-          "props": {
-            "label": "Downloads",
-            "icon": "folder-download-symbolic",
-            "art": "downloads",
-            "command": "files.open",
-            "category": "System",
-            "description": "Downloads folder stack.",
-            "color": "blue",
-            "running": false,
-            "pinned": true
           }
         },
         {
@@ -884,10 +734,10 @@
           "id": "launch.editor",
           "kind": "app",
           "props": {
-            "label": "Code Editor",
+            "label": "Editor",
             "icon": "accessories-text-editor-symbolic",
             "art": "editor",
-            "command": "mousepad /home/desktop/demo.rs",
+            "command": "mousepad",
             "category": "Developer Tools",
             "description": "Edit code and text files.",
             "color": "orange"
@@ -897,7 +747,7 @@
           "id": "launch.agents",
           "kind": "app",
           "props": {
-            "label": "Antigravity",
+            "label": "Agent State",
             "icon": "system-run-symbolic",
             "art": "agents",
             "command": "foot -c /etc/tiaki/foot.ini -e /usr/local/bin/agentd state",
@@ -923,7 +773,7 @@
           "id": "launch.monitor",
           "kind": "app",
           "props": {
-            "label": "Activity Monitor",
+            "label": "Monitor",
             "icon": "computer-symbolic",
             "art": "monitor",
             "command": "foot -c /etc/tiaki/foot.ini -a btop -w 940x560 -e btop",
@@ -946,45 +796,6 @@
           }
         },
         {
-          "id": "launch.notes",
-          "kind": "app",
-          "props": {
-            "label": "Notes",
-            "icon": "accessories-text-editor-symbolic",
-            "art": "editor",
-            "command": "mousepad",
-            "category": "Productivity & Finance",
-            "description": "Quick notes and scratchpad.",
-            "color": "orange"
-          }
-        },
-        {
-          "id": "launch.calculator",
-          "kind": "app",
-          "props": {
-            "label": "Calculator",
-            "icon": "accessories-calculator",
-            "art": "clock",
-            "command": "foot -e bc -l",
-            "category": "Productivity & Finance",
-            "description": "Precise math and unit conversions.",
-            "color": "green"
-          }
-        },
-        {
-          "id": "launch.calendar",
-          "kind": "app",
-          "props": {
-            "label": "Calendar",
-            "icon": "x-office-calendar",
-            "art": "clock",
-            "command": "settings.open",
-            "category": "Productivity & Finance",
-            "description": "Calendar and schedule view.",
-            "color": "cyan"
-          }
-        },
-        {
           "id": "launch.browser",
           "kind": "app",
           "props": {
@@ -998,32 +809,6 @@
           }
         },
         {
-          "id": "launch.chrome",
-          "kind": "app",
-          "props": {
-            "label": "Google Chrome",
-            "icon": "google-chrome",
-            "art": "browser",
-            "command": "epiphany",
-            "category": "Social",
-            "description": "Full web and devtools browser.",
-            "color": "orange"
-          }
-        },
-        {
-          "id": "launch.contacts",
-          "kind": "app",
-          "props": {
-            "label": "Contacts",
-            "icon": "user-info",
-            "art": "settings",
-            "command": "settings.open",
-            "category": "Social",
-            "description": "Users and accounts.",
-            "color": "purple"
-          }
-        },
-        {
           "id": "launch.settings",
           "kind": "app",
           "props": {
@@ -1034,19 +819,6 @@
             "category": "Utilities",
             "description": "System settings, wallpapers, sound, network.",
             "color": "slate"
-          }
-        },
-        {
-          "id": "launch.theme",
-          "kind": "app",
-          "props": {
-            "label": "Theme",
-            "icon": "weather-clear-night-symbolic",
-            "art": "theme",
-            "command": "tiaki:theme.toggle",
-            "category": "Utilities",
-            "description": "Toggle between dark and light appearance.",
-            "color": "purple"
           }
         },
         {

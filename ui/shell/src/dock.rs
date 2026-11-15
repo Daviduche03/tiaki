@@ -1,9 +1,9 @@
-//! The floating dock with macOS-style physical magnification and spring bounce.
+//! The dock: a low ink shelf, centred at the bottom of the screen.
 //!
-//! Pinned applications, running indicators, and the separator come straight
-//! from the `dock` panel in the tree. The dock floats above windows with smooth
-//! fisheye Gaussian magnification on hover, decaying spring launch bounce, and
-//! a floating label badge above the hovered icon.
+//! Pinned applications and the separator come straight from the `dock` panel
+//! in the tree; running dots come from the live window list. Icons stand on
+//! the shelf and grow upward out of it under the pointer, so the surface
+//! never resizes while the pointer moves.
 
 use std::cell::Cell;
 use std::rc::Rc;
@@ -14,22 +14,34 @@ use gtk::gdk::prelude::GdkContextExt;
 use gtk::prelude::*;
 use gtk_layer_shell::{Edge, KeyboardMode, Layer, LayerShell};
 
-use crate::{icons, model, single, system, theme, windows};
+use crate::motion::Spring;
+use crate::{model, single, system, theme, windows};
 
 /// Stylesheets owned by this module, in cascade order.
 pub const STYLE_SHEETS: &[&str] = &[include_str!("../css/dock.css")];
 
-const BASE_ICON_SIZE: f64 = 36.0;
-const PEAK_ICON_SIZE: f64 = 48.0;
-const MAGNIFY_RADIUS: f64 = 90.0;
+const BASE_ICON_SIZE: f64 = 40.0;
+const PEAK_ICON_SIZE: f64 = 52.0;
+const MAGNIFY_RADIUS: f64 = 96.0;
+/// Width of one icon slot. Wider than the base icon so neighbours have air,
+/// and wide enough that a magnified icon never touches the next one.
+const SLOT_WIDTH: i32 = 52;
+/// How far a launching icon hops.
+const BOUNCE_HEIGHT: f64 = 12.0;
+/// Height of the icon canvas: a magnified icon plus the hop above it.
+const CANVAS_HEIGHT: i32 = (PEAK_ICON_SIZE + BOUNCE_HEIGHT) as i32;
+/// Shelf padding above the resting icons, and the shelf's corner radius.
+const SHELF_PAD: f64 = 8.0;
+const SHELF_RADIUS: f64 = 16.0;
+const BOUNCE_SECONDS: f64 = 0.3;
 
 struct AppItemWidget {
     app: model::AppItem,
     button: gtk::Button,
     drawing_area: gtk::DrawingArea,
+    dot: gtk::Box,
     pixbuf: gtk::gdk_pixbuf::Pixbuf,
-    current_size: Cell<f64>,
-    target_size: Cell<f64>,
+    size: Cell<Spring>,
     bounce_start: Cell<Option<Instant>>,
 }
 
@@ -45,17 +57,17 @@ pub fn run(root: &agentic_ui_tree::Node) {
     let window = theme::base_window("dock-window");
     theme::setup_layer(&window, "tiaki-dock", Layer::Top, KeyboardMode::None, 0);
     theme::anchor(&window, Edge::Bottom);
-    window.set_layer_shell_margin(Edge::Bottom, 6);
+    window.set_layer_shell_margin(Edge::Bottom, 8);
 
-    let container = gtk::Box::new(gtk::Orientation::Vertical, 2);
+    let container = gtk::Box::new(gtk::Orientation::Vertical, 0);
     container.set_valign(gtk::Align::End);
     container.set_halign(gtk::Align::Center);
 
     // Floating label pill above the dock
     let label_box = gtk::Box::new(gtk::Orientation::Horizontal, 0);
-    label_box.set_halign(gtk::Align::Center);
     label_box.set_size_request(-1, 24);
     let floating_label = gtk::Label::new(None);
+    floating_label.set_halign(gtk::Align::Start);
     theme::class(&floating_label, "dock-label-pill");
     floating_label.set_opacity(0.0);
     label_box.pack_start(&floating_label, false, false, 0);
@@ -70,9 +82,27 @@ pub fn run(root: &agentic_ui_tree::Node) {
             | gdk::EventMask::ENTER_NOTIFY_MASK,
     );
 
-    let panel = gtk::Box::new(gtk::Orientation::Horizontal, 2);
+    let panel = gtk::Box::new(gtk::Orientation::Horizontal, 0);
     theme::class(&panel, "dock");
     panel.set_valign(gtk::Align::End);
+
+    // The shelf: ink with one hairline, painted behind the icons. It starts
+    // SHELF_PAD above the resting icons, so magnified icons rise out of it.
+    panel.connect_draw(|widget, cr| {
+        let width = widget.allocated_width() as f64;
+        let height = widget.allocated_height() as f64;
+        let top = CANVAS_HEIGHT as f64 - BASE_ICON_SIZE - SHELF_PAD;
+        let (ir, ig, ib) = theme::INK;
+        let (pr, pg, pb) = theme::PAPER;
+
+        rounded_rect(cr, 0.5, top + 0.5, width - 1.0, height - top - 1.0, SHELF_RADIUS);
+        cr.set_source_rgba(ir, ig, ib, 0.88);
+        let _ = cr.fill_preserve();
+        cr.set_source_rgba(pr, pg, pb, 0.14);
+        cr.set_line_width(1.0);
+        let _ = cr.stroke();
+        gtk::glib::Propagation::Proceed
+    });
 
     let mut items: Vec<Rc<AppItemWidget>> = Vec::new();
 
@@ -89,11 +119,7 @@ pub fn run(root: &agentic_ui_tree::Node) {
                 }
             }
             "separator" => {
-                let sep = gtk::Box::new(gtk::Orientation::Vertical, 0);
-                sep.set_size_request(1, 32);
-                sep.set_valign(gtk::Align::Center);
-                theme::class(&sep, "dock-sep");
-                panel.pack_start(&sep, false, false, 4);
+                panel.pack_start(&shelf_rule(), false, false, 8);
             }
             _ => {}
         }
@@ -110,22 +136,19 @@ pub fn run(root: &agentic_ui_tree::Node) {
     for item in items_rc.iter() {
         let item_clone = item.clone();
         item.drawing_area.connect_draw(move |widget, cr| {
-            let cur_size = item_clone.current_size.get();
+            let cur_size = item_clone.size.get().value;
             let alloc_w = widget.allocated_width() as f64;
             let alloc_h = widget.allocated_height() as f64;
 
+            // Launch hop: a damped bounce that settles inside 300ms.
             let mut y_bounce = 0.0;
             if let Some(start) = item_clone.bounce_start.get() {
                 let elapsed = start.elapsed().as_secs_f64();
-                if elapsed < 0.85 {
-                    let decay = (-3.2 * elapsed).exp();
-                    let bounce = (elapsed * 18.0).sin().abs() * decay;
-                    y_bounce = -18.0 * bounce;
+                if elapsed < BOUNCE_SECONDS {
+                    let decay = (-9.0 * elapsed).exp();
+                    y_bounce = -BOUNCE_HEIGHT * (elapsed * 21.0).sin().abs() * decay;
                 }
             }
-
-            // Subtle vertical lift on magnification (macOS signature lift effect)
-            let lift = (cur_size - BASE_ICON_SIZE) * 0.35;
 
             let _ = cr.save();
             let pb_w = item_clone.pixbuf.width() as f64;
@@ -136,8 +159,9 @@ pub fn run(root: &agentic_ui_tree::Node) {
                 let drawn_w = pb_w * scale;
                 let drawn_h = pb_h * scale;
 
+                // Icons stand on the canvas floor and grow upward.
                 let x_off = (alloc_w - drawn_w) / 2.0;
-                let y_off = (alloc_h - drawn_h) / 2.0 - lift + y_bounce;
+                let y_off = alloc_h - drawn_h + y_bounce;
 
                 cr.translate(x_off, y_off);
                 cr.scale(scale, scale);
@@ -162,26 +186,27 @@ pub fn run(root: &agentic_ui_tree::Node) {
 
             let items = items.clone();
             let is_animating = is_animating.clone();
-            gtk::glib::timeout_add_local(std::time::Duration::from_millis(16), move || {
+            let mut last = Instant::now();
+            gtk::glib::timeout_add_local(std::time::Duration::from_millis(8), move || {
+                let now = Instant::now();
+                let dt = (now - last).as_secs_f64();
+                last = now;
                 let mut still_animating = false;
 
                 for item in items.iter() {
-                    let cur = item.current_size.get();
-                    let tgt = item.target_size.get();
-                    let diff = tgt - cur;
-                    if diff.abs() > 0.25 {
-                        let new_size = cur + diff * 0.35;
-                        item.current_size.set(new_size);
-                        item.drawing_area.queue_draw();
+                    let mut spring = item.size.get();
+                    let before = spring.value;
+                    if spring.step(dt) {
                         still_animating = true;
-                    } else if (cur - tgt).abs() > 0.01 {
-                        item.current_size.set(tgt);
+                    }
+                    item.size.set(spring);
+                    if (spring.value - before).abs() > 0.0 {
                         item.drawing_area.queue_draw();
                     }
 
                     if let Some(start) = item.bounce_start.get() {
                         let elapsed = start.elapsed().as_secs_f64();
-                        if elapsed < 0.85 {
+                        if elapsed < BOUNCE_SECONDS {
                             still_animating = true;
                             item.drawing_area.queue_draw();
                         } else {
@@ -215,6 +240,7 @@ pub fn run(root: &agentic_ui_tree::Node) {
             last_x.set(mouse_x);
 
             let mut closest_label: Option<&str> = None;
+            let mut closest_center = 0.0;
             let mut min_dist = f64::MAX;
 
             for item in items.iter() {
@@ -228,17 +254,24 @@ pub fn run(root: &agentic_ui_tree::Node) {
                 } else {
                     BASE_ICON_SIZE
                 };
-                item.target_size.set(target);
+                let mut spring = item.size.get();
+                spring.target = target;
+                item.size.set(spring);
 
                 if dist < min_dist {
                     min_dist = dist;
+                    closest_center = center_x;
                     closest_label = Some(&item.app.label);
                 }
             }
 
-            if min_dist < 35.0 {
+            if min_dist < SLOT_WIDTH as f64 / 2.0 {
                 if let Some(lbl) = closest_label {
+                    // Centre the name over its icon.
                     flabel.set_text(lbl);
+                    let (_, width) = flabel.preferred_width();
+                    let start = (closest_center - width as f64 / 2.0).max(0.0);
+                    flabel.set_margin_start(start as i32);
                     flabel.set_opacity(1.0);
                 }
             } else {
@@ -280,7 +313,9 @@ pub fn run(root: &agentic_ui_tree::Node) {
         let flabel = floating_label.clone();
         event_box.connect_leave_notify_event(move |_, _| {
             for item in items.iter() {
-                item.target_size.set(BASE_ICON_SIZE);
+                let mut spring = item.size.get();
+                spring.target = BASE_ICON_SIZE;
+                item.size.set(spring);
             }
             flabel.set_opacity(0.0);
             start_tick();
@@ -299,9 +334,10 @@ pub fn run(root: &agentic_ui_tree::Node) {
             start_tick();
 
             let app_id = windows::app_id_for_command(&command);
+            let label = item_clone.app.label.clone();
             let app_windows: Vec<_> = windows::views()
                 .into_iter()
-                .filter(|view| view.app_id == app_id)
+                .filter(|view| owns(&app_id, &label, view))
                 .collect();
             match app_windows.len() {
                 0 => {
@@ -322,6 +358,29 @@ pub fn run(root: &agentic_ui_tree::Node) {
     }
 
     window.show_all();
+
+    // Running dots follow the real window list, not the manifest.
+    let refresh_dots = {
+        let items = items_rc.clone();
+        move || {
+            let views = windows::views();
+            for item in items.iter() {
+                let app_id = windows::app_id_for_command(&item.app.command);
+                let running = views.iter().any(|view| owns(&app_id, &item.app.label, view));
+                let context = item.dot.style_context();
+                if running {
+                    context.remove_class("hidden");
+                } else {
+                    context.add_class("hidden");
+                }
+            }
+        }
+    };
+    refresh_dots();
+    gtk::glib::timeout_add_seconds_local(2, move || {
+        refresh_dots();
+        gtk::glib::ControlFlow::Continue
+    });
 
     // The launcher has its own dock; hide the desktop dock while it is open.
     let window_for_visibility = window.clone();
@@ -356,14 +415,50 @@ fn launcher_open() -> bool {
         .unwrap_or(false)
 }
 
+/// Whether a window belongs to a dock item. The shell's own apps (Files,
+/// Settings, Agents) share one app_id, so those are told apart by title.
+fn owns(app_id: &str, label: &str, view: &windows::View) -> bool {
+    if view.app_id != app_id {
+        return false;
+    }
+    if app_id != "tiaki-shell" {
+        return true;
+    }
+    view.name.to_lowercase().contains(&label.to_lowercase())
+}
+
+fn rounded_rect(cr: &gtk::cairo::Context, x: f64, y: f64, w: f64, h: f64, r: f64) {
+    use std::f64::consts::{FRAC_PI_2, PI};
+    cr.new_sub_path();
+    cr.arc(x + w - r, y + r, r, -FRAC_PI_2, 0.0);
+    cr.arc(x + w - r, y + h - r, r, 0.0, FRAC_PI_2);
+    cr.arc(x + r, y + h - r, r, FRAC_PI_2, PI);
+    cr.arc(x + r, y + r, r, PI, 1.5 * PI);
+    cr.close_path();
+}
+
+/// The hairline between apps and the trash, standing on the shelf.
+fn shelf_rule() -> gtk::DrawingArea {
+    let rule = gtk::DrawingArea::new();
+    rule.set_size_request(1, CANVAS_HEIGHT);
+    rule.set_valign(gtk::Align::Start);
+    rule.connect_draw(|widget, cr| {
+        let height = widget.allocated_height() as f64;
+        let (pr, pg, pb) = theme::PAPER;
+        cr.set_source_rgba(pr, pg, pb, 0.14);
+        cr.rectangle(0.0, height - BASE_ICON_SIZE + 4.0, 1.0, BASE_ICON_SIZE - 8.0);
+        let _ = cr.fill();
+        gtk::glib::Propagation::Proceed
+    });
+    rule
+}
+
 fn create_dock_item(app: &model::AppItem) -> Rc<AppItemWidget> {
     let button = gtk::Button::new();
     button.set_relief(gtk::ReliefStyle::None);
     theme::class(&button, "dock-item");
-    button.set_size_request(40, 52);
 
     let content = gtk::Box::new(gtk::Orientation::Vertical, 0);
-    content.set_valign(gtk::Align::Center);
     content.set_halign(gtk::Align::Center);
 
     // High resolution pixbuf for smooth Cairo scaling
@@ -375,16 +470,14 @@ fn create_dock_item(app: &model::AppItem) -> Rc<AppItemWidget> {
         });
 
     let drawing_area = gtk::DrawingArea::new();
-    drawing_area.set_size_request(40, 40);
-    drawing_area.set_valign(gtk::Align::Center);
-    drawing_area.set_halign(gtk::Align::Center);
+    drawing_area.set_size_request(SLOT_WIDTH, CANVAS_HEIGHT);
     content.pack_start(&drawing_area, false, false, 0);
 
-    let dot = gtk::Label::new(Some("•"));
+    let dot = gtk::Box::new(gtk::Orientation::Horizontal, 0);
+    dot.set_size_request(4, 4);
+    dot.set_halign(gtk::Align::Center);
     theme::class(&dot, "run-dot");
-    if !app.running {
-        theme::class(&dot, "hidden");
-    }
+    theme::class(&dot, "hidden");
     content.pack_start(&dot, false, false, 0);
 
     button.add(&content);
@@ -393,9 +486,9 @@ fn create_dock_item(app: &model::AppItem) -> Rc<AppItemWidget> {
         app: app.clone(),
         button,
         drawing_area,
+        dot,
         pixbuf,
-        current_size: Cell::new(BASE_ICON_SIZE),
-        target_size: Cell::new(BASE_ICON_SIZE),
+        size: Cell::new(Spring::snappy(BASE_ICON_SIZE)),
         bounce_start: Cell::new(None),
     })
 }

@@ -1,108 +1,104 @@
+//! Wi-Fi: what the wireless adapter reports, or a plain statement that there
+//! is none. Nothing on this page is a placeholder.
+use std::process::Command;
+
 use super::{data::*, widgets::*};
+use crate::system;
 use gtk::prelude::*;
 
 pub(crate) fn wifi_page() -> gtk::Box {
     let page = page_shell();
 
-    // 1. Master Wi-Fi Switch
-    section(&page, "Wi-Fi");
-    let (_master_card, master_body) = card(&page);
-    let (_, master_right) = row(
-        &master_body,
-        Some("fluent:wifi"),
-        "Wi-Fi",
-        "Enable or disable wireless network connectivity",
-    );
-    let master_switch = toggle_switch(true, |_active| {});
-    master_right.pack_start(&master_switch, false, false, 0);
-
-    // 2. Connected Network
-    section(&page, "Connected Network");
-    let (_connected_card, connected_body) = card(&page);
     let interfaces = network_interfaces();
-    let wifi_iface = interfaces.iter().find(|i| i.wireless);
-
-    let (ssid_name, ip_addr) = if let Some(iface) = wifi_iface {
-        (iface.name.as_str(), iface.address.as_str())
-    } else {
-        ("Tiaki-Mesh-5G", "192.168.1.142")
+    let Some(adapter) = interfaces.iter().find(|interface| interface.wireless) else {
+        section(&page, "Wi-Fi");
+        let (_card, body) = card(&page);
+        row(
+            &body,
+            Some("fluent:wifi"),
+            "No Wi-Fi adapter",
+            "This machine has no wireless hardware. Wired connections are under Network.",
+        );
+        return page;
     };
 
-    let (_, conn_right) = row(
-        &connected_body,
-        Some("fluent:wifi"),
-        ssid_name,
-        "Connected · WPA3-Personal · 5 GHz (866 Mb/s) · Signal: 96% (-42 dBm)",
-    );
-    let disconnect_btn = pill_button("Disconnect");
-    conn_right.pack_start(&disconnect_btn, false, false, 0);
+    section(&page, "Adapter");
+    let (_card, body) = card(&page);
+    let (_, right) = row(&body, Some("fluent:wifi"), &adapter.name, &adapter.state);
+    value_text(&right, &adapter.address);
 
-    let (_, ip_right) = row(
-        &connected_body,
-        None,
-        "IPv4 Address",
-        "Assigned by wireless gateway DHCP",
-    );
-    value_text(&ip_right, ip_addr);
-
-    let (_, mac_right) = row(
-        &connected_body,
-        None,
-        "Hardware MAC Address",
-        "Physical wireless adapter address",
-    );
-    value_text(&mac_right, "e4:5f:01:8b:32:19");
-
-    // 3. Visible Networks
-    section(&page, "Visible Networks");
-    let (_networks_card, networks_body) = card(&page);
-
-    let available = [
-        ("Nordic-Office-Fast", "WPA2/WPA3 · 5 GHz · Signal: 88%", "Connect"),
-        ("Studio-Guest", "Open (Captive Portal) · 2.4 GHz · Signal: 74%", "Connect"),
-        ("Lab-Secure-6E", "WPA3-Enterprise 802.1X · 6 GHz · Signal: 62%", "Connect"),
-        ("IoT-SmartHome-Net", "WPA2-Personal · 2.4 GHz · Signal: 45%", "Connect"),
-    ];
-
-    for (ssid, detail, btn_text) in available {
-        let (_, right) = row(
-            &networks_body,
+    section(&page, "Networks");
+    let (_card, body) = card(&page);
+    let networks = visible_networks();
+    if networks.is_empty() {
+        row(
+            &body,
             Some("fluent:wifi"),
-            ssid,
-            detail,
+            "No networks found",
+            if command_exists("nmcli") {
+                "Nothing in range, or the adapter is switched off."
+            } else {
+                "NetworkManager is not installed, so networks cannot be listed."
+            },
         );
-        let btn = pill_button(btn_text);
-        right.pack_start(&btn, false, false, 0);
+    }
+    for network in networks {
+        let detail = format!("{} · signal {}%", network.security, network.signal);
+        let (_, right) = row(&body, Some("fluent:wifi"), &network.ssid, &detail);
+        if network.in_use {
+            value_text(&right, "Connected");
+        } else {
+            let button = pill_button("Connect");
+            let ssid = network.ssid.clone();
+            button.connect_clicked(move |_| {
+                // Open and saved networks join directly; a new secured
+                // network prompts for its key in the terminal.
+                system::spawn_app(
+                    &format!(
+                        "foot -c /etc/tiaki/foot.ini -e nmcli --ask dev wifi connect '{}'",
+                        ssid.replace('\'', "")
+                    ),
+                    "foreground",
+                );
+            });
+            right.pack_start(&button, false, false, 0);
+        }
     }
 
-    // 4. Hotspot & Preferences
-    section(&page, "Hotspot & Preferences");
-    let (_hotspot_card, hotspot_body) = card(&page);
-
-    let (_, hs_right) = row(
-        &hotspot_body,
-        Some("fluent:network"),
-        "Wi-Fi Hotspot",
-        "Share machine internet with phones, tablets and other computers",
-    );
-    let hs_switch = toggle_switch(false, |_| {});
-    hs_right.pack_start(&hs_switch, false, false, 0);
-
-    let (_, saved_right) = row(
-        &hotspot_body,
-        Some("fluent:gear"),
-        "Saved Networks",
-        "Manage known network credentials and auto-reconnect",
-    );
-    chevron_right(&saved_right);
-
-    let (_, cli_right) = row(
-        &hotspot_body,
-        Some("fluent:keyboard"),
-        "Command Line Management",
-        "CLI equivalents for headless or terminal control",
-    );
-    value_text(&cli_right, "nmcli dev wifi [list|connect]");
-
     page
+}
+
+struct Network {
+    ssid: String,
+    signal: String,
+    security: String,
+    in_use: bool,
+}
+
+fn visible_networks() -> Vec<Network> {
+    let Ok(output) = Command::new("nmcli")
+        .args(["-t", "-f", "IN-USE,SSID,SIGNAL,SECURITY", "dev", "wifi", "list"])
+        .output()
+    else {
+        return Vec::new();
+    };
+    String::from_utf8_lossy(&output.stdout)
+        .lines()
+        .filter_map(|line| {
+            let fields: Vec<&str> = line.split(':').collect();
+            if fields.len() < 4 || fields[1].is_empty() {
+                return None;
+            }
+            Some(Network {
+                in_use: fields[0].trim() == "*",
+                ssid: fields[1].to_string(),
+                signal: fields[2].to_string(),
+                security: if fields[3].is_empty() {
+                    "Open".to_string()
+                } else {
+                    fields[3].to_string()
+                },
+            })
+        })
+        .collect()
 }

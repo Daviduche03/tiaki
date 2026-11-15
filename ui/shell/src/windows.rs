@@ -302,6 +302,15 @@ pub fn app_id_for_command(command: &str) -> String {
         "settings.open" => return "tiaki-shell".to_string(),
         _ => {}
     }
+    // `foot -a btop …` names its own app_id; honour it.
+    let mut words = command.split_whitespace();
+    while let Some(word) = words.next() {
+        if word == "-a" || word == "--app-id" {
+            if let Some(id) = words.next() {
+                return id.to_string();
+            }
+        }
+    }
     let first = command.split_whitespace().next().unwrap_or("");
     let base = first.rsplit('/').next().unwrap_or(first);
     match base {

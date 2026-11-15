@@ -136,6 +136,7 @@ pub fn run(root: &agentic_ui_tree::Node, menu_id: &str, x: i32, app_id: &str) {
 
     window.show_all();
     panel.show_all();
+    crate::motion::enter(&panel);
     window.present();
     scrim.grab_focus();
     gtk::main();

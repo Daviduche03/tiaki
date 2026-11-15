@@ -1,9 +1,11 @@
-/* Shared shell foundation: window transparency, the app font,
-   and the click-catcher scrim every overlay uses. */
+/* Shared shell foundation: window transparency, the one typeface, and the
+   click-catcher scrim every overlay uses. Colours come from tokens.css. */
 window, window.background {
   background-color: transparent;
-  color: #f0ebe1;
-  font-family: "Aspekta", "SF Pro Display", "Plus Jakarta Sans", "IBM Plex Sans", -apple-system, sans-serif;
+  color: @paper;
+  font-family: "IBM Plex Sans", sans-serif;
+  font-size: 13px;
+  font-weight: 400;
 }
 
 .dock-window, .launcher-window, .bar-window {

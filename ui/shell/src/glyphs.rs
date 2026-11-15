@@ -10,7 +10,7 @@ use gtk::prelude::*;
 const TAU: f64 = std::f64::consts::TAU;
 
 pub fn status_icon(name: &str, size: i32) -> gtk::DrawingArea {
-    status_icon_tinted(name, size, (1.0, 1.0, 1.0))
+    status_icon_tinted(name, size, crate::theme::PAPER)
 }
 
 pub fn status_icon_tinted(name: &str, size: i32, color: (f64, f64, f64)) -> gtk::DrawingArea {

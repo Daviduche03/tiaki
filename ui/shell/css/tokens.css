@@ -1,0 +1,30 @@
+/* Tiaki shell primitives. Every other sheet builds on these and on nothing
+   else. Source of truth: docs/design/brand/tokens.css and color.md.
+
+   GTK3 CSS has named colours but no custom properties for lengths, so the
+   non-colour scales are fixed here by convention. Do not invent values
+   between the steps.
+
+   Colour     ink, paper, lamp. A fourth colour on screen means a mistake.
+              State colours (kept, refused) report an outcome, never decorate.
+   Type       IBM Plex Sans 400 and 500 only. Mono for clocks and shortcuts.
+              13px body, 12px secondary, 11px caption.
+   Spacing    4, 8, 12, 16, 24.
+   Radius     6 controls, 10 windows and popovers, 16 the dock.
+   Depth      one hairline. No gradients, no drop shadows, no text shadows.
+   Motion     150 to 300ms, ease-out, only on things the pointer touches. */
+
+@define-color ink        #151413;
+@define-color ink_raised #1b1917;
+@define-color ink_rail   #131314;
+@define-color paper      #e6e0d4;
+@define-color paper_2    rgba(230, 224, 212, 0.62);
+@define-color paper_3    rgba(230, 224, 212, 0.40);
+@define-color lamp       #d08a2c;
+@define-color kept       #2e6b4e;
+@define-color refused    #a23b2a;
+
+@define-color rule       rgba(230, 224, 212, 0.12);
+@define-color rule_strong rgba(230, 224, 212, 0.20);
+@define-color hover      rgba(230, 224, 212, 0.08);
+@define-color pressed    rgba(230, 224, 212, 0.14);

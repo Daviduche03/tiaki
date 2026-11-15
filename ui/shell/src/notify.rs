@@ -179,7 +179,7 @@ pub fn run(_x: i32) {
     // The icon x in bar pixels does not match compositor scale reliably,
     // so derive the position from the screen, not the click point.
     panel.set_margin_end(12);
-    panel.set_margin_top(44);
+    panel.set_margin_top(8);
 
     let content = gtk::Box::new(gtk::Orientation::Vertical, 0);
     content.set_margin_top(14);
@@ -283,6 +283,7 @@ pub fn run(_x: i32) {
     window.connect_destroy(|_| gtk::main_quit());
     window.show_all();
     panel.show_all();
+    crate::motion::enter(&panel);
     window.present();
     scrim.grab_focus();
     gtk::main();

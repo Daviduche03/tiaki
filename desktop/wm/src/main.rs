@@ -1370,7 +1370,7 @@ mod tests {
 
         // Closing: the close animation's duration is declared.
         let close = runtime.start_close("w2", now as u64).unwrap();
-        assert_eq!(close.close_animation_duration_ms, Some(500));
+        assert_eq!(close.close_animation_duration_ms, Some(240));
         settle(&mut runtime, &mut now, &["w1", "w2"]);
         runtime.window_closed("w2").unwrap();
         settle(&mut runtime, &mut now, &["w1"]);
