@@ -1,11 +1,9 @@
-/* Top bar. The surface itself (ink, one hairline) is painted in bar.rs;
-   this sheet styles what sits on it. Every control is the same shape:
-   22px tall, 6px radius, transparent until touched. */
+/* Top bar: macOS / Zorin translucent glass styling with Poppins and JetBrains Mono */
 
 .bar {
   background: transparent;
-  padding: 0 12px;
-  color: #f5f2eb;
+  padding: 0 14px;
+  color: #ffffff;
 }
 
 .bar button {
@@ -13,66 +11,135 @@
   background-image: none;
   border: none;
   box-shadow: none;
-  text-shadow: 0 1px 2px rgba(0, 0, 0, 0.45);
+  text-shadow: 0 1px 2px rgba(0, 0, 0, 0.40);
   -gtk-icon-shadow: none;
   margin: 0;
-  min-height: 22px;
+  min-height: 24px;
   border-radius: 6px;
-  transition: background-color 150ms ease-out;
+  transition: background-color 150ms ease-out, color 150ms ease-out;
 }
-.bar button:hover   { background-color: rgba(255, 255, 255, 0.12); }
+.bar button:hover   { background-color: rgba(255, 255, 255, 0.14); }
 .bar button:active,
-.bar button:checked { background-color: rgba(255, 255, 255, 0.20); }
+.bar button:checked { background-color: rgba(255, 255, 255, 0.22); }
 
-.brand-button     { padding: 0 8px; }
-.menu-button      { padding: 0 8px; color: rgba(255, 255, 255, 0.85); font-family: "Inter", sans-serif; font-weight: 400; }
-.menu-button:hover,
-.menu-button:active { color: #ffffff; }
-.bar-icon-button  { padding: 0 8px; color: #f5f2eb; }
-.bar-clock-button { padding: 0 12px; border-radius: 8px; }
-
-/* The focused app's name: semibold with subtle shadow */
-.bar-app-title {
-  font-family: "Inter", sans-serif;
-  font-weight: 600;
-  color: #ffffff;
-  padding: 0 8px 0 4px;
-  text-shadow: 0 1px 2px rgba(0, 0, 0, 0.45);
-}
-
-.menu-button popover,
-popover.background {
-  background-color: transparent;
-  border: none;
-  box-shadow: none;
-  padding: 0;
-}
-
-/* Pending approvals: the one lit thing on the bar. */
-.bar button.bar-chip {
-  background-color: @lamp;
+.brand-button {
   padding: 0 8px;
-  min-height: 20px;
-  margin-right: 8px;
-  border-radius: 10px;
+  border-radius: 6px;
 }
-.bar button.bar-chip:hover { background-color: shade(@lamp, 1.08); }
-.bar-chip-label {
-  color: @ink;
-  font-size: 11px;
-  font-weight: 600;
+.brand-button:hover {
+  background-color: rgba(255, 255, 255, 0.12);
 }
 
-.bar-battery-box { padding: 0 8px; }
-.bar-battery-pct,
+/* Active app title in crisp Poppins */
+.bar-app-title {
+  font-family: "Poppins", "Inter", sans-serif;
+  font-weight: 600;
+  font-size: 13.5px;
+  color: #ffffff;
+  padding: 0 10px 0 6px;
+  text-shadow: 0 1px 2px rgba(0, 0, 0, 0.50);
+}
+
+/* Menu items in Poppins */
+.menu-button {
+  padding: 2px 9px;
+  color: rgba(255, 255, 255, 0.90);
+  font-family: "Poppins", "Inter", sans-serif;
+  font-weight: 500;
+  font-size: 13px;
+  border-radius: 6px;
+}
+.menu-button:hover,
+.menu-button:active {
+  color: #ffffff;
+  background-color: rgba(255, 255, 255, 0.14);
+}
+
+/* Center Clock & Date Glass Capsule */
+.bar-clock-button {
+  background-color: rgba(255, 255, 255, 0.08);
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  border-radius: 12px;
+  padding: 2px 14px;
+  margin: 0;
+  transition: background-color 150ms ease-out, border-color 150ms ease-out;
+}
+.bar-clock-button:hover {
+  background-color: rgba(255, 255, 255, 0.16);
+  border-color: rgba(255, 255, 255, 0.22);
+}
+.bar-clock-button:active {
+  background-color: rgba(255, 255, 255, 0.24);
+}
+
 .bar-clock {
-  font-family: "JetBrains Mono", "Inter", monospace;
+  font-family: "Poppins", "JetBrains Mono", sans-serif;
   font-size: 12.5px;
   font-weight: 500;
   color: #ffffff;
   text-shadow: 0 1px 2px rgba(0, 0, 0, 0.45);
 }
-.bar-battery-pct { margin-right: 4px; }
+
+.bar-clock-bell {
+  color: rgba(255, 255, 255, 0.75);
+  margin-left: 2px;
+}
+
+/* Icon action buttons */
+.bar-icon-button {
+  padding: 0 7px;
+  min-height: 24px;
+  border-radius: 6px;
+  color: #ffffff;
+}
+.bar-icon-button:hover {
+  background-color: rgba(255, 255, 255, 0.14);
+}
+
+/* Battery readout */
+.bar-battery-box {
+  padding: 0 8px;
+  border-radius: 6px;
+}
+.bar-battery-box:hover {
+  background-color: rgba(255, 255, 255, 0.10);
+}
+.bar-battery-pct {
+  font-family: "JetBrains Mono", monospace;
+  font-size: 12px;
+  font-weight: 500;
+  color: #ffffff;
+  margin-right: 4px;
+  text-shadow: 0 1px 2px rgba(0, 0, 0, 0.45);
+}
+
+/* Pending approvals chip: themeable accent */
+.bar button.bar-chip {
+  background-color: @accent;
+  padding: 0 10px;
+  min-height: 20px;
+  margin-right: 8px;
+  border-radius: 10px;
+  box-shadow: 0 0 8px @accent_glow;
+}
+.bar button.bar-chip:hover {
+  background-color: shade(@accent, 1.15);
+}
+.bar-chip-label {
+  color: #ffffff;
+  font-family: "Poppins", sans-serif;
+  font-size: 11px;
+  font-weight: 600;
+}
+
+.menu-button popover,
+popover.background {
+  background-color: rgba(20, 24, 28, 0.95);
+  border: 1px solid rgba(255, 255, 255, 0.14);
+  border-radius: 10px;
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.50);
+  padding: 4px;
+}
 
 .status-item  { padding: 0 4px; }
-.status-glyph { color: #f5f2eb; }
+.status-glyph { color: #ffffff; }

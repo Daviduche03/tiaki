@@ -16,8 +16,12 @@ pub fn logo_mark(size: i32) -> gtk::DrawingArea {
         }
         let _ = cr.save();
         cr.scale(side / 100.0, side / 100.0);
-        let (r, g, b) = theme::PAPER;
-        cr.set_source_rgb(r, g, b);
+        let (ar, ag, ab) = theme::accent_color();
+        let pat = gtk::cairo::LinearGradient::new(50.0, 7.0, 50.0, 96.0);
+        pat.add_color_stop_rgb(0.0, 1.0, 1.0, 1.0);
+        pat.add_color_stop_rgb(0.35, ar, ag, ab);
+        pat.add_color_stop_rgb(1.0, ar * 0.70, ag * 0.70, ab * 0.70);
+        let _ = cr.set_source(&pat);
 
         // roof, lantern, gallery
         cr.move_to(50.0, 7.0);

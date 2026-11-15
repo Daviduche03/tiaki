@@ -17,14 +17,25 @@
 @define-color ink        #151413;
 @define-color ink_raised #1b1917;
 @define-color ink_rail   #131314;
-@define-color paper      #e6e0d4;
-@define-color paper_2    rgba(230, 224, 212, 0.62);
-@define-color paper_3    rgba(230, 224, 212, 0.40);
+@define-color paper      #ffffff;
+@define-color paper_2    rgba(255, 255, 255, 0.85);
+@define-color paper_3    rgba(255, 255, 255, 0.55);
 @define-color lamp       #d08a2c;
 @define-color kept       #2e6b4e;
 @define-color refused    #a23b2a;
 
-@define-color rule       rgba(230, 224, 212, 0.12);
-@define-color rule_strong rgba(230, 224, 212, 0.20);
-@define-color hover      rgba(230, 224, 212, 0.08);
-@define-color pressed    rgba(230, 224, 212, 0.14);
+/* Themeable accent and glass tokens */
+@define-color accent     #3ea6ff;
+@define-color accent_hover #60b6ff;
+@define-color accent_glow rgba(62, 166, 255, 0.35);
+
+@define-color glass_bg     rgba(18, 22, 26, 0.42);
+@define-color glass_border rgba(255, 255, 255, 0.12);
+@define-color glass_pill   rgba(255, 255, 255, 0.08);
+@define-color glass_hover  rgba(255, 255, 255, 0.15);
+@define-color glass_active rgba(255, 255, 255, 0.22);
+
+@define-color rule       rgba(255, 255, 255, 0.12);
+@define-color rule_strong rgba(255, 255, 255, 0.22);
+@define-color hover      rgba(255, 255, 255, 0.10);
+@define-color pressed    rgba(255, 255, 255, 0.18);

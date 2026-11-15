@@ -1,9 +1,8 @@
-/* Shared shell foundation: window transparency, the one typeface, and the
-   click-catcher scrim every overlay uses. Colours come from tokens.css. */
+/* Shared shell foundation: window transparency, modern type stack (Poppins / Inter), and scrim */
 window, window.background {
   background-color: transparent;
-  color: @paper;
-  font-family: "Inter", "SF Pro Display", -apple-system, system-ui, sans-serif;
+  color: #ffffff;
+  font-family: "Poppins", "Inter", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
   font-size: 13px;
   font-weight: 400;
   -webkit-font-smoothing: antialiased;

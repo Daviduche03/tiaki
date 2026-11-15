@@ -13,12 +13,35 @@ use crate::{agents, bar, chrome, control, dock, files, greet, launcher, menu, no
 
 /// Height of the top bar and its exclusive zone. The titlebar overlay and
 /// window zoom position themselves against this, so it lives in one place.
-pub const BAR_HEIGHT: i32 = 28;
+pub const BAR_HEIGHT: i32 = 30;
 
 /// Brand colours as cairo RGB, for the few surfaces painted in code rather
 /// than CSS. Values mirror `css/tokens.css`.
 pub const INK: (f64, f64, f64) = (0.082, 0.078, 0.075);
-pub const PAPER: (f64, f64, f64) = (0.902, 0.878, 0.831);
+pub const PAPER: (f64, f64, f64) = (0.95, 0.96, 0.98);
+pub const ACCENT: (f64, f64, f64) = (0.243, 0.651, 1.0); // #3ea6ff (Zorin Blue default)
+
+/// Active themeable accent color from ~/.config/tiaki/accent or system defaults.
+pub fn accent_color() -> (f64, f64, f64) {
+    if let Ok(path) = std::env::var("XDG_CONFIG_HOME")
+        .map(|p| format!("{p}/tiaki/accent"))
+        .or_else(|_| std::env::var("HOME").map(|h| format!("{h}/.config/tiaki/accent")))
+    {
+        if let Ok(hex) = std::fs::read_to_string(path) {
+            let hex = hex.trim().trim_start_matches('#');
+            if hex.len() == 6 {
+                if let (Ok(r), Ok(g), Ok(b)) = (
+                    u8::from_str_radix(&hex[0..2], 16),
+                    u8::from_str_radix(&hex[2..4], 16),
+                    u8::from_str_radix(&hex[4..6], 16),
+                ) {
+                    return (r as f64 / 255.0, g as f64 / 255.0, b as f64 / 255.0);
+                }
+            }
+        }
+    }
+    ACCENT
+}
 
 /// Colour names, the type ramp, spacing and radius steps. Loaded first.
 const TOKENS_CSS: &str = include_str!("../css/tokens.css");
@@ -49,7 +72,17 @@ fn all_sheets() -> Vec<&'static str> {
 }
 
 pub fn install() {
-    let css: String = all_sheets().join("\n");
+    let accent = accent_color();
+    let ar = (accent.0 * 255.0).round() as u8;
+    let ag = (accent.1 * 255.0).round() as u8;
+    let ab = (accent.2 * 255.0).round() as u8;
+    let dynamic_tokens = format!(
+        "@define-color accent rgb({ar}, {ag}, {ab});\n\
+         @define-color accent_hover rgba({ar}, {ag}, {ab}, 0.85);\n\
+         @define-color accent_glow rgba({ar}, {ag}, {ab}, 0.40);\n"
+    );
+    let mut css: String = dynamic_tokens;
+    css.push_str(&all_sheets().join("\n"));
     let provider = gtk::CssProvider::new();
     if let Err(error) = provider.load_from_data(css.as_bytes()) {
         eprintln!("tiaki-shell: stylesheet error: {error}");
