@@ -92,53 +92,16 @@ When running Tiaki directly on a local Linux computer (e.g. Zorin OS, Ubuntu, De
 #### Method A: Nested in a Window (Fastest / Recommended for Dev)
 Runs Tiaki inside a standalone Wayland window on top of your current GNOME/Wayland/X11 session:
 ```bash
-# 1. Install prerequisites
-sudo apt update && sudo apt install -y build-essential pkg-config libgtk-3-dev libgtk-layer-shell-dev \
-    libglib2.0-dev libcairo2-dev libpango1.0-dev libgdk-pixbuf-2.0-dev libatk1.0-dev sway swaybg foot btop \
-    fonts-jetbrains-mono fonts-font-awesome adwaita-icon-theme grim curl unzip xz-utils libgtk-3-0 \
-    libgtk-layer-shell0 ca-certificates wtype wl-clipboard brightnessctl pamixer fastfetch librsvg2-common python3 git
-
-# 2. Build binaries
-cargo build --release -p agentd
-cargo build --release --manifest-path ui/shell/Cargo.toml
-cargo build --release -p agentic-agents
-
-# 3. Seed desktop tree and start agentd UI server
-export XDG_RUNTIME_DIR="${XDG_RUNTIME_DIR:-/tmp/tiaki-runtime}"
-mkdir -p "$XDG_RUNTIME_DIR" && chmod 700 "$XDG_RUNTIME_DIR"
-./target/release/agentd --principal user:local ui set desktop/desktop.json
-./target/release/agentd --principal user:local ui serve --host 127.0.0.1 --port 8787 &
-
-# 4. Launch nested Sway session
-sway -c desktop/wayland/sway.conf
+# 1. Quick launch using the helper script
+tiaki-nested
+# or run manually:
+sway -c /etc/tiaki/sway.conf
 ```
 
 #### Method B: Native Bare-Metal Desktop Session (Full OS Experience)
 Register Tiaki in GDM/LightDM display manager:
-```bash
-# 1. Copy binaries and desktop configuration
-sudo cp target/release/agentd ui/shell/target/release/tiaki-shell target/release/sched-launch /usr/local/bin/
-sudo cp desktop/wayland/tiaki-session desktop/wayland/tiaki-wallpaper.sh /usr/local/bin/
-sudo mkdir -p /etc/tiaki /usr/share/tiaki /usr/share/fonts/truetype/tiaki /usr/share/icons
-sudo cp desktop/wayland/sway.conf desktop/wayland/wayvnc.conf desktop/wayland/foot.ini /etc/tiaki/
-sudo cp desktop/desktop.json /usr/share/tiaki/
-sudo cp -r desktop/icons desktop/wallpapers /usr/share/tiaki/
-sudo cp -r desktop/fonts/* /usr/share/fonts/truetype/tiaki/ && sudo fc-cache -f
-sudo cp -r desktop/icons/cursors/macOS /usr/share/icons/
-
-# 2. Add Wayland session entry (/usr/share/wayland-sessions/tiaki.desktop)
-sudo tee /usr/share/wayland-sessions/tiaki.desktop << 'EOF'
-[Desktop Entry]
-Name=Tiaki
-Comment=Tiaki Autonomous Agent Operating System
-Exec=/usr/local/bin/tiaki-session
-Type=Application
-DesktopNames=Tiaki
-EOF
-
-# 3. Log out, choose 'Tiaki' at the display manager gear menu, and log in.
-```
-See [docs/runbooks/local-linux-setup.md](file:///Users/eric/tiaki/docs/runbooks/local-linux-setup.md) for full details.
+1. Select 'Tiaki' at the display manager login gear menu and log in.
+See [docs/runbooks/local-linux-setup.md](file:///home/eric/tiaki/docs/runbooks/local-linux-setup.md) for full details.
 
 ---
 
