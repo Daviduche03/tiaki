@@ -6,6 +6,8 @@ Requires=tiaki-firstboot.service
 [Service]
 Environment=TIAKI_HOME=/var/lib/tiaki
 Environment=XDG_RUNTIME_DIR=/run/tiaki
+# Files this service creates must stay writable by the session user.
+UMask=0002
 ExecStartPre=/bin/mkdir -p /run/tiaki
 ExecStart=/usr/local/bin/agentd --principal user:ada ui serve --host 127.0.0.1 --port 8787
 Restart=always

@@ -43,6 +43,18 @@ if [ ! -e "$TIAKI_HOME/state" ]; then
     --intent "Set the desktop theme" || true
 fi
 
+# The ledger is written by two users: root (the tree API) and the session
+# user (setup and Settings run `agentd apply` as `desktop`). Without a shared
+# group, a root-created state directory made every session-user transaction
+# fail with "could not write snapshot: Permission denied" and first-run setup
+# reported "0 of 4 transactions recorded". Group `users` owns the ledger, the
+# setgid bit keeps new files in it, and the service runs with umask 002.
+if getent group users >/dev/null 2>&1; then
+  chgrp -R users "$TIAKI_HOME" 2>/dev/null || true
+  chmod -R g+rwX "$TIAKI_HOME" 2>/dev/null || true
+  find "$TIAKI_HOME" -type d -exec chmod g+s {} + 2>/dev/null || true
+fi
+
 if mkdir -p /sys/fs/cgroup/tiaki 2>/dev/null; then
   # One write per controller: a bundled write fails wholesale when any
   # controller is unavailable (e.g. cpuset without parent enablement), and
