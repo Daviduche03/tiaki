@@ -38,20 +38,24 @@ pub fn run(root: &agentic_ui_tree::Node) {
     theme::anchor(&window, Edge::Right);
     window.set_size_request(-1, BAR_HEIGHT);
 
-    // Ink, slightly translucent so the wallpaper reads through, and one
-    // hairline. No gradient, no highlight.
+    // Translucent frosted glass with specular bottom hairline
     window.connect_draw(|widget, cr| {
         let width = widget.allocated_width() as f64;
         let height = widget.allocated_height() as f64;
-        let (ir, ig, ib) = theme::INK;
-        let (pr, pg, pb) = theme::PAPER;
 
         cr.set_operator(gtk::cairo::Operator::Source);
-        cr.set_source_rgba(ir, ig, ib, 0.88);
+        let pat = gtk::cairo::LinearGradient::new(0.0, 0.0, 0.0, height);
+        pat.add_color_stop_rgba(0.0, 0.12, 0.15, 0.18, 0.70);
+        pat.add_color_stop_rgba(1.0, 0.07, 0.09, 0.11, 0.78);
+        let _ = cr.set_source(&pat);
         let _ = cr.paint();
         cr.set_operator(gtk::cairo::Operator::Over);
 
-        cr.set_source_rgba(pr, pg, pb, 0.12);
+        let stroke_pat = gtk::cairo::LinearGradient::new(0.0, 0.0, width, 0.0);
+        stroke_pat.add_color_stop_rgba(0.0, 1.0, 1.0, 1.0, 0.06);
+        stroke_pat.add_color_stop_rgba(0.5, 1.0, 1.0, 1.0, 0.18);
+        stroke_pat.add_color_stop_rgba(1.0, 1.0, 1.0, 1.0, 0.06);
+        let _ = cr.set_source(&stroke_pat);
         cr.rectangle(0.0, height - 1.0, width, 1.0);
         let _ = cr.fill();
 
@@ -62,18 +66,23 @@ pub fn run(root: &agentic_ui_tree::Node) {
     bar.set_size_request(-1, BAR_HEIGHT);
     theme::class(&bar, "bar");
 
+    // Left cluster: Tiaki logo, active app title, and application menus
+    let left_cluster = gtk::Box::new(gtk::Orientation::Horizontal, 0);
+    left_cluster.set_valign(gtk::Align::Center);
+
     // 1. Tiaki brand mark button (beacon icon)
-    bar.pack_start(&tiaki_brand_button(bar_node), false, false, 0);
+    left_cluster.pack_start(&tiaki_brand_button(bar_node), false, false, 0);
 
     // 2. Active application title in bold
     let (app_title_widget, app_title_label) = active_app_title();
-    bar.pack_start(&app_title_widget, false, false, 0);
+    left_cluster.pack_start(&app_title_widget, false, false, 0);
 
     // 3. Persistent application menus: File, Edit, View, Window, etc.
     for menu in model::menus_in(bar_node) {
         let button = menu_button(menu, &window);
-        bar.pack_start(&button, false, false, 0);
+        left_cluster.pack_start(&button, false, false, 0);
     }
+    bar.pack_start(&left_cluster, false, false, 0);
 
     // Dynamic focus tracker for app title
     let title_for_timer = app_title_label;
@@ -93,40 +102,43 @@ pub fn run(root: &agentic_ui_tree::Node) {
         glib::ControlFlow::Continue
     });
 
-    // Flexible spacer pushing right cluster to the right
-    let spacer = gtk::Box::new(gtk::Orientation::Horizontal, 0);
-    spacer.set_hexpand(true);
-    bar.pack_start(&spacer, true, true, 0);
+    // Center cluster: Horizontally centered clock and date (matching Zorin OS)
+    let center_cluster = gtk::Box::new(gtk::Orientation::Horizontal, 0);
+    center_cluster.set_valign(gtk::Align::Center);
+    let clock = clock_button(bar_node);
+    center_cluster.pack_start(&clock, false, false, 0);
+    bar.set_center_widget(Some(&center_cluster));
 
-    // Right cluster:
+    // Right cluster: privacy approvals, hardware status, search, control center
+    let right_cluster = gtk::Box::new(gtk::Orientation::Horizontal, 0);
+    right_cluster.set_valign(gtk::Align::Center);
+
     // a. Privacy / Agent approval orange capsule
     let (chip, chip_label) = approval_chip();
-    bar.pack_start(&chip, false, false, 0);
+    right_cluster.pack_start(&chip, false, false, 0);
 
     // b. Radios and battery, each only if the hardware exists.
     if has_bluetooth() {
         let bt = icon_spawn_button("bluetooth", 16, "tiaki-shell settings bluetooth", "Bluetooth");
-        bar.pack_start(&bt, false, false, 0);
+        right_cluster.pack_start(&bt, false, false, 0);
     }
     if has_wifi() {
         let wifi = icon_spawn_button("wifi", 16, "tiaki-shell settings wifi", "Wi-Fi");
-        bar.pack_start(&wifi, false, false, 0);
+        right_cluster.pack_start(&wifi, false, false, 0);
     }
     if let Some(battery) = battery_widget() {
-        bar.pack_start(&battery, false, false, 0);
+        right_cluster.pack_start(&battery, false, false, 0);
     }
 
     // c. Search
     let search = icon_action_button("search", 16, "palette.open", "Search (⌘Space)");
-    bar.pack_start(&search, false, false, 0);
+    right_cluster.pack_start(&search, false, false, 0);
 
     // d. Control Center
     let control = control_center_button(bar_node, &window);
-    bar.pack_start(&control, false, false, 0);
+    right_cluster.pack_start(&control, false, false, 0);
 
-    // e. Clock and Notification Center
-    let clock = clock_button(bar_node);
-    bar.pack_start(&clock, false, false, 0);
+    bar.pack_end(&right_cluster, false, false, 0);
 
     window.add(&bar);
     window.show_all();
@@ -350,7 +362,7 @@ fn clock_button(bar: &agentic_ui_tree::Node) -> gtk::Button {
     theme::class(&button, "bar-clock-button");
 
     let label = gtk::Label::new(Some(&clock_text(&format, show_date, show_seconds)));
-    label.set_xalign(1.0);
+    label.set_xalign(0.5);
     label.set_valign(gtk::Align::Center);
     theme::class(&label, "bar-clock");
     button.add(&label);
@@ -398,11 +410,9 @@ fn clock_text(format: &str, show_date: bool, show_seconds: bool) -> String {
         return time;
     }
 
-    const WEEKDAYS: [&str; 7] = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
     const MONTHS: [&str; 12] = [
         "Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec",
     ];
-    let weekday = WEEKDAYS[(now.day_of_week() as usize) % 7];
     let month = MONTHS[((now.month() as usize).saturating_sub(1)) % 12];
-    format!("{weekday} {month} {}  {time}", now.day_of_month())
+    format!("{month} {:02}  {time}", now.day_of_month())
 }

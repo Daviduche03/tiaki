@@ -3,9 +3,10 @@
 window, window.background {
   background-color: transparent;
   color: @paper;
-  font-family: "IBM Plex Sans", sans-serif;
+  font-family: "Inter", "SF Pro Display", -apple-system, system-ui, sans-serif;
   font-size: 13px;
   font-weight: 400;
+  -webkit-font-smoothing: antialiased;
 }
 
 .dock-window, .launcher-window, .bar-window {

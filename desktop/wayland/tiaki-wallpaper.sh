@@ -15,7 +15,7 @@ mode="${1:-init}"
 case "$mode" in
   init)
     if [ -z "$current" ] || [ ! -f "$dir/$current" ]; then
-      current=photo-06-sequoia-sunset.jpg
+      current=photo-09-laptop-glow.jpg
     fi
     ;;
   next|prev)
@@ -43,7 +43,7 @@ case "$mode" in
 esac
 
 if [ ! -f "$dir/$current" ]; then
-  current=photo-06-sequoia-sunset.jpg
+  current=photo-09-laptop-glow.jpg
 fi
 printf '%s\n' "$current" > "$state"
 pkill -x swaybg 2>/dev/null || true

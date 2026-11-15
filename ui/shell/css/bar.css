@@ -4,8 +4,8 @@
 
 .bar {
   background: transparent;
-  padding: 0 8px;
-  color: @paper;
+  padding: 0 12px;
+  color: #f5f2eb;
 }
 
 .bar button {
@@ -13,29 +13,31 @@
   background-image: none;
   border: none;
   box-shadow: none;
-  text-shadow: none;
+  text-shadow: 0 1px 2px rgba(0, 0, 0, 0.45);
   -gtk-icon-shadow: none;
   margin: 0;
   min-height: 22px;
   border-radius: 6px;
   transition: background-color 150ms ease-out;
 }
-.bar button:hover   { background-color: @hover; }
+.bar button:hover   { background-color: rgba(255, 255, 255, 0.12); }
 .bar button:active,
-.bar button:checked { background-color: @pressed; }
+.bar button:checked { background-color: rgba(255, 255, 255, 0.20); }
 
 .brand-button     { padding: 0 8px; }
-.menu-button      { padding: 0 8px; color: @paper_2; font-weight: 400; }
+.menu-button      { padding: 0 8px; color: rgba(255, 255, 255, 0.85); font-family: "Inter", sans-serif; font-weight: 400; }
 .menu-button:hover,
-.menu-button:active { color: @paper; }
-.bar-icon-button  { padding: 0 8px; }
-.bar-clock-button { padding: 0 8px; margin-left: 4px; }
+.menu-button:active { color: #ffffff; }
+.bar-icon-button  { padding: 0 8px; color: #f5f2eb; }
+.bar-clock-button { padding: 0 12px; border-radius: 8px; }
 
-/* The focused app's name: medium, never bold. */
+/* The focused app's name: semibold with subtle shadow */
 .bar-app-title {
-  font-weight: 500;
-  color: @paper;
+  font-family: "Inter", sans-serif;
+  font-weight: 600;
+  color: #ffffff;
   padding: 0 8px 0 4px;
+  text-shadow: 0 1px 2px rgba(0, 0, 0, 0.45);
 }
 
 .menu-button popover,
@@ -52,22 +54,25 @@ popover.background {
   padding: 0 8px;
   min-height: 20px;
   margin-right: 8px;
+  border-radius: 10px;
 }
 .bar button.bar-chip:hover { background-color: shade(@lamp, 1.08); }
 .bar-chip-label {
   color: @ink;
   font-size: 11px;
-  font-weight: 500;
+  font-weight: 600;
 }
 
 .bar-battery-box { padding: 0 8px; }
 .bar-battery-pct,
 .bar-clock {
-  font-family: "IBM Plex Mono", monospace;
-  font-size: 12px;
-  color: @paper;
+  font-family: "JetBrains Mono", "Inter", monospace;
+  font-size: 12.5px;
+  font-weight: 500;
+  color: #ffffff;
+  text-shadow: 0 1px 2px rgba(0, 0, 0, 0.45);
 }
 .bar-battery-pct { margin-right: 4px; }
 
 .status-item  { padding: 0 4px; }
-.status-glyph { color: @paper; }
+.status-glyph { color: #f5f2eb; }

@@ -32,7 +32,8 @@ const BOUNCE_HEIGHT: f64 = 12.0;
 const CANVAS_HEIGHT: i32 = (PEAK_ICON_SIZE + BOUNCE_HEIGHT) as i32;
 /// Shelf padding above the resting icons, and the shelf's corner radius.
 const SHELF_PAD: f64 = 8.0;
-const SHELF_RADIUS: f64 = 16.0;
+const SHELF_RADIUS: f64 = 18.0;
+const DOCK_PAD_X: i32 = 72;
 const BOUNCE_SECONDS: f64 = 0.3;
 
 struct AppItemWidget {
@@ -65,7 +66,7 @@ pub fn run(root: &agentic_ui_tree::Node) {
 
     // Floating label pill above the dock
     let label_box = gtk::Box::new(gtk::Orientation::Horizontal, 0);
-    label_box.set_size_request(-1, 24);
+    label_box.set_size_request(-1, 26);
     let floating_label = gtk::Label::new(None);
     floating_label.set_halign(gtk::Align::Start);
     theme::class(&floating_label, "dock-label-pill");
@@ -76,6 +77,8 @@ pub fn run(root: &agentic_ui_tree::Node) {
     // Dock pill panel wrapped in EventBox for hover tracking
     let event_box = gtk::EventBox::new();
     event_box.set_visible_window(false);
+    event_box.set_margin_start(DOCK_PAD_X);
+    event_box.set_margin_end(DOCK_PAD_X);
     event_box.add_events(
         gdk::EventMask::POINTER_MOTION_MASK
             | gdk::EventMask::LEAVE_NOTIFY_MASK
@@ -86,21 +89,31 @@ pub fn run(root: &agentic_ui_tree::Node) {
     theme::class(&panel, "dock");
     panel.set_valign(gtk::Align::End);
 
-    // The shelf: ink with one hairline, painted behind the icons. It starts
-    // SHELF_PAD above the resting icons, so magnified icons rise out of it.
+    // Translucent frosted glass shelf with specular rim highlights
     panel.connect_draw(|widget, cr| {
         let width = widget.allocated_width() as f64;
         let height = widget.allocated_height() as f64;
         let top = CANVAS_HEIGHT as f64 - BASE_ICON_SIZE - SHELF_PAD;
-        let (ir, ig, ib) = theme::INK;
-        let (pr, pg, pb) = theme::PAPER;
 
         rounded_rect(cr, 0.5, top + 0.5, width - 1.0, height - top - 1.0, SHELF_RADIUS);
-        cr.set_source_rgba(ir, ig, ib, 0.88);
+
+        // Translucent frosted glass background
+        let pat = gtk::cairo::LinearGradient::new(0.0, top, 0.0, height);
+        pat.add_color_stop_rgba(0.0, 0.16, 0.20, 0.25, 0.72);
+        pat.add_color_stop_rgba(0.4, 0.10, 0.13, 0.17, 0.78);
+        pat.add_color_stop_rgba(1.0, 0.06, 0.08, 0.11, 0.85);
+        let _ = cr.set_source(&pat);
         let _ = cr.fill_preserve();
-        cr.set_source_rgba(pr, pg, pb, 0.14);
+
+        // Crisp specular highlight on top rim, fading downward
+        let stroke_pat = gtk::cairo::LinearGradient::new(0.0, top, 0.0, height);
+        stroke_pat.add_color_stop_rgba(0.0, 1.0, 1.0, 1.0, 0.36);
+        stroke_pat.add_color_stop_rgba(0.25, 1.0, 1.0, 1.0, 0.14);
+        stroke_pat.add_color_stop_rgba(1.0, 1.0, 1.0, 1.0, 0.06);
+        let _ = cr.set_source(&stroke_pat);
         cr.set_line_width(1.0);
         let _ = cr.stroke();
+
         gtk::glib::Propagation::Proceed
     });
 
@@ -231,6 +244,7 @@ pub fn run(root: &agentic_ui_tree::Node) {
         let items = items_rc.clone();
         let start_tick = start_animation_tick.clone();
         let flabel = floating_label.clone();
+        let lbox = label_box.clone();
         let last_x = Cell::new(f64::NAN);
         move |mouse_x: f64| {
             let prev = last_x.get();
@@ -239,8 +253,7 @@ pub fn run(root: &agentic_ui_tree::Node) {
             }
             last_x.set(mouse_x);
 
-            let mut closest_label: Option<&str> = None;
-            let mut closest_center = 0.0;
+            let mut closest_item: Option<&Rc<AppItemWidget>> = None;
             let mut min_dist = f64::MAX;
 
             for item in items.iter() {
@@ -260,17 +273,22 @@ pub fn run(root: &agentic_ui_tree::Node) {
 
                 if dist < min_dist {
                     min_dist = dist;
-                    closest_center = center_x;
-                    closest_label = Some(&item.app.label);
+                    closest_item = Some(item);
                 }
             }
 
             if min_dist < SLOT_WIDTH as f64 / 2.0 {
-                if let Some(lbl) = closest_label {
-                    // Centre the name over its icon.
-                    flabel.set_text(lbl);
-                    let (_, width) = flabel.preferred_width();
-                    let start = (closest_center - width as f64 / 2.0).max(0.0);
+                if let Some(item) = closest_item {
+                    // Centre the tooltip pill accurately over the hovered icon
+                    flabel.set_text(&item.app.label);
+                    let alloc = item.button.allocation();
+                    let btn_x = item.button
+                        .translate_coordinates(&lbox, 0, 0)
+                        .map(|(x, _)| x)
+                        .unwrap_or_else(|| alloc.x() + DOCK_PAD_X);
+                    let btn_center = btn_x as f64 + (alloc.width() as f64) / 2.0;
+                    let (_, natural_width) = flabel.preferred_width();
+                    let start = (btn_center - (natural_width as f64) / 2.0).round().max(0.0);
                     flabel.set_margin_start(start as i32);
                     flabel.set_opacity(1.0);
                 }
