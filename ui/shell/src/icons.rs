@@ -54,6 +54,17 @@ pub fn logo_mark(size: i32) -> gtk::DrawingArea {
     area
 }
 
+/// An app's icon as a pixbuf, or None when the file is missing.
+pub fn app_icon_pixbuf(art: &str, size: i32) -> Option<gtk::gdk_pixbuf::Pixbuf> {
+    let primary = format!("/usr/share/tiaki/icons/{art}.svg");
+    let path = if std::path::Path::new(&primary).exists() {
+        primary
+    } else {
+        format!("desktop/icons/{art}.svg")
+    };
+    gtk::gdk_pixbuf::Pixbuf::from_file_at_scale(&path, size, size, true).ok()
+}
+
 pub fn app_icon(art: &str, size: i32) -> gtk::Widget {
     let primary = format!("/usr/share/tiaki/icons/{art}.svg");
     let fallback = format!("desktop/icons/{art}.svg");
@@ -62,11 +73,13 @@ pub fn app_icon(art: &str, size: i32) -> gtk::Widget {
     } else {
         fallback
     };
-    let pixbuf = gtk::gdk_pixbuf::Pixbuf::from_file_at_scale(&path, size, size, true)
-        .unwrap_or_else(|_| {
-            panic!("tiaki-shell: missing app icon {path}; the image must ship desktop/icons/")
-        });
-    let image = gtk::Image::from_pixbuf(Some(&pixbuf));
+    // A missing icon must never take the shell down: the dock, switcher and
+    // overview all draw icons for windows whose apps they have never heard of.
+    let pixbuf = gtk::gdk_pixbuf::Pixbuf::from_file_at_scale(&path, size, size, true).ok();
+    if pixbuf.is_none() {
+        eprintln!("tiaki-shell: missing app icon {path}");
+    }
+    let image = gtk::Image::from_pixbuf(pixbuf.as_ref());
     theme::class(&image, "app-icon-image");
     image.upcast()
 }

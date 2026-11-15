@@ -8,6 +8,7 @@ use std::cell::RefCell;
 use std::rc::Rc;
 
 use gtk::gdk;
+use gtk::gdk::prelude::GdkContextExt;
 use gtk::prelude::*;
 use gtk_layer_shell::{Edge, KeyboardMode, Layer};
 
@@ -16,6 +17,14 @@ use crate::{icons, single, theme};
 
 /// Stylesheets owned by this module, in cascade order.
 pub const STYLE_SHEETS: &[&str] = &[include_str!("../css/overview.css")];
+
+/// Space kept clear around the grid: the bar above, the dock below.
+const MARGIN_SIDE: i32 = 64;
+const MARGIN_TOP: i32 = theme::BAR_HEIGHT + 40;
+const MARGIN_BOTTOM: i32 = 130;
+const GAP: i32 = 28;
+/// Height of the icon and title row under each thumbnail.
+const LABEL_HEIGHT: i32 = 32;
 
 pub fn run() {
     let Some(_instance) = single::Instance::acquire("tiaki-overview", "overview", true) else {
@@ -26,6 +35,11 @@ pub fn run() {
     if all_windows.is_empty() {
         return;
     }
+
+    // One capture of the screen before the overlay exists, cropped per window
+    // below. Sway offers no per-window capture, so a window another covers
+    // shows what is on top of it, which is what you would see.
+    let screen = capture_screen();
 
     let window = theme::base_window("overview-window");
     theme::setup_layer(
@@ -44,74 +58,71 @@ pub fn run() {
     scrim.set_can_focus(true);
     theme::class(&scrim, "overview-scrim");
 
-    let root_box = gtk::Box::new(gtk::Orientation::Vertical, 0);
-    root_box.set_halign(gtk::Align::Center);
-    root_box.set_valign(gtk::Align::Center);
-    root_box.set_margin_start(48);
-    root_box.set_margin_end(48);
-    root_box.set_margin_top(48);
-    root_box.set_margin_bottom(48);
+    let (screen_w, screen_h) = windows::output_size();
 
-    // Top header
-    let header = gtk::Box::new(gtk::Orientation::Horizontal, 16);
-    theme::class(&header, "overview-header-bar");
-    let title = gtk::Label::new(Some("Mission Control"));
-    theme::class(&title, "overview-title-main");
-    header.pack_start(&title, false, false, 0);
+    // Fit every window at one shared scale, never above 1:1. One scale keeps
+    // relative sizes honest: a terminal does not look as big as a browser.
+    let count = all_windows.len() as i32;
+    let cols = (count as f64).sqrt().ceil().max(1.0) as i32;
+    let rows = ((count + cols - 1) / cols).max(1);
+    let cell_w = (screen_w - 2 * MARGIN_SIDE - (cols - 1) * GAP) / cols;
+    let cell_h = (screen_h - MARGIN_TOP - MARGIN_BOTTOM - (rows - 1) * GAP) / rows - LABEL_HEIGHT;
+    let scale = all_windows
+        .iter()
+        .map(|view| {
+            (cell_w as f64 / view.width.max(1) as f64)
+                .min(cell_h as f64 / view.height.max(1) as f64)
+        })
+        .fold(1.0_f64, f64::min)
+        .max(0.05);
 
-    let count_label = gtk::Label::new(Some(&format!("{} windows open", all_windows.len())));
-    theme::class(&count_label, "overview-count");
-    header.pack_start(&count_label, false, false, 0);
-    root_box.pack_start(&header, false, false, 0);
-
-    // Grid of window cards
     let grid = gtk::Grid::new();
-    grid.set_column_spacing(20);
-    grid.set_row_spacing(20);
+    grid.set_column_spacing(GAP as u32);
+    grid.set_row_spacing(GAP as u32);
+    grid.set_column_homogeneous(true);
+    grid.set_row_homogeneous(true);
     grid.set_halign(gtk::Align::Center);
+    grid.set_valign(gtk::Align::Center);
+    grid.set_margin_top(MARGIN_TOP - theme::BAR_HEIGHT);
+    grid.set_margin_bottom(MARGIN_BOTTOM - 60);
 
     let cards: Rc<RefCell<Vec<(i64, gtk::EventBox)>>> = Rc::new(RefCell::new(Vec::new()));
-    let cols = if all_windows.len() <= 2 {
-        all_windows.len()
-    } else if all_windows.len() <= 6 {
-        3
-    } else {
-        4
-    };
+    let cols = cols as usize;
 
     for (index, view) in all_windows.iter().enumerate() {
         let card = gtk::EventBox::new();
         card.set_visible_window(true);
+        card.set_halign(gtk::Align::Center);
+        // Centre, not fill: rows are homogeneous, so a filling card would draw
+        // its selection ring down to the bottom of a taller row.
+        card.set_valign(gtk::Align::Center);
         theme::class(&card, "overview-card");
         // Cards arrive as a cascade, not as one block.
         crate::motion::enter_after(&card, crate::motion::stagger_ms(index.min(12), 25));
 
         let card_box = gtk::Box::new(gtk::Orientation::Vertical, 0);
 
-        // Header row: app icon + title + workspace badge
-        let card_header = gtk::Box::new(gtk::Orientation::Horizontal, 8);
-        theme::class(&card_header, "overview-card-header");
+        let thumb_w = ((view.width as f64 * scale).round() as i32).max(120);
+        let thumb_h = ((view.height as f64 * scale).round() as i32).max(80);
+        let covered = !view.focused && covered_fraction(view, &all_windows) > 0.08;
+        card_box.pack_start(
+            &thumbnail(&screen, view, thumb_w, thumb_h, covered),
+            false,
+            false,
+            0,
+        );
 
-        let icon_name = art_for(view);
-        card_header.pack_start(&icons::app_icon(&icon_name, 20), false, false, 0);
-
+        // Icon and name under the thumbnail.
+        let label_row = gtk::Box::new(gtk::Orientation::Horizontal, 8);
+        label_row.set_halign(gtk::Align::Center);
+        theme::class(&label_row, "overview-card-label");
+        label_row.pack_start(&icons::app_icon(&art_for(view), 16), false, false, 0);
         let win_title = gtk::Label::new(Some(&windows::title(view)));
-        win_title.set_xalign(0.0);
-        win_title.set_hexpand(true);
-        win_title.set_max_width_chars(24);
+        win_title.set_max_width_chars(((thumb_w - 40) / 8).max(10));
         win_title.set_ellipsize(gtk::pango::EllipsizeMode::End);
         theme::class(&win_title, "overview-card-title");
-        card_header.pack_start(&win_title, true, true, 0);
-
-        let badge = gtk::Label::new(Some(&format!("ID {}", view.id)));
-        theme::class(&badge, "overview-card-badge");
-        card_header.pack_end(&badge, false, false, 0);
-        card_box.pack_start(&card_header, false, false, 0);
-
-        // Thumbnail canvas / mock representation
-        let thumb = gtk::Box::new(gtk::Orientation::Vertical, 0);
-        theme::class(&thumb, "overview-thumbnail");
-        card_box.pack_start(&thumb, true, true, 0);
+        label_row.pack_start(&win_title, false, false, 0);
+        card_box.pack_start(&label_row, false, false, 0);
 
         card.add(&card_box);
 
@@ -129,14 +140,17 @@ pub fn run() {
         cards.borrow_mut().push((id, card));
     }
 
-    root_box.pack_start(&grid, true, true, 0);
-    scrim.add(&root_box);
+    scrim.add(&grid);
     window.add(&scrim);
 
-    // Select the first card initially
-    let selected = Rc::new(RefCell::new(0usize));
-    if let Some((_, first_card)) = cards.borrow().first() {
-        first_card.style_context().add_class("selected");
+    // Select the focused window first, falling back to the first card.
+    let start = all_windows
+        .iter()
+        .position(|view| view.focused)
+        .unwrap_or(0);
+    let selected = Rc::new(RefCell::new(start));
+    if let Some((_, card)) = cards.borrow().get(start) {
+        card.style_context().add_class("selected");
     }
 
     let cards_for_key = cards.clone();
@@ -197,6 +211,104 @@ pub fn run() {
     gtk::main();
 }
 
+/// The whole screen as a pixbuf, or None when `grim` is unavailable.
+fn capture_screen() -> Option<gtk::gdk_pixbuf::Pixbuf> {
+    let output = std::process::Command::new("grim").arg("-").output().ok()?;
+    if !output.status.success() || output.stdout.is_empty() {
+        return None;
+    }
+    let loader = gtk::gdk_pixbuf::PixbufLoader::new();
+    loader.write(&output.stdout).ok()?;
+    loader.close().ok()?;
+    loader.pixbuf()
+}
+
+/// One window's picture, drawn to fit with the frame's corner radius and a
+/// hairline. Falls back to the app icon when the window is off screen
+/// (minimized, on another workspace) and there is nothing to crop.
+fn thumbnail(
+    screen: &Option<gtk::gdk_pixbuf::Pixbuf>,
+    view: &View,
+    width: i32,
+    height: i32,
+    covered: bool,
+) -> gtk::DrawingArea {
+    // A window another covers cannot be captured: the screen shows the
+    // window on top of it. Those get the icon card, never someone else's
+    // picture.
+    let crop = screen.as_ref().filter(|_| !covered).and_then(|screen| {
+        let x = view.x.max(0);
+        let y = view.y.max(0);
+        let w = (view.x + view.width).min(screen.width()) - x;
+        let h = (view.y + view.height).min(screen.height()) - y;
+        (w > 16 && h > 16).then(|| screen.new_subpixbuf(x, y, w, h))
+    });
+    let art = art_for(view);
+
+    let area = gtk::DrawingArea::new();
+    area.set_size_request(width, height);
+    area.connect_draw(move |widget, cr| {
+        use std::f64::consts::{FRAC_PI_2, PI};
+        let w = widget.allocated_width() as f64;
+        let h = widget.allocated_height() as f64;
+        let r = 10.0;
+        let (ir, ig, ib) = theme::INK;
+        let (pr, pg, pb) = theme::PAPER;
+
+        let outline = |cr: &gtk::cairo::Context| {
+            cr.new_sub_path();
+            cr.arc(w - r - 0.5, r + 0.5, r, -FRAC_PI_2, 0.0);
+            cr.arc(w - r - 0.5, h - r - 0.5, r, 0.0, FRAC_PI_2);
+            cr.arc(r + 0.5, h - r - 0.5, r, FRAC_PI_2, PI);
+            cr.arc(r + 0.5, r + 0.5, r, PI, 1.5 * PI);
+            cr.close_path();
+        };
+
+        let _ = cr.save();
+        outline(cr);
+        cr.clip();
+        cr.set_source_rgb(ir, ig, ib);
+        let _ = cr.paint();
+        match &crop {
+            Some(pixbuf) => {
+                let sx = w / pixbuf.width() as f64;
+                let sy = h / pixbuf.height() as f64;
+                cr.scale(sx, sy);
+                cr.set_source_pixbuf(pixbuf, 0.0, 0.0);
+                let _ = cr.paint();
+            }
+            None => {
+                if let Some(icon) = crate::icons::app_icon_pixbuf(&art, 64) {
+                    cr.set_source_pixbuf(&icon, (w - 64.0) / 2.0, (h - 64.0) / 2.0);
+                    let _ = cr.paint();
+                }
+            }
+        }
+        let _ = cr.restore();
+
+        outline(cr);
+        cr.set_source_rgba(pr, pg, pb, 0.16);
+        cr.set_line_width(1.0);
+        let _ = cr.stroke();
+        gtk::glib::Propagation::Proceed
+    });
+    area
+}
+
+/// How much of `view` other windows overlap, as a fraction of its area.
+fn covered_fraction(view: &View, all: &[View]) -> f64 {
+    let area = (view.width.max(1) as f64) * (view.height.max(1) as f64);
+    let mut covered = 0.0;
+    for other in all.iter().filter(|other| other.id != view.id) {
+        let w = (view.x + view.width).min(other.x + other.width) - view.x.max(other.x);
+        let h = (view.y + view.height).min(other.y + other.height) - view.y.max(other.y);
+        if w > 0 && h > 0 {
+            covered += w as f64 * h as f64;
+        }
+    }
+    (covered / area).min(1.0)
+}
+
 fn focus(id: i64) {
     // Bring out of scratchpad if needed and focus
     windows::sway_plain(&format!("[con_id={id}] scratchpad show"));
@@ -212,7 +324,10 @@ fn art_for(view: &View) -> String {
         if title.contains("agents") {
             return "agents".to_string();
         }
-        return "app".to_string();
+        if title.contains("files") || title.contains("trash") {
+            return "files".to_string();
+        }
+        return "launcher".to_string();
     }
     match view.app_id.as_str() {
         "foot" => "terminal".to_string(),
