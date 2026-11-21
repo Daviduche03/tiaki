@@ -1,0 +1,16 @@
+[Unit]
+Description=Tiaki VNC web client (noVNC over websockify)
+After=tiaki-session.service
+Wants=tiaki-session.service
+
+[Service]
+User=desktop
+# wayvnc offers no-auth only (classic VNC auth is gone; it speaks RSA-AES,
+# which macOS Screen Sharing does not). The browser client works with it, and
+# stays on loopback so the port mapping decides who can reach it.
+ExecStart=/usr/bin/websockify --web /usr/share/novnc 0.0.0.0:6080 127.0.0.1:5900
+Restart=always
+RestartSec=2
+
+[Install]
+WantedBy=multi-user.target

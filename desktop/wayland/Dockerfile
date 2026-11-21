@@ -47,7 +47,7 @@ RUN apt-get update \
     && apt-get install -y --no-install-recommends \
         sway swaybg foot mousepad btop thunar epiphany-browser swaylock \
         fonts-jetbrains-mono fonts-font-awesome adwaita-icon-theme \
-        grim curl unzip xz-utils wayvnc libgtk-3-0 libgtk-layer-shell0 ca-certificates wtype wl-clipboard brightnessctl pamixer \
+        grim curl unzip xz-utils wayvnc novnc websockify libgtk-3-0 libgtk-layer-shell0 ca-certificates wtype wl-clipboard brightnessctl pamixer \
         fastfetch imagemagick dbus adduser librsvg2-common python3 git \
     && rm -rf /var/lib/apt/lists/*
 
@@ -148,7 +148,7 @@ COPY desktop/wayland/tiaki-session /usr/local/bin/tiaki-session
 COPY desktop/systemd/tiaki-firstboot.sh /usr/local/bin/tiaki-firstboot
 COPY desktop/systemd/tiaki-t3.sh /usr/local/bin/tiaki-t3
 COPY desktop/bin/tiaki-t3-open /usr/local/bin/tiaki-t3-open
-COPY desktop/systemd/tiaki-firstboot.service desktop/systemd/tiaki-ui-serve.service desktop/systemd/tiaki-session.service desktop/systemd/tiaki-t3.service /etc/systemd/system/
+COPY desktop/systemd/tiaki-firstboot.service desktop/systemd/tiaki-ui-serve.service desktop/systemd/tiaki-session.service desktop/systemd/tiaki-t3.service desktop/systemd/tiaki-vnc-web.service /etc/systemd/system/
 COPY models /usr/share/tiaki/models
 COPY plugins /usr/share/tiaki/plugins
 COPY image/examples /usr/share/tiaki/image-examples
@@ -158,10 +158,10 @@ RUN chown -R desktop:desktop /home/desktop \
         /usr/local/bin/tiaki-shell /usr/local/bin/run-wayland /usr/local/bin/tiaki-session /usr/local/bin/tiaki-wallpaper \
         /usr/local/bin/tiaki-firstboot /usr/local/bin/tiaki-t3 /usr/share/tiaki/terminal-demo.sh \
     && mkdir -p /var/lib/tiaki \
-    && systemctl enable tiaki-firstboot.service tiaki-ui-serve.service tiaki-session.service tiaki-t3.service
+    && systemctl enable tiaki-firstboot.service tiaki-ui-serve.service tiaki-session.service tiaki-t3.service tiaki-vnc-web.service
 
 ENV TIAKI_HOME=/var/lib/tiaki
-EXPOSE 5900 5733
+EXPOSE 5900 6080 5733
 # PID 1 is systemd: firstboot seeds state and delegates cgroups, ui-serve
 # answers the tree API, and the session unit runs Sway as the desktop user.
 # run-wayland.sh remains for legacy direct launches.

@@ -80,8 +80,9 @@ desktop is the GTK shell in `ui/shell`, not this page.
 
 ```bash
 docker build -f desktop/wayland/Dockerfile -t tiaki-wayland:dev .
-docker run -d --privileged --name tiaki-wayland -p 5901:5900 tiaki-wayland:dev
-open vnc://localhost:5901   # macOS Screen Sharing
+docker run -d --privileged --name tiaki-wayland \
+  -p 127.0.0.1:6080:6080 -p 127.0.0.1:5901:5900 tiaki-wayland:dev
+open http://localhost:6080/vnc.html?autoconnect=true   # noVNC in a browser
 ```
 
 `--privileged` is required: systemd is PID 1 and delegates the cgroup
