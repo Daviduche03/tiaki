@@ -1,167 +1,254 @@
-/* First-run setup. One question per screen, paper on ink, no panels.
+/* First-run setup. One question per screen, on a single centred sheet.
    Only proven GTK3 properties: one invalid property drops the whole sheet. */
+
+/* ---- the sheet ------------------------------------------------------- */
+
+.su-sheet {
+  border-radius: 10px;
+}
+
+/* ---- masthead -------------------------------------------------------- */
 
 .su-brand {
   color: #e6e0d4;
-  font-size: 10px;
-  font-weight: 500;
   font-family: "IBM Plex Sans", sans-serif;
-  letter-spacing: 0.08em;
+  font-size: 12px;
+  font-weight: 500;
+  letter-spacing: 0.02em;
 }
+
+/* Mono, so "Step 1 of 5" reads as an instrument, not a heading. */
+.su-step {
+  color: rgba(230, 224, 212, 0.40);
+  font-family: "IBM Plex Mono", monospace;
+  font-size: 11px;
+  letter-spacing: 0.02em;
+}
+
+/* ---- the question ---------------------------------------------------- */
 
 .su-title {
   color: #e6e0d4;
-  font-size: 40px;
-  font-weight: 500;
   font-family: "IBM Plex Sans", sans-serif;
+  font-size: 34px;
+  font-weight: 500;
   letter-spacing: -0.02em;
 }
 
 .su-lede {
   color: rgba(230, 224, 212, 0.62);
-  font-size: 15px;
   font-family: "IBM Plex Sans", sans-serif;
+  font-size: 13px;
 }
 
 .su-label {
   color: rgba(230, 224, 212, 0.55);
-  font-size: 12px;
-  font-weight: 500;
+  font-family: "IBM Plex Mono", monospace;
+  font-size: 10px;
+  letter-spacing: 0.10em;
 }
 
 .su-field {
   color: #e6e0d4;
-  font-size: 15px;
   font-family: "IBM Plex Sans", sans-serif;
+  font-size: 13px;
 }
 
 .su-entry {
   background-color: #1b1917;
-  border: 1px solid rgba(230, 224, 212, 0.16);
-  border-radius: 3px;
+  background-image: none;
+  border: 1px solid rgba(230, 224, 212, 0.14);
+  border-radius: 6px;
+  box-shadow: none;
   color: #e6e0d4;
   padding: 0 12px;
   font-family: "IBM Plex Sans", sans-serif;
-  font-size: 15px;
+  font-size: 13px;
 }
 
 .su-entry:focus {
   border-color: rgba(208, 138, 44, 0.60);
 }
 
-.su-foot {
-  color: rgba(230, 224, 212, 0.40);
-  font-family: "IBM Plex Mono", monospace;
-  font-size: 10.5px;
-}
+/* ---- options --------------------------------------------------------- */
 
-/* cards: luminance step, lamp edge only on the chosen one */
+/* Cards are structure, not depth: a luminance step and one hairline. */
 .su-card {
   background-color: #1b1917;
   border: 1px solid rgba(230, 224, 212, 0.10);
   border-radius: 6px;
-  padding: 20px 24px;
 }
+
 .su-card.on {
+  background-color: #221f1c;
   border-color: rgba(208, 138, 44, 0.60);
 }
+
 .su-card-title {
   color: #e6e0d4;
-  font-size: 15px;
-  font-weight: 500;
   font-family: "IBM Plex Sans", sans-serif;
+  font-size: 13px;
+  font-weight: 500;
 }
+
 .su-card-tag {
   color: #d08a2c;
-  font-family: "IBM Plex Mono", monospace;
-  font-size: 9.5px;
   border: 1px solid rgba(208, 138, 44, 0.45);
-  border-radius: 2px;
-  padding: 2px 6px;
+  border-radius: 3px;
+  padding: 1px 6px;
+  font-family: "IBM Plex Mono", monospace;
+  font-size: 9px;
+  letter-spacing: 0.06em;
 }
+
 .su-card-body {
   color: rgba(230, 224, 212, 0.60);
-  font-size: 12.5px;
   font-family: "IBM Plex Sans", sans-serif;
+  font-size: 12px;
 }
 
-/* the single commit action: paper fill, ink text */
-.su-stamp {
+/* ---- actions --------------------------------------------------------- */
+
+/* The one commit action: paper fill, ink text. */
+.su-primary {
   background-color: #e6e0d4;
   background-image: none;
-  border: none;
+  border: 1px solid #e6e0d4;
+  border-radius: 6px;
   box-shadow: none;
-  border-radius: 2px;
   color: #151413;
-  font-size: 14px;
+  padding: 0 20px;
+  font-family: "IBM Plex Sans", sans-serif;
+  font-size: 13px;
   font-weight: 500;
-  padding: 0 28px;
-}
-/* The label is its own node: without this it takes the window's paper
-   colour and disappears into the paper button. */
-.su-stamp label {
-  color: #151413;
-  text-shadow: none;
-}
-.su-stamp:hover {
-  background-color: #ffffff;
-  background-image: none;
-}
-.su-stamp:active {
-  background-color: #d8d1c2;
-  background-image: none;
 }
 
-/* review rows */
-.su-marker {
-  background-color: #2e6b4e;
-  border-radius: 1px;
+.su-primary label {
+  color: #151413;
 }
-.su-change {
+
+.su-primary:hover {
+  background-color: #ffffff;
+  border-color: #ffffff;
+}
+
+.su-primary:active {
+  background-color: #d8d1c2;
+  border-color: #d8d1c2;
+}
+
+.su-back {
+  background-color: transparent;
+  background-image: none;
+  border: 1px solid rgba(230, 224, 212, 0.16);
+  border-radius: 6px;
+  box-shadow: none;
+  color: rgba(230, 224, 212, 0.72);
+  padding: 0 16px;
+  font-family: "IBM Plex Sans", sans-serif;
+  font-size: 13px;
+}
+
+.su-back label {
+  color: rgba(230, 224, 212, 0.72);
+}
+
+.su-back:hover {
+  background-color: rgba(230, 224, 212, 0.06);
   color: #e6e0d4;
-  font-size: 15px;
 }
-.su-change-sub {
+
+.su-back:hover label {
+  color: #e6e0d4;
+}
+
+.su-hint {
   color: rgba(230, 224, 212, 0.50);
   font-family: "IBM Plex Mono", monospace;
   font-size: 10.5px;
 }
+
+/* ---- review rows ----------------------------------------------------- */
+
+.su-marker {
+  background-color: #2e6b4e;
+  border-radius: 3px;
+}
+
+.su-change {
+  color: #e6e0d4;
+  font-family: "IBM Plex Sans", sans-serif;
+  font-size: 13px;
+}
+
+.su-change-sub {
+  color: rgba(230, 224, 212, 0.45);
+  font-family: "IBM Plex Mono", monospace;
+  font-size: 10px;
+}
+
 .su-rule {
   color: rgba(230, 224, 212, 0.10);
 }
 
-/* contents rail */
-.su-contents {
+/* ---- the rail -------------------------------------------------------- */
+
+.su-rail {
   background-color: #131314;
+  border: 1px solid rgba(230, 224, 212, 0.08);
+  border-radius: 6px;
 }
+
 .su-toc-title {
-  color: rgba(230, 224, 212, 0.62);
-  font-size: 13px;
+  color: rgba(230, 224, 212, 0.40);
+  font-family: "IBM Plex Mono", monospace;
+  font-size: 9.5px;
+  letter-spacing: 0.14em;
 }
+
 .su-toc-count {
-  color: rgba(230, 224, 212, 0.38);
+  color: rgba(230, 224, 212, 0.40);
   font-family: "IBM Plex Mono", monospace;
   font-size: 10px;
 }
-.su-toc-num {
-  color: rgba(230, 224, 212, 0.38);
-  font-family: "IBM Plex Mono", monospace;
-  font-size: 10px;
-}
+
 .su-toc-item {
-  color: rgba(230, 224, 212, 0.45);
-  font-size: 13px;
+  color: rgba(230, 224, 212, 0.38);
+  font-family: "IBM Plex Sans", sans-serif;
+  font-size: 12.5px;
 }
+
 .su-toc-now {
   color: #e6e0d4;
-  font-size: 13px;
+  font-family: "IBM Plex Sans", sans-serif;
+  font-size: 12.5px;
   font-weight: 500;
 }
+
 .su-toc-done {
-  color: rgba(230, 224, 212, 0.62);
+  color: rgba(230, 224, 212, 0.55);
+  font-family: "IBM Plex Sans", sans-serif;
+  font-size: 12.5px;
 }
-.su-toc-state {
-  color: rgba(230, 224, 212, 0.38);
+
+.su-toc-note {
+  color: rgba(230, 224, 212, 0.28);
   font-family: "IBM Plex Mono", monospace;
-  font-size: 10px;
+  font-size: 9.5px;
+}
+
+/* State lives in the dot, so the name never has to shout twice. */
+.su-dot {
+  background-color: rgba(230, 224, 212, 0.18);
+  border-radius: 3px;
+}
+
+.su-dot-done {
+  background-color: rgba(230, 224, 212, 0.40);
+  border-radius: 3px;
+}
+
+.su-dot-now {
+  background-color: #d08a2c;
+  border-radius: 3px;
 }

@@ -90,6 +90,8 @@ struct Ui {
     window: gtk::Window,
     body: gtk::Box,
     contents: gtk::Box,
+    actions: gtk::Box,
+    step: gtk::Label,
     screen: Screen,
     answers: Answers,
     card_selected: usize,
@@ -119,50 +121,100 @@ pub fn run() {
     backdrop.add(&wallpaper());
     backdrop.add_overlay(&veil());
 
-    let columns = gtk::Box::new(gtk::Orientation::Horizontal, 0);
+    // One sheet, centred over the wallpaper. A window-sized surface beats a
+    // full-bleed page: the eye gets a single edge to follow and the wallpaper
+    // stays a background instead of a competing panel.
+    // A Box, not an EventBox: an EventBox hands its child its natural width,
+    // which left the sheet under-allocated and every control short of its edge.
+    let sheet = gtk::Box::new(gtk::Orientation::Vertical, 0);
+    sheet.set_size_request(1040, 560);
+    sheet.set_halign(gtk::Align::Center);
+    sheet.set_valign(gtk::Align::Center);
+    theme::class(&sheet, "su-sheet");
+    sheet.connect_draw(|widget, cr| {
+        let width = widget.allocated_width() as f64;
+        let height = widget.allocated_height() as f64;
+        cr.set_operator(gtk::cairo::Operator::Source);
+        rounded_path(cr, 0.0, 0.0, width, height, 10.0);
+        cr.set_source_rgba(0.082, 0.078, 0.075, 0.97);
+        let _ = cr.fill();
+        cr.set_operator(gtk::cairo::Operator::Over);
+        cr.set_line_width(1.0);
+        cr.set_source_rgba(0.902, 0.878, 0.831, 0.12);
+        rounded_path(cr, 0.5, 0.5, width - 1.0, height - 1.0, 10.0);
+        let _ = cr.stroke();
+        gtk::glib::Propagation::Proceed
+    });
+
+    let columns = gtk::Grid::new();
     columns.set_hexpand(true);
     columns.set_vexpand(true);
+    columns.set_margin_top(1);
+    columns.set_margin_bottom(1);
+    columns.set_margin_start(1);
+    columns.set_margin_end(1);
 
-    let left = gtk::Box::new(gtk::Orientation::Vertical, 0);
-    left.set_hexpand(true);
-    left.set_margin_start(96);
-    left.set_margin_end(64);
-    left.set_margin_top(48);
-    left.set_margin_bottom(40);
+    // Left: the question, its explanation, its controls, then the actions.
+    let content = gtk::Box::new(gtk::Orientation::Vertical, 0);
+    content.set_hexpand(true);
+    content.set_valign(gtk::Align::Center);
+    content.set_margin_start(56);
+    content.set_margin_end(36);
+    content.set_margin_top(44);
+    content.set_margin_bottom(36);
 
-    let brand = gtk::Box::new(gtk::Orientation::Horizontal, 11);
-    brand.pack_start(&icons::logo_mark(20), false, false, 0);
+    let head = gtk::Box::new(gtk::Orientation::Horizontal, 0);
+    let brand = gtk::Box::new(gtk::Orientation::Horizontal, 10);
+    brand.pack_start(&icons::logo_mark(18), false, false, 0);
     let word = gtk::Label::new(Some("tiaki"));
     theme::class(&word, "su-brand");
     brand.pack_start(&word, false, false, 0);
-    left.pack_start(&brand, false, false, 0);
+    head.pack_start(&brand, false, false, 0);
+
+    // Where you are belongs at the top, beside the name, read before the
+    // question.
+    let step = gtk::Label::new(None);
+    step.set_halign(gtk::Align::Start);
+    step.set_valign(gtk::Align::Center);
+    step.set_margin_start(12);
+    theme::class(&step, "su-step");
+    head.pack_start(&step, false, false, 0);
+    content.pack_start(&head, false, false, 0);
 
     let body = gtk::Box::new(gtk::Orientation::Vertical, 0);
-    body.set_vexpand(true);
-    left.pack_start(&body, true, true, 0);
+    body.set_hexpand(true);
+    content.pack_start(&body, false, false, 0);
 
-    let foot = gtk::Label::new(None);
-    foot.set_halign(gtk::Align::Start);
-    theme::class(&foot, "su-foot");
-    left.pack_start(&foot, false, false, 0);
+    let actions = gtk::Box::new(gtk::Orientation::Horizontal, 10);
+    actions.set_hexpand(true);
+    actions.set_margin_top(36);
+    content.pack_start(&actions, true, true, 0);
 
-    let right = gtk::EventBox::new();
-    right.set_visible_window(true);
-    right.set_size_request(400, -1);
-    theme::class(&right, "su-contents");
+    // Right: the map. Inset, so the sheet keeps one silhouette.
+    let rail = gtk::EventBox::new();
+    rail.set_visible_window(true);
+    rail.set_size_request(252, -1);
+    rail.set_margin_top(24);
+    rail.set_margin_bottom(24);
+    rail.set_margin_end(24);
+    theme::class(&rail, "su-rail");
     let contents = gtk::Box::new(gtk::Orientation::Vertical, 0);
-    contents.set_margin_top(48);
-    contents.set_margin_start(40);
-    contents.set_margin_end(40);
-    right.add(&contents);
+    contents.set_margin_top(24);
+    contents.set_margin_start(22);
+    contents.set_margin_end(22);
+    contents.set_margin_bottom(20);
+    rail.add(&contents);
 
-    columns.pack_start(&left, true, true, 0);
-    columns.pack_start(&right, false, false, 0);
+    columns.attach(&content, 0, 0, 1, 1);
+    columns.attach(&rail, 1, 0, 1, 1);
+    content.set_hexpand(true);
+    rail.set_hexpand(false);
+    sheet.pack_start(&columns, true, true, 0);
 
     let shell = gtk::Overlay::new();
-    shell.add(&columns);
-    // Pin the layout to the screen. Left to its natural width the contents
-    // rail moved sideways every time the step's text changed length.
+    shell.add(&sheet);
+    // Pin the layout to the screen so the sheet does not drift when a step's
+    // text changes length.
     let (screen_width, screen_height) = screen_size();
     shell.set_size_request(screen_width, screen_height);
     shell.set_halign(gtk::Align::Fill);
@@ -174,6 +226,8 @@ pub fn run() {
         window: window.clone(),
         body,
         contents,
+        actions,
+        step,
         screen: Screen::Welcome,
         answers: Answers {
             name: "Ada".to_string(),
@@ -435,6 +489,13 @@ fn draw(ui: &std::rc::Rc<std::cell::RefCell<Ui>>) {
     for child in contents.children() {
         contents.remove(&child);
     }
+    let actions = ui.borrow().actions.clone();
+    for child in actions.children() {
+        actions.remove(&child);
+    }
+    ui.borrow()
+        .step
+        .set_text(&format!("Step {} of {}", screen.index() + 1, STEPS.len()));
 
     let mut ui_mut = ui.borrow_mut();
     ui_mut.name_entry = None;
@@ -446,16 +507,14 @@ fn draw(ui: &std::rc::Rc<std::cell::RefCell<Ui>>) {
         Screen::Welcome => {
             title(&body, "A computer that\nremembers what\nit changed.");
             lede(&body, "Every app, agent, and setting is a transaction in a ledger you can read, undo, and hand to someone else.");
-            primary_button(ui, &body, "Begin");
-            footer(ui, "setup writes 4 transactions · all reversible");
+            action_row(ui, "Begin", "4 transactions · all reversible");
         }
         Screen::Principal => {
             title(&body, "Who owns\nthis machine?");
             lede(&body, "This principal signs every transaction. Others can be added later, each with their own authority.");
             let entry = field(&body, "Name", &name);
             ui.borrow_mut().name_entry = Some(entry);
-            primary_button(ui, &body, "Continue");
-            footer(ui, "the name becomes user:<name> · owner");
+            action_row(ui, "Continue", "the name becomes user:<name> · owner");
         }
         Screen::Mode => {
             title(&body, "How much should\nthe machine trust agents?");
@@ -478,8 +537,7 @@ fn draw(ui: &std::rc::Rc<std::cell::RefCell<Ui>>) {
                 "No prompts inside this session. Every action is still recorded.",
             );
             let _ = guarded;
-            primary_button(ui, &body, "Continue");
-            footer(ui, "switchable per session, never silently");
+            action_row(ui, "Continue", "switchable per session, never silently");
         }
         Screen::Inference => {
             title(&body, "Where should\nthinking happen?");
@@ -516,8 +574,11 @@ fn draw(ui: &std::rc::Rc<std::cell::RefCell<Ui>>) {
                 let entry = field(&body, "Endpoint URL", "");
                 ui.borrow_mut().url_entry = Some(entry);
             }
-            primary_button(ui, &body, "Continue");
-            footer(ui, "inference is an OS service, not an app setting");
+            action_row(
+                ui,
+                "Continue",
+                "inference is an OS service, not an app setting",
+            );
         }
         Screen::Review => {
             title(&body, "Four changes,\nall reversible.");
@@ -551,9 +612,11 @@ fn draw(ui: &std::rc::Rc<std::cell::RefCell<Ui>>) {
                 "Keep generation A as last-good",
                 "B stays the rollback target",
             );
-            let button = primary_button(ui, &body, "Finish setup");
+            if let Some(trailing) = body.children().last().cloned() {
+                body.remove(&trailing);
+            }
+            let button = action_row(ui, "Finish setup", "4 transactions · 4 rollback points");
             ui.borrow_mut().finish_button = Some(button);
-            footer(ui, "4 transactions · 4 rollback points");
         }
         Screen::Done => {
             title(&body, "Tiaki is ready.");
@@ -561,8 +624,7 @@ fn draw(ui: &std::rc::Rc<std::cell::RefCell<Ui>>) {
                 &body,
                 &format!("{recorded} of {total} transactions recorded. Nothing left this machine."),
             );
-            primary_button(ui, &body, "Sign in");
-            footer(ui, "return to sign in");
+            action_row(ui, "Sign in", "return to sign in");
         }
     }
 
@@ -572,60 +634,69 @@ fn draw(ui: &std::rc::Rc<std::cell::RefCell<Ui>>) {
 
 fn draw_contents(ui: &std::rc::Rc<std::cell::RefCell<Ui>>, screen: Screen) {
     let contents = ui.borrow().contents.clone();
+    let here = screen.index();
+    let done = screen == Screen::Done;
+
     let head = gtk::Box::new(gtk::Orientation::Horizontal, 0);
-    let title = gtk::Label::new(Some("Contents"));
+    let title = gtk::Label::new(Some("SETUP"));
     title.set_halign(gtk::Align::Start);
     title.set_hexpand(true);
     theme::class(&title, "su-toc-title");
     head.pack_start(&title, true, true, 0);
-    let count = gtk::Label::new(Some("5 steps"));
+    let count = gtk::Label::new(Some(&format!("{} / {}", here + 1, STEPS.len())));
     theme::class(&count, "su-toc-count");
     head.pack_end(&count, false, false, 0);
     contents.pack_start(&head, false, false, 0);
 
-    let rule = gtk::Separator::new(gtk::Orientation::Horizontal);
-    theme::class(&rule, "su-rule");
-    contents.pack_start(&rule, false, false, 0);
+    // A dot per step, one column of names. The dot carries state; the label
+    // carries the name. No rows, no rules, no numbers to read twice.
+    let list = gtk::Box::new(gtk::Orientation::Vertical, 0);
+    list.set_margin_top(20);
+    contents.pack_start(&list, false, false, 0);
 
-    let here = screen.index();
     for (index, label) in STEPS.iter().enumerate() {
         let row = gtk::Box::new(gtk::Orientation::Horizontal, 12);
-        row.set_margin_top(14);
-        row.set_margin_bottom(14);
-        row.set_margin_start(2);
-        let number = gtk::Label::new(Some(&format!("{:02}", index + 1)));
-        theme::class(&number, "su-toc-num");
-        row.pack_start(&number, false, false, 0);
+        row.set_margin_top(9);
+        row.set_margin_bottom(9);
+
+        let dot = gtk::EventBox::new();
+        dot.set_visible_window(true);
+        dot.set_size_request(6, 6);
+        dot.set_valign(gtk::Align::Center);
+        theme::class(
+            &dot,
+            if index == here && !done {
+                "su-dot-now"
+            } else if index < here || done {
+                "su-dot-done"
+            } else {
+                "su-dot"
+            },
+        );
+        row.pack_start(&dot, false, false, 0);
+
         let name = gtk::Label::new(Some(label));
         name.set_halign(gtk::Align::Start);
-        name.set_hexpand(true);
         theme::class(
             &name,
-            if index == here {
+            if index == here && !done {
                 "su-toc-now"
+            } else if index < here || done {
+                "su-toc-done"
             } else {
                 "su-toc-item"
             },
         );
-        if index < here || screen == Screen::Done {
-            theme::class(&name, "su-toc-done");
-        }
-        row.pack_start(&name, true, true, 0);
-        let state = gtk::Label::new(Some(if index < here || screen == Screen::Done {
-            "done"
-        } else if index == here {
-            "here"
-        } else {
-            "—"
-        }));
-        theme::class(&state, "su-toc-state");
-        row.pack_end(&state, false, false, 0);
-        contents.pack_start(&row, false, false, 0);
-
-        let separator = gtk::Separator::new(gtk::Orientation::Horizontal);
-        theme::class(&separator, "su-rule");
-        contents.pack_start(&separator, false, false, 0);
+        row.pack_start(&name, false, false, 0);
+        list.pack_start(&row, false, false, 0);
     }
+
+    let note = gtk::Label::new(Some("Enter continue\nEsc back"));
+    note.set_halign(gtk::Align::Start);
+    note.set_valign(gtk::Align::End);
+    note.set_vexpand(true);
+    theme::class(&note, "su-toc-note");
+    contents.pack_start(&note, true, true, 0);
 }
 
 fn title(body: &gtk::Box, text: &str) {
@@ -633,7 +704,7 @@ fn title(body: &gtk::Box, text: &str) {
     label.set_halign(gtk::Align::Start);
     label.set_valign(gtk::Align::Start);
     label.set_line_wrap(true);
-    label.set_margin_top(64);
+    label.set_margin_top(40);
     theme::class(&label, "su-title");
     body.pack_start(&label, false, false, 0);
 }
@@ -642,8 +713,8 @@ fn lede(body: &gtk::Box, text: &str) {
     let label = gtk::Label::new(Some(text));
     label.set_halign(gtk::Align::Start);
     label.set_line_wrap(true);
-    label.set_max_width_chars(46);
-    label.set_margin_top(22);
+    label.set_max_width_chars(44);
+    label.set_margin_top(14);
     theme::class(&label, "su-lede");
     body.pack_start(&label, false, false, 0);
 }
@@ -651,14 +722,14 @@ fn lede(body: &gtk::Box, text: &str) {
 fn field(body: &gtk::Box, label_text: &str, value: &str) -> gtk::Entry {
     let label = gtk::Label::new(Some(label_text));
     label.set_halign(gtk::Align::Start);
-    label.set_margin_top(30);
+    label.set_margin_top(22);
     theme::class(&label, "su-label");
     body.pack_start(&label, false, false, 0);
 
     let entry = gtk::Entry::new();
     entry.set_text(value);
-    entry.set_hexpand(false);
-    entry.set_size_request(420, 44);
+    entry.set_hexpand(true);
+    entry.set_size_request(0, 40);
     entry.set_halign(gtk::Align::Start);
     entry.set_margin_top(6);
     theme::class(&entry, "su-field");
@@ -678,19 +749,18 @@ fn card(
 ) {
     let card = gtk::EventBox::new();
     card.set_visible_window(true);
-    card.set_size_request(560, -1);
-    card.set_halign(gtk::Align::Start);
-    card.set_margin_top(if index == 0 { 30 } else { 12 });
+    card.set_halign(gtk::Align::Fill);
+    card.set_margin_top(if index == 0 { 24 } else { 10 });
     theme::class(&card, "su-card");
     if selected {
         theme::class(&card, "on");
     }
 
-    let inner = gtk::Box::new(gtk::Orientation::Vertical, 6);
-    inner.set_margin_top(16);
-    inner.set_margin_bottom(16);
-    inner.set_margin_start(18);
-    inner.set_margin_end(18);
+    let inner = gtk::Box::new(gtk::Orientation::Vertical, 4);
+    inner.set_margin_top(14);
+    inner.set_margin_bottom(14);
+    inner.set_margin_start(16);
+    inner.set_margin_end(16);
 
     let head = gtk::Box::new(gtk::Orientation::Horizontal, 10);
     let title = gtk::Label::new(Some(title_text));
@@ -755,28 +825,66 @@ fn change(body: &gtk::Box, what: &str, sub: &str) {
     body.pack_start(&rule, false, false, 0);
 }
 
-fn primary_button(
+fn action_row(
     ui: &std::rc::Rc<std::cell::RefCell<Ui>>,
-    body: &gtk::Box,
-    label: &str,
+    primary_label: &str,
+    hint: &str,
 ) -> gtk::Button {
-    let button = gtk::Button::with_label(label);
-    button.set_halign(gtk::Align::Start);
-    button.set_size_request(0, 44);
-    button.set_margin_top(30);
-    theme::class(&button, "su-stamp");
+    let actions = ui.borrow().actions.clone();
+    let has_back = ui.borrow().screen.prev().is_some();
+
+    if has_back {
+        let back = gtk::Button::with_label("Back");
+        back.set_size_request(0, 36);
+        back.set_valign(gtk::Align::Center);
+        theme::class(&back, "su-back");
+        let ui_for_click = ui.clone();
+        back.connect_clicked(move |_| {
+            let previous = ui_for_click.borrow().screen.prev();
+            if let Some(previous) = previous {
+                {
+                    let mut borrowed = ui_for_click.borrow_mut();
+                    borrowed.screen = previous;
+                    borrowed.card_selected = 0;
+                }
+                draw(&ui_for_click);
+            }
+        });
+        actions.pack_start(&back, false, false, 0);
+    }
+
+    let button = gtk::Button::with_label(primary_label);
+    button.set_size_request(0, 36);
+    button.set_valign(gtk::Align::Center);
+    theme::class(&button, "su-primary");
     let ui_for_click = ui.clone();
     button.connect_clicked(move |_| primary(&ui_for_click));
-    body.pack_start(&button, false, false, 0);
+    actions.pack_end(&button, false, false, 0);
+
+    let hint_label = gtk::Label::new(Some(hint));
+    hint_label.set_halign(gtk::Align::End);
+    hint_label.set_valign(gtk::Align::Center);
+    hint_label.set_margin_end(14);
+    theme::class(&hint_label, "su-hint");
+    actions.pack_end(&hint_label, false, false, 0);
     button
 }
 
-fn footer(ui: &std::rc::Rc<std::cell::RefCell<Ui>>, text: &str) {
-    let label = gtk::Label::new(Some(text));
-    label.set_halign(gtk::Align::Start);
-    label.set_margin_top(26);
-    theme::class(&label, "su-foot");
-    ui.borrow().body.pack_start(&label, false, false, 0);
+/// Rounded-rectangle path for the sheet's own surface.
+fn rounded_path(cr: &gtk::cairo::Context, x: f64, y: f64, width: f64, height: f64, radius: f64) {
+    use std::f64::consts::{FRAC_PI_2, PI};
+    cr.new_sub_path();
+    cr.arc(x + width - radius, y + radius, radius, -FRAC_PI_2, 0.0);
+    cr.arc(
+        x + width - radius,
+        y + height - radius,
+        radius,
+        0.0,
+        FRAC_PI_2,
+    );
+    cr.arc(x + radius, y + height - radius, radius, FRAC_PI_2, PI);
+    cr.arc(x + radius, y + radius, radius, PI, 3.0 * FRAC_PI_2);
+    cr.close_path();
 }
 
 fn wallpaper() -> gtk::Image {
