@@ -8,7 +8,7 @@ window, window.background {
   -webkit-font-smoothing: antialiased;
 }
 
-.dock-window, .launcher-window, .bar-window {
+.dock-window, .launcher-window, .bar-window, .menu-window, .control-window, .notify-window {
   background-color: transparent;
 }
 

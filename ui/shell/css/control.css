@@ -1,21 +1,22 @@
-/* Control Center. Same material as the bar: ink panel, paper text,
-   one lamp accent. Spec: docs/design/brand/color.md */
+/* Control Center: Translucent frosted glass matching dock and navbar */
 
 .cc-panel {
-  background-color: #151413;
-  background-image: none;
-  border: 1px solid rgba(230, 224, 212, 0.14);
-  border-radius: 3px;
+  background: linear-gradient(to bottom, rgba(41, 51, 64, 0.82) 0%, rgba(26, 33, 43, 0.86) 40%, rgba(15, 20, 28, 0.92) 100%);
+  border: 1px solid rgba(255, 255, 255, 0.18);
+  border-top: 1px solid rgba(255, 255, 255, 0.32);
+  border-radius: 14px;
+  box-shadow: 0 16px 40px rgba(0, 0, 0, 0.60), 0 2px 10px rgba(0, 0, 0, 0.35);
 }
 
 .cc-title {
-  color: #e6e0d4;
-  font-size: 13px;
-  font-weight: 500;
+  color: #ffffff;
+  font-family: "Poppins", sans-serif;
+  font-size: 13.5px;
+  font-weight: 600;
 }
 
 .cc-rule {
-  background-color: rgba(230, 224, 212, 0.10);
+  background-color: rgba(255, 255, 255, 0.12);
 }
 
 .cc-icon-button {
@@ -23,83 +24,90 @@
   background-image: none;
   border: none;
   box-shadow: none;
-  padding: 2px 4px;
-  border-radius: 3px;
-  min-height: 22px;
+  padding: 4px 6px;
+  border-radius: 6px;
+  min-height: 24px;
+  color: #ffffff;
+  transition: background-color 120ms ease-out;
 }
 .cc-icon-button:hover {
-  background-color: rgba(230, 224, 212, 0.07);
+  background-color: rgba(255, 255, 255, 0.14);
 }
 
 /* ---- tiles ---- */
 .cc-tile {
-  background-color: #1b1917;
-  border: 1px solid rgba(230, 224, 212, 0.10);
-  border-radius: 3px;
+  background-color: rgba(255, 255, 255, 0.08);
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  border-radius: 10px;
+  transition: background-color 120ms ease-out, border-color 120ms ease-out;
 }
 .cc-tile:hover {
-  border-color: rgba(230, 224, 212, 0.18);
+  background-color: rgba(255, 255, 255, 0.14);
+  border-color: rgba(255, 255, 255, 0.22);
 }
 
 .cc-tile-title {
-  color: #e6e0d4;
+  color: #ffffff;
+  font-family: "Poppins", sans-serif;
   font-size: 12.5px;
   font-weight: 500;
 }
 .cc-tile-sub {
-  color: rgba(230, 224, 212, 0.55);
-  font-family: "IBM Plex Mono", monospace;
-  font-size: 9.5px;
+  color: rgba(255, 255, 255, 0.60);
+  font-family: "Poppins", sans-serif;
+  font-size: 10.5px;
 }
 .cc-dot {
-  background-color: #d08a2c;
-  border-radius: 1px;
+  background-color: @accent;
+  border-radius: 2px;
 }
 
 /* ---- sliders and rows ---- */
 .cc-card {
-  background-color: #1b1917;
-  border: 1px solid rgba(230, 224, 212, 0.10);
-  border-radius: 3px;
+  background-color: rgba(255, 255, 255, 0.08);
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  border-radius: 10px;
   margin-top: 8px;
 }
 .cc-slider-title {
-  color: #e6e0d4;
+  color: #ffffff;
+  font-family: "Poppins", sans-serif;
   font-size: 12.5px;
+  font-weight: 500;
 }
 .cc-value {
-  color: rgba(230, 224, 212, 0.72);
-  font-family: "IBM Plex Mono", monospace;
+  color: rgba(255, 255, 255, 0.85);
+  font-family: "JetBrains Mono", monospace;
   font-size: 10.5px;
 }
 .cc-meta {
-  color: rgba(230, 224, 212, 0.45);
-  font-family: "IBM Plex Mono", monospace;
+  color: rgba(255, 255, 255, 0.50);
+  font-family: "JetBrains Mono", monospace;
   font-size: 9.5px;
 }
 
-/* GTK3 scale: ink trough, lamp fill, paper handle */
+/* GTK3 scale: glass trough, accent fill, white handle */
 .cc-scale trough {
-  background-color: #232324;
+  background-color: rgba(255, 255, 255, 0.15);
   border: none;
-  border-radius: 2px;
-  min-height: 4px;
+  border-radius: 4px;
+  min-height: 5px;
 }
 .cc-scale highlight {
-  background-color: #e6e0d4;
-  border-radius: 2px;
-  min-height: 4px;
+  background-color: @accent;
+  border-radius: 4px;
+  min-height: 5px;
 }
 .cc-scale slider {
-  background-color: #e6e0d4;
+  background-color: #ffffff;
   background-image: none;
   border: none;
-  border-radius: 7px;
-  min-width: 13px;
-  min-height: 13px;
+  border-radius: 8px;
+  min-width: 14px;
+  min-height: 14px;
   margin: -5px 0;
-  box-shadow: none;
+  box-shadow: 0 1px 4px rgba(0, 0, 0, 0.35);
 }
 .cc-scale slider:hover {
-  background-color: @paper;
+  background-color: #ffffff;
 }

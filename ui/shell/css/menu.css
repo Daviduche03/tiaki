@@ -1,41 +1,60 @@
-/* Drop-down menus: same material as Control Center and
-   Notifications. Ink panel, paper text, hairline. */
+/* Drop-down menus: translucent frosted glass matching dock and navbar */
+
+.menu-scrim {
+  background-color: transparent;
+}
+
 .menu-popover {
-  background-color: #151413;
-  background-image: none;
-  border: 1px solid rgba(230, 224, 212, 0.14);
-  border-radius: 3px;
+  background: linear-gradient(to bottom, rgba(41, 51, 64, 0.82) 0%, rgba(26, 33, 43, 0.86) 40%, rgba(15, 20, 28, 0.92) 100%);
+  border: 1px solid rgba(255, 255, 255, 0.18);
+  border-top: 1px solid rgba(255, 255, 255, 0.32);
+  border-radius: 12px;
   padding: 6px;
+  box-shadow: 0 12px 36px rgba(0, 0, 0, 0.55), 0 2px 8px rgba(0, 0, 0, 0.30);
 }
+
 .menu-list {
-  padding: 0;
+  padding: 2px 0;
 }
+
 .menu-entry {
   background: transparent;
   background-image: none;
   border: none;
   box-shadow: none;
-  padding: 6px 10px;
-  border-radius: 3px;
+  padding: 6px 12px;
+  border-radius: 7px;
+  transition: background-color 100ms ease-out, color 100ms ease-out;
 }
+
 .menu-entry:hover {
-  background-color: rgba(230, 224, 212, 0.07);
+  background-color: @accent;
 }
+
+.menu-entry:hover .menu-label,
+.menu-entry:hover .menu-shortcut {
+  color: #ffffff;
+}
+
 .menu-entry:active {
-  background-color: rgba(230, 224, 212, 0.11);
+  background-color: shade(@accent, 0.90);
 }
+
 .menu-label {
-  font-size: 12.5px;
+  font-family: "Poppins", "Inter", -apple-system, sans-serif;
+  font-size: 13px;
   font-weight: 500;
-  color: #e6e0d4;
+  color: #f0f4f8;
 }
+
 .menu-sep {
-  background-color: rgba(230, 224, 212, 0.10);
+  background-color: rgba(255, 255, 255, 0.12);
   min-height: 1px;
-  margin: 5px 8px;
+  margin: 5px 6px;
 }
+
 .menu-shortcut {
-  font-family: "IBM Plex Mono", monospace;
-  font-size: 10.5px;
-  color: rgba(230, 224, 212, 0.62);
+  font-family: "JetBrains Mono", monospace;
+  font-size: 11px;
+  color: rgba(255, 255, 255, 0.55);
 }

@@ -38,23 +38,27 @@ pub fn run(root: &agentic_ui_tree::Node) {
     theme::anchor(&window, Edge::Right);
     window.set_size_request(-1, BAR_HEIGHT);
 
-    // Translucent frosted glass matching Zorin OS ~0.40 opacity
+    // Translucent frosted glass matching the dock's color theme and translucency
     window.connect_draw(|widget, cr| {
         let width = widget.allocated_width() as f64;
         let height = widget.allocated_height() as f64;
 
         cr.set_operator(gtk::cairo::Operator::Source);
         let pat = gtk::cairo::LinearGradient::new(0.0, 0.0, 0.0, height);
-        pat.add_color_stop_rgba(0.0, 0.08, 0.11, 0.14, 0.38);
-        pat.add_color_stop_rgba(1.0, 0.04, 0.06, 0.08, 0.46);
+        pat.add_color_stop_rgba(0.0, 0.16, 0.20, 0.25, 0.72);
+        pat.add_color_stop_rgba(0.4, 0.10, 0.13, 0.17, 0.78);
+        pat.add_color_stop_rgba(1.0, 0.06, 0.08, 0.11, 0.85);
         let _ = cr.set_source(&pat);
         let _ = cr.paint();
         cr.set_operator(gtk::cairo::Operator::Over);
 
+        // Crisp specular highlight on bottom rim matching dock
         let stroke_pat = gtk::cairo::LinearGradient::new(0.0, 0.0, width, 0.0);
-        stroke_pat.add_color_stop_rgba(0.0, 1.0, 1.0, 1.0, 0.04);
-        stroke_pat.add_color_stop_rgba(0.5, 1.0, 1.0, 1.0, 0.16);
-        stroke_pat.add_color_stop_rgba(1.0, 1.0, 1.0, 1.0, 0.04);
+        stroke_pat.add_color_stop_rgba(0.0, 1.0, 1.0, 1.0, 0.10);
+        stroke_pat.add_color_stop_rgba(0.2, 1.0, 1.0, 1.0, 0.28);
+        stroke_pat.add_color_stop_rgba(0.5, 1.0, 1.0, 1.0, 0.36);
+        stroke_pat.add_color_stop_rgba(0.8, 1.0, 1.0, 1.0, 0.28);
+        stroke_pat.add_color_stop_rgba(1.0, 1.0, 1.0, 1.0, 0.10);
         let _ = cr.set_source(&stroke_pat);
         cr.rectangle(0.0, height - 1.0, width, 1.0);
         let _ = cr.fill();

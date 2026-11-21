@@ -24,16 +24,19 @@
 @define-color kept       #2e6b4e;
 @define-color refused    #a23b2a;
 
-/* Themeable accent and glass tokens */
+/* Themeable accent and glass tokens (matching dock glass) */
 @define-color accent     #3ea6ff;
 @define-color accent_hover #60b6ff;
 @define-color accent_glow rgba(62, 166, 255, 0.35);
 
-@define-color glass_bg     rgba(18, 22, 26, 0.42);
-@define-color glass_border rgba(255, 255, 255, 0.12);
+@define-color glass_bg     rgba(26, 33, 43, 0.78);
+@define-color glass_bg_top rgba(41, 51, 64, 0.75);
+@define-color glass_bg_bot rgba(15, 20, 28, 0.88);
+@define-color glass_border rgba(255, 255, 255, 0.18);
+@define-color glass_border_top rgba(255, 255, 255, 0.32);
 @define-color glass_pill   rgba(255, 255, 255, 0.08);
-@define-color glass_hover  rgba(255, 255, 255, 0.15);
-@define-color glass_active rgba(255, 255, 255, 0.22);
+@define-color glass_hover  rgba(255, 255, 255, 0.16);
+@define-color glass_active rgba(255, 255, 255, 0.24);
 
 @define-color rule       rgba(255, 255, 255, 0.12);
 @define-color rule_strong rgba(255, 255, 255, 0.22);
