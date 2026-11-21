@@ -1,8 +1,7 @@
-/* Mission Control. Near-opaque ink so windows behind never ghost through the
-   cards; the cards carry their own pictures of the windows. */
-
+/* Mission Control. Fully opaque ink: at 98.5% bright window text still ghosted
+   through between the cards, which reads as a rendering fault. */
 .overview-scrim {
-  background-color: rgba(21, 20, 19, 0.985);
+  background-color: #151413;
 }
 
 /* A card is only its selection ring: the picture and name are the content. */
