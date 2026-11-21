@@ -277,7 +277,8 @@ pub fn run(root: &agentic_ui_tree::Node) {
                 }
             }
 
-            if min_dist < SLOT_WIDTH as f64 / 2.0 {
+            // Show tooltip whenever pointer is over an icon slot (generous hit target)
+            if min_dist < SLOT_WIDTH as f64 * 0.95 {
                 if let Some(item) = closest_item {
                     // Centre the tooltip pill accurately over the hovered icon
                     flabel.set_text(&item.app.label);
@@ -287,9 +288,11 @@ pub fn run(root: &agentic_ui_tree::Node) {
                         .map(|(x, _)| x)
                         .unwrap_or_else(|| alloc.x() + DOCK_PAD_X);
                     let btn_center = btn_x as f64 + (alloc.width() as f64) / 2.0;
-                    let (_, natural_width) = flabel.preferred_width();
-                    let start = (btn_center - (natural_width as f64) / 2.0).round().max(0.0);
+                    let (_, total_width) = flabel.preferred_width();
+                    let content_width = (total_width - flabel.margin_start() - flabel.margin_end()).max(1);
+                    let start = (btn_center - (content_width as f64) / 2.0).round().max(0.0);
                     flabel.set_margin_start(start as i32);
+                    flabel.queue_resize();
                     flabel.set_opacity(1.0);
                 }
             } else {
@@ -319,7 +322,22 @@ pub fn run(root: &agentic_ui_tree::Node) {
         let panel_ref = panel.clone();
         let update_mag = update_magnification.clone();
         let last_motion = last_motion.clone();
-        item.button.add_events(gdk::EventMask::POINTER_MOTION_MASK);
+        item.button.add_events(
+            gdk::EventMask::POINTER_MOTION_MASK
+                | gdk::EventMask::ENTER_NOTIFY_MASK
+                | gdk::EventMask::LEAVE_NOTIFY_MASK,
+        );
+        let panel_ref_enter = panel_ref.clone();
+        let update_mag_enter = update_mag.clone();
+        let last_motion_enter = last_motion.clone();
+        item.button.connect_enter_notify_event(move |btn, event| {
+            last_motion_enter.set(Instant::now());
+            let (bx, by) = event.position();
+            if let Some((px, _)) = btn.translate_coordinates(&panel_ref_enter, bx as i32, by as i32) {
+                update_mag_enter(px as f64);
+            }
+            gtk::glib::Propagation::Proceed
+        });
         item.button.connect_motion_notify_event(move |btn, event| {
             last_motion.set(Instant::now());
             let (bx, by) = event.position();
