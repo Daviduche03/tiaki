@@ -77,7 +77,14 @@ struct Network {
 
 fn visible_networks() -> Vec<Network> {
     let Ok(output) = Command::new("nmcli")
-        .args(["-t", "-f", "IN-USE,SSID,SIGNAL,SECURITY", "dev", "wifi", "list"])
+        .args([
+            "-t",
+            "-f",
+            "IN-USE,SSID,SIGNAL,SECURITY",
+            "dev",
+            "wifi",
+            "list",
+        ])
         .output()
     else {
         return Vec::new();

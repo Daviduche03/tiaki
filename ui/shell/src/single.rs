@@ -10,7 +10,8 @@ use std::time::Duration;
 pub struct Instance;
 
 impl Instance {
-    pub fn acquire(name: &str, marker: &str, replace: bool) -> Option<Self> {        let base = std::env::var("XDG_RUNTIME_DIR").unwrap_or_else(|_| "/tmp".to_string());
+    pub fn acquire(name: &str, marker: &str, replace: bool) -> Option<Self> {
+        let base = std::env::var("XDG_RUNTIME_DIR").unwrap_or_else(|_| "/tmp".to_string());
         let path = PathBuf::from(base).join(format!("{name}.lock"));
 
         if Self::create(&path) {

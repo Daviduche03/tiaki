@@ -45,7 +45,12 @@ pub(crate) fn bluetooth_page() -> gtk::Box {
         section(&page, "Input devices");
         let (_card, body) = card(&page);
         for device in inputs.iter().take(8) {
-            row(&body, Some("fluent:keyboard"), device, "Registered with the kernel");
+            row(
+                &body,
+                Some("fluent:keyboard"),
+                device,
+                "Registered with the kernel",
+            );
         }
     }
 
@@ -53,7 +58,10 @@ pub(crate) fn bluetooth_page() -> gtk::Box {
 }
 
 fn paired_devices() -> Vec<(String, String)> {
-    let Ok(output) = Command::new("bluetoothctl").args(["devices", "Paired"]).output() else {
+    let Ok(output) = Command::new("bluetoothctl")
+        .args(["devices", "Paired"])
+        .output()
+    else {
         return Vec::new();
     };
     String::from_utf8_lossy(&output.stdout)

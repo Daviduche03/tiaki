@@ -9,7 +9,10 @@
 use gtk::prelude::*;
 use gtk_layer_shell::LayerShell;
 
-use crate::{agents, bar, chrome, control, dock, files, greet, launcher, menu, notify, overview, settings, setup, switcher};
+use crate::{
+    bar, chrome, control, dock, files, greet, launcher, menu, notify, overview, settings, setup,
+    switcher,
+};
 
 /// Height of the top bar and its exclusive zone. The titlebar overlay and
 /// window zoom position themselves against this, so it lives in one place.
@@ -61,7 +64,6 @@ fn all_sheets() -> Vec<&'static str> {
     sheets.extend_from_slice(launcher::STYLE_SHEETS);
     sheets.extend_from_slice(chrome::STYLE_SHEETS);
     sheets.extend_from_slice(settings::STYLE_SHEETS);
-    sheets.extend_from_slice(agents::STYLE_SHEETS);
     sheets.extend_from_slice(control::STYLE_SHEETS);
     sheets.extend_from_slice(files::STYLE_SHEETS);
     sheets.extend_from_slice(notify::STYLE_SHEETS);

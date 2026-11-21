@@ -262,7 +262,8 @@ pub fn run(root: &agentic_ui_tree::Node) {
                 let dist = (mouse_x - center_x).abs();
 
                 let target = if dist < MAGNIFY_RADIUS {
-                    let factor = 0.5 * (1.0 + ((dist / MAGNIFY_RADIUS) * std::f64::consts::PI).cos());
+                    let factor =
+                        0.5 * (1.0 + ((dist / MAGNIFY_RADIUS) * std::f64::consts::PI).cos());
                     BASE_ICON_SIZE + (PEAK_ICON_SIZE - BASE_ICON_SIZE) * factor
                 } else {
                     BASE_ICON_SIZE
@@ -433,7 +434,9 @@ pub fn run(root: &agentic_ui_tree::Node) {
             let views = windows::views();
             for item in items.iter() {
                 let app_id = windows::app_id_for_command(&item.app.command);
-                let running = views.iter().any(|view| owns(&app_id, &item.app.label, view));
+                let running = views
+                    .iter()
+                    .any(|view| owns(&app_id, &item.app.label, view));
                 let context = item.dot.style_context();
                 if running {
                     context.remove_class("hidden");
@@ -475,8 +478,7 @@ fn launcher_open() -> bool {
         .map(|command| {
             let mut args = command.split('\0');
             let exe = args.next().unwrap_or_default();
-            let is_shell =
-                exe.ends_with("tiaki-shell") || exe.ends_with("tiaki-shell (deleted)");
+            let is_shell = exe.ends_with("tiaki-shell") || exe.ends_with("tiaki-shell (deleted)");
             is_shell && command.split('\0').any(|arg| arg == "launcher")
         })
         .unwrap_or(false)
@@ -513,7 +515,12 @@ fn shelf_rule() -> gtk::DrawingArea {
         let height = widget.allocated_height() as f64;
         let (pr, pg, pb) = theme::PAPER;
         cr.set_source_rgba(pr, pg, pb, 0.14);
-        cr.rectangle(0.0, height - BASE_ICON_SIZE + 4.0, 1.0, BASE_ICON_SIZE - 8.0);
+        cr.rectangle(
+            0.0,
+            height - BASE_ICON_SIZE + 4.0,
+            1.0,
+            BASE_ICON_SIZE - 8.0,
+        );
         let _ = cr.fill();
         gtk::glib::Propagation::Proceed
     });
@@ -530,8 +537,8 @@ fn create_dock_item(app: &model::AppItem) -> Rc<AppItemWidget> {
 
     // High resolution pixbuf for smooth Cairo scaling
     let path = format!("/usr/share/tiaki/icons/{}.svg", app.art);
-    let pixbuf = gtk::gdk_pixbuf::Pixbuf::from_file_at_scale(&path, 128, 128, true)
-        .unwrap_or_else(|_| {
+    let pixbuf =
+        gtk::gdk_pixbuf::Pixbuf::from_file_at_scale(&path, 128, 128, true).unwrap_or_else(|_| {
             gtk::gdk_pixbuf::Pixbuf::new(gtk::gdk_pixbuf::Colorspace::Rgb, true, 8, 128, 128)
                 .expect("failed to create fallback pixbuf")
         });

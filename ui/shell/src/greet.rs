@@ -138,7 +138,6 @@ pub fn run() {
     scrim_add(&backdrop, &overlay);
     window.add(&backdrop);
 
-    let window_for_keys = window.clone();
     let rows_for_keys = rows.clone();
     let mode_for_keys = mode.clone();
     let state_for_keys = state.clone();
@@ -147,7 +146,11 @@ pub fn run() {
         match event.keyval() {
             gdk::keys::constants::Return | gdk::keys::constants::KP_Enter => {
                 confirm(&state);
-                window_for_keys.close();
+                // Quit rather than close(): a layer-shell surface can ignore a
+                // close request, which left the greeter on top of the desktop
+                // it had just started. Exiting removes the surface for good.
+                drop(state);
+                gtk::main_quit();
                 gtk::glib::Propagation::Stop
             }
             gdk::keys::constants::g | gdk::keys::constants::G => {
@@ -232,7 +235,10 @@ fn confirm(state: &State) {
 
     // The session contract: who sat down, under what mode.
     let runtime = std::env::var("XDG_RUNTIME_DIR").unwrap_or_else(|_| "/tmp".to_string());
-    let _ = std::fs::write(format!("{runtime}/tiaki-session"), format!("{} {mode}\n", principal.id));
+    let _ = std::fs::write(
+        format!("{runtime}/tiaki-session"),
+        format!("{} {mode}\n", principal.id),
+    );
 
     // Best effort: sign the sign-in itself into the ledger. The key is
     // user-scoped: a principal can write its own session state, not the

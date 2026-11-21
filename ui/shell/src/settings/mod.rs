@@ -133,7 +133,12 @@ pub fn run(root: &Node, start_page: Option<&str>) {
     search.set_valign(gtk::Align::Center);
     theme::class(&search, "settings-search-entry");
     search_box.pack_start(&search, true, true, 0);
-    search_box.pack_end(&glyphs::status_icon_tinted(glyphs::settings_icon("search"), 15, (0.56, 0.54, 0.51)), false, false, 0);
+    search_box.pack_end(
+        &glyphs::status_icon_tinted(glyphs::settings_icon("search"), 15, (0.56, 0.54, 0.51)),
+        false,
+        false,
+        0,
+    );
     sidebar.pack_start(&search_box, false, false, 0);
 
     let nav_box = gtk::Box::new(gtk::Orientation::Vertical, 2);
@@ -159,7 +164,11 @@ pub fn run(root: &Node, start_page: Option<&str>) {
     back.set_tooltip_text(Some("Back"));
     back.set_sensitive(false);
     theme::class(&back, "settings-back");
-    back.add(&glyphs::status_icon_tinted(glyphs::settings_icon("back"), 15, (0.902, 0.878, 0.831)));
+    back.add(&glyphs::status_icon_tinted(
+        glyphs::settings_icon("back"),
+        15,
+        (0.902, 0.878, 0.831),
+    ));
     header.pack_start(&back, false, false, 0);
     let crumb = gtk::Label::new(None);
     crumb.set_xalign(0.0);
@@ -206,7 +215,16 @@ pub fn run(root: &Node, start_page: Option<&str>) {
         let line = gtk::Box::new(gtk::Orientation::Horizontal, 14);
         line.set_margin_start(14);
         line.set_margin_end(12);
-        line.pack_start(&glyphs::status_icon_tinted(glyphs::settings_icon(&page.icon), 20, (0.902, 0.878, 0.831)), false, false, 0);
+        line.pack_start(
+            &glyphs::status_icon_tinted(
+                glyphs::settings_icon(&page.icon),
+                20,
+                (0.902, 0.878, 0.831),
+            ),
+            false,
+            false,
+            0,
+        );
         let label = gtk::Label::new(Some(&page.label));
         label.set_xalign(0.0);
         label.set_hexpand(true);
@@ -402,26 +420,14 @@ fn fallback_pages() -> Vec<Page> {
             "personalization",
         ),
         page("Agents & AI", "settings.page.agents", "agents"),
-        page(
-            "Keyboard & Shortcuts",
-            "settings.page.keyboard",
-            "keyboard",
-        ),
+        page("Keyboard & Shortcuts", "settings.page.keyboard", "keyboard"),
         page("Displays", "settings.page.display", "display"),
         page("Sound", "settings.page.sound", "sound"),
         page("Power & Battery", "settings.page.power", "power"),
         page("Storage & Disks", "settings.page.storage", "storage"),
         page("Applications", "settings.page.apps", "apps"),
-        page(
-            "Privacy & security",
-            "settings.page.privacy",
-            "privacy",
-        ),
-        page(
-            "System update",
-            "settings.page.update",
-            "update",
-        ),
+        page("Privacy & security", "settings.page.privacy", "privacy"),
+        page("System update", "settings.page.update", "update"),
         page("Date & time", "settings.page.time", "time"),
         page("About Tiaki", "settings.page.about", "about"),
     ]

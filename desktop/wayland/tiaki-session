@@ -46,6 +46,13 @@ start_inside() {
     # wayvnc runs forever and would block greet without the &.
     /usr/local/bin/sched-launch --class background -- \
         wayvnc -C /etc/tiaki/wayvnc.conf || true &
+    # The bar and dock are surfaces of the shell, and nothing else starts
+    # them: without these two lines a fresh boot lands on greet with no
+    # chrome, which is what the rig showed before this was wired.
+    /usr/local/bin/sched-launch --class foreground -- \
+        /usr/local/bin/tiaki-shell bar || true &
+    /usr/local/bin/sched-launch --class foreground -- \
+        /usr/local/bin/tiaki-shell dock || true &
     /usr/local/bin/sched-launch --class foreground -- \
         /usr/local/bin/tiaki-shell greet || true
 }

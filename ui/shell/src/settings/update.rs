@@ -11,7 +11,12 @@ pub(crate) fn update_page() -> gtk::Box {
     hero.set_margin_bottom(24);
     hero.set_margin_start(24);
     hero.set_margin_end(24);
-    hero.pack_start(&glyphs::status_icon_tinted(glyphs::settings_icon("update"), 40, (0.902, 0.878, 0.831)), false, false, 0);
+    hero.pack_start(
+        &glyphs::status_icon_tinted(glyphs::settings_icon("update"), 40, (0.902, 0.878, 0.831)),
+        false,
+        false,
+        0,
+    );
     let text = gtk::Box::new(gtk::Orientation::Vertical, 4);
     text.set_valign(gtk::Align::Center);
     let heading = gtk::Label::new(Some("You're up to date"));
@@ -35,7 +40,10 @@ pub(crate) fn update_page() -> gtk::Box {
         let status_timer = status_clone.clone();
         let check_timer = check_clone.clone();
         gtk::glib::timeout_add_seconds_local(2, move || {
-            status_timer.set_text(&format!("Last checked: {} · system is up to date", now_clock()));
+            status_timer.set_text(&format!(
+                "Last checked: {} · system is up to date",
+                now_clock()
+            ));
             check_timer.set_label("Check for updates");
             check_timer.set_sensitive(true);
             gtk::glib::ControlFlow::Break

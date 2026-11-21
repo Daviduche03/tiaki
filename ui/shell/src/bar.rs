@@ -130,6 +130,22 @@ pub fn run(root: &agentic_ui_tree::Node) {
         right_cluster.pack_start(&battery, false, false, 0);
     }
 
+    right_cluster.pack_start(&divider(), false, false, 0);
+
+    // Notifications: the bell opens the notification centre and carries the
+    // unread count. Straight from the tree, like every other status item.
+    let (bell, badge) = notify::bell_button(&window);
+    right_cluster.pack_start(&bell, false, false, 0);
+
+    // The agent app, named by the tree (bar.agent → action t3.open).
+    if let Some(node) = bar_node
+        .children
+        .iter()
+        .find(|child| child.id == "bar.agent")
+    {
+        right_cluster.pack_start(&status_button(node, &window), false, false, 0);
+    }
+
     // c. Search
     let search = icon_action_button("search", 16, "palette.open", "Search (⌘Space)");
     right_cluster.pack_start(&search, false, false, 0);
@@ -143,9 +159,10 @@ pub fn run(root: &agentic_ui_tree::Node) {
     window.add(&bar);
     window.show_all();
 
-    // Check approvals periodically
+    // Check approvals and unread notifications periodically
     let chip_for_timer = chip.clone();
     let label_for_timer = chip_label.clone();
+    let badge_for_timer = badge.clone();
     glib::timeout_add_seconds_local(2, move || {
         let approvals = notify::pending_approvals();
         if approvals == 0 {
@@ -159,6 +176,13 @@ pub fn run(root: &agentic_ui_tree::Node) {
             });
             chip_for_timer.set_no_show_all(false);
             chip_for_timer.show_all();
+        }
+        if notify::count() == 0 {
+            badge_for_timer.set_no_show_all(true);
+            badge_for_timer.hide();
+        } else {
+            badge_for_timer.set_no_show_all(false);
+            badge_for_timer.show_all();
         }
         glib::ControlFlow::Continue
     });
@@ -340,6 +364,49 @@ fn control_center_button(bar: &agentic_ui_tree::Node, window: &gtk::Window) -> g
         launch_popup("control", &x.to_string());
     });
     button
+}
+
+fn divider() -> gtk::Widget {
+    let rule = gtk::Separator::new(gtk::Orientation::Vertical);
+    rule.set_size_request(1, 14);
+    rule.set_valign(gtk::Align::Center);
+    theme::class(&rule, "bar-divider");
+    rule.upcast()
+}
+
+fn status_button(node: &agentic_ui_tree::Node, window: &gtk::Window) -> gtk::Widget {
+    let action = node
+        .prop_str("action")
+        .unwrap_or("control.open")
+        .to_string();
+
+    let button = gtk::Button::new();
+    button.set_relief(gtk::ReliefStyle::None);
+    button.set_valign(gtk::Align::Center);
+    theme::class(&button, "bar-icon-button");
+
+    if action == "control.open" {
+        button.add(&icons::status_icon("control", 22));
+        button.set_tooltip_text(Some("Control Center"));
+        let window = window.clone();
+        button.connect_clicked(move |button| {
+            let x = button
+                .translate_coordinates(&window, 0, 0)
+                .map(|(x, _)| x)
+                .unwrap_or(0);
+            launch_popup("control", &x.to_string());
+        });
+    } else {
+        // Every other status button draws the icon the model names.
+        let icon = node.prop_str("icon").unwrap_or("spark").to_string();
+        button.add(&icons::status_icon(&icon, 22));
+        if action == "t3.open" {
+            button.set_tooltip_text(Some("T3 Code — your agent app"));
+        }
+        button.connect_clicked(move |_| system::run_action(&action));
+    }
+
+    button.upcast()
 }
 
 fn clock_button(bar: &agentic_ui_tree::Node) -> gtk::Button {
