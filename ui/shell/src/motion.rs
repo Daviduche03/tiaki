@@ -89,12 +89,7 @@ pub fn fade_in(widget: &impl IsA<gtk::Widget>, duration_ms: u64, curve: Curve) {
 }
 
 /// Slide a widget along the Y-axis from an offset to its natural allocation.
-pub fn slide_y(
-    widget: &impl IsA<gtk::Widget>,
-    start_offset: i32,
-    duration_ms: u64,
-    curve: Curve,
-) {
+pub fn slide_y(widget: &impl IsA<gtk::Widget>, start_offset: i32, duration_ms: u64, curve: Curve) {
     let config = MotionConfig::default();
     if config.reduced_motion || duration_ms == 0 {
         widget.set_margin_top(0);

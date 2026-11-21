@@ -32,7 +32,12 @@ pub(crate) fn display_page() -> gtk::Box {
             right.pack_start(&scale, false, false, 0);
         }
     }
-    right.pack_start(&glyphs::status_icon_tinted(glyphs::settings_icon("chevron_up"), 12, (0.56, 0.54, 0.51)), false, false, 0);
+    right.pack_start(
+        &glyphs::status_icon_tinted(glyphs::settings_icon("chevron_up"), 12, (0.56, 0.54, 0.51)),
+        false,
+        false,
+        0,
+    );
 
     let (_, right) = row(
         &brightness_body,

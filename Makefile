@@ -59,6 +59,7 @@ payload:
 	docker rm tiaki-wm-extract >/dev/null
 	cp -r desktop/wm/assets payload/wm-assets
 	cp desktop/bin/tiaki-notify payload/tiaki-notify
+	cp desktop/bin/tiaki-t3-open payload/tiaki-t3-open
 	cp desktop/desktop.json payload/desktop.json
 	cp -r desktop/icons payload/icons
 	cp -r desktop/wallpapers payload/wallpapers

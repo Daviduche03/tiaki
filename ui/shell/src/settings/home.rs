@@ -9,12 +9,8 @@ pub(crate) fn home_page(root: &Node, nav: &Nav) -> gtk::Box {
 
     let top = gtk::Box::new(gtk::Orientation::Horizontal, 16);
     let (device_card, device_body) = new_card();
-    let (device_row, device_right) = device_row(
-        &device_body,
-        "device",
-        "Tiaki",
-        "Virtual machine · x86_64",
-    );
+    let (device_row, device_right) =
+        device_row(&device_body, "device", "Tiaki", "Virtual machine · x86_64");
     device_row.set_valign(gtk::Align::Center);
     device_right.pack_start(
         &nav_button("Details", nav, "settings.page.about", false),

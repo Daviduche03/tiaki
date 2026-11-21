@@ -13,13 +13,21 @@ pub(crate) fn keyboard_page() -> gtk::Box {
         ("Application Launcher", "⌘ Space", "tiaki-shell --launcher"),
         ("Terminal Emulator", "⌘ Return", "foot"),
         ("Application Switcher", "⌘ Tab", "tiaki-shell --switcher"),
-        ("Window Overview (Exposé)", "⌘ Up / ⌘ M", "tiaki-shell --overview"),
+        (
+            "Window Overview (Exposé)",
+            "⌘ Up / ⌘ M",
+            "tiaki-shell --overview",
+        ),
         ("Lock Screen", "⌃ ⌘ Q / ⌘ L", "swaylock -f"),
         ("Close Active Window", "⌘ W / ⌘ Q", "swaymsg kill"),
         ("Toggle Fullscreen", "⌘ F", "swaymsg fullscreen toggle"),
         ("Hide to Scratchpad", "⌘ H", "swaymsg move scratchpad"),
         ("Toggle Scratchpad", "⌘ ⇧ H", "swaymsg scratchpad show"),
-        ("Switch Workspaces (1–5)", "⌘ 1 – ⌘ 5", "swaymsg workspace number N"),
+        (
+            "Switch Workspaces (1–5)",
+            "⌘ 1 – ⌘ 5",
+            "swaymsg workspace number N",
+        ),
         ("Open Settings", "⌘ ,", "tiaki-shell --settings"),
         ("Log Out / Exit Session", "⌘ ⇧ E", "swaymsg exit"),
     ];

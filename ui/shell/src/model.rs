@@ -221,7 +221,10 @@ pub fn filter_menu(menu: &MenuDef, app_id: &str) -> MenuDef {
     let is_terminal = app.contains("foot") || app.contains("btop") || app.contains("agentd");
     let is_editor = app.contains("mousepad") || app.contains("editor");
     let is_files = app.contains("thunar") || app.contains("files") || app.contains("trash");
-    let is_browser = app.contains("epiphany") || app.contains("browser") || app.contains("chrom") || app.contains("firefox");
+    let is_browser = app.contains("epiphany")
+        || app.contains("browser")
+        || app.contains("chrom")
+        || app.contains("firefox");
 
     let item = |label: &str, action: &str, shortcut: &str| {
         MenuEntry::Item(MenuItem {

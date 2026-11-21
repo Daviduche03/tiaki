@@ -319,7 +319,10 @@ fn finish(ui: &std::rc::Rc<std::cell::RefCell<Ui>>) {
     let user = name.to_lowercase();
     let mode = if guarded { "guarded" } else { "full" };
     let (backend, backend_detail) = match inference {
-        Inference::Local => ("local".to_string(), "broker starts with the session".to_string()),
+        Inference::Local => (
+            "local".to_string(),
+            "broker starts with the session".to_string(),
+        ),
         Inference::Remote => (
             if remote_url.is_empty() {
                 "remote".to_string()
@@ -328,12 +331,19 @@ fn finish(ui: &std::rc::Rc<std::cell::RefCell<Ui>>) {
             },
             "every call is logged to the ledger".to_string(),
         ),
-        Inference::Later => ("later".to_string(), "agents will ask when they need one".to_string()),
+        Inference::Later => (
+            "later".to_string(),
+            "agents will ask when they need one".to_string(),
+        ),
     };
 
     let mut recorded = 0;
     let writes = [
-        (format!("user/{user}/profile/name"), name.clone(), format!("Create principal {name}")),
+        (
+            format!("user/{user}/profile/name"),
+            name.clone(),
+            format!("Create principal {name}"),
+        ),
         (
             format!("user/{user}/session/mode"),
             mode.to_string(),
@@ -377,7 +387,15 @@ fn finish(ui: &std::rc::Rc<std::cell::RefCell<Ui>>) {
 fn apply(key: &str, value: &str, intent: &str) -> bool {
     let principal = "user:ada";
     let output = std::process::Command::new("/usr/local/bin/agentd")
-        .args(["--principal", principal, "apply", key, value, "--intent", intent])
+        .args([
+            "--principal",
+            principal,
+            "apply",
+            key,
+            value,
+            "--intent",
+            intent,
+        ])
         .env(
             "TIAKI_HOME",
             std::env::var("TIAKI_HOME").unwrap_or_else(|_| "/var/lib/tiaki".to_string()),
@@ -503,17 +521,36 @@ fn draw(ui: &std::rc::Rc<std::cell::RefCell<Ui>>) {
         }
         Screen::Review => {
             title(&body, "Four changes,\nall reversible.");
-            lede(&body, "This is the whole of setup, written the way the system will write it.");
+            lede(
+                &body,
+                "This is the whole of setup, written the way the system will write it.",
+            );
             let mode_word = if guarded { "Guarded" } else { "Full access" };
             let backend_word = match inference {
                 Inference::Local => "local",
                 Inference::Remote => "remote",
                 Inference::Later => "later",
             };
-            change(&body, &format!("Create principal {name}"), "owner of this machine");
-            change(&body, &format!("Default mode set to {mode_word}"), "switchable per session");
-            change(&body, &format!("Inference backend: {backend_word}"), "broker starts with the session");
-            change(&body, "Keep generation A as last-good", "B stays the rollback target");
+            change(
+                &body,
+                &format!("Create principal {name}"),
+                "owner of this machine",
+            );
+            change(
+                &body,
+                &format!("Default mode set to {mode_word}"),
+                "switchable per session",
+            );
+            change(
+                &body,
+                &format!("Inference backend: {backend_word}"),
+                "broker starts with the session",
+            );
+            change(
+                &body,
+                "Keep generation A as last-good",
+                "B stays the rollback target",
+            );
             let button = primary_button(ui, &body, "Finish setup");
             ui.borrow_mut().finish_button = Some(button);
             footer(ui, "4 transactions · 4 rollback points");

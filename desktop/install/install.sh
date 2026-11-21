@@ -25,7 +25,7 @@ set -eu
 
 # Run from the repository root: the script reads the staged payload/ tree
 # (see `make payload`).
-for required in payload/agentd payload/sched-launch payload/tiaki-firstboot payload/tiaki-notify payload/desktop.json; do
+for required in payload/agentd payload/sched-launch payload/tiaki-firstboot payload/tiaki-notify payload/tiaki-t3-open payload/desktop.json; do
   if [ ! -e "$required" ]; then
     echo "missing $required — run from the repo root after \`make payload\`" >&2
     exit 1
@@ -181,10 +181,10 @@ echo "== OS payload (binaries, units, tree, wallpapers)"
 # `payload` for the exact list; keep it in sync with desktop/wayland/Dockerfile.
 for gen in "$MNT" /tmp/tiaki-b; do
   mkdir -p "$gen/usr/local/bin" "$gen/usr/share/tiaki" "$gen/var/lib/tiaki"
-  cp payload/agentd payload/tiaki-shell payload/tiaki-wallpaper payload/tiaki-firstboot payload/tiaki-session payload/sched-launch payload/tiaki-notify "$gen/usr/local/bin/" 2>/dev/null || cp payload/agentd payload/tiaki-shell payload/tiaki-wallpaper payload/tiaki-firstboot payload/sched-launch payload/tiaki-notify "$gen/usr/local/bin/"
+  cp payload/agentd payload/tiaki-shell payload/tiaki-wallpaper payload/tiaki-firstboot payload/tiaki-session payload/sched-launch payload/tiaki-notify payload/tiaki-t3-open "$gen/usr/local/bin/" 2>/dev/null || cp payload/agentd payload/tiaki-shell payload/tiaki-wallpaper payload/tiaki-firstboot payload/sched-launch payload/tiaki-notify payload/tiaki-t3-open "$gen/usr/local/bin/"
   if [ -e payload/tiaki-wm ]; then cp payload/tiaki-wm "$gen/usr/local/bin/" && chmod 0755 "$gen/usr/local/bin/tiaki-wm"; fi
   if [ -e payload/wm-assets ]; then mkdir -p "$gen/usr/share/tiaki/wm" && cp -r payload/wm-assets "$gen/usr/share/tiaki/wm/assets"; fi
-  chmod 0755 "$gen/usr/local/bin/agentd" "$gen/usr/local/bin/tiaki-firstboot" "$gen/usr/local/bin/tiaki-session" "$gen/usr/local/bin/sched-launch" "$gen/usr/local/bin/tiaki-notify"
+  chmod 0755 "$gen/usr/local/bin/agentd" "$gen/usr/local/bin/tiaki-firstboot" "$gen/usr/local/bin/tiaki-session" "$gen/usr/local/bin/sched-launch" "$gen/usr/local/bin/tiaki-notify" "$gen/usr/local/bin/tiaki-t3-open"
   cp payload/desktop.json "$gen/usr/share/tiaki/"
   cp -r payload/icons payload/wallpapers "$gen/usr/share/tiaki/"
   mkdir -p "$gen/etc/tiaki"

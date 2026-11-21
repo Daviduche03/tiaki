@@ -10,15 +10,14 @@
 //!   tiaki-shell dock      floating application dock
 //!   tiaki-shell launcher  Spotlight-style launcher
 
-mod agents;
 mod bar;
 mod chrome;
 mod clock;
 mod control;
 mod dock;
 mod files;
-mod greet;
 mod glyphs;
+mod greet;
 mod icons;
 mod launcher;
 mod menu;
@@ -74,7 +73,10 @@ fn main() -> ExitCode {
         }
         "setup" => setup::run(),
         "notifications" => {
-            let x = args.get(1).and_then(|value| value.parse().ok()).unwrap_or(0);
+            let x = args
+                .get(1)
+                .and_then(|value| value.parse().ok())
+                .unwrap_or(0);
             notify::run(x)
         }
         "control" => {
@@ -84,7 +86,6 @@ fn main() -> ExitCode {
                 .unwrap_or(0);
             control::run(x)
         }
-        "agents" => agents::run(&tree),
         "settings" => {
             let page = args.get(1).cloned().unwrap_or_default();
             settings::run(&tree, (!page.is_empty()).then_some(page.as_str()))
@@ -105,7 +106,7 @@ fn main() -> ExitCode {
             return ExitCode::SUCCESS;
         }
         other => {
-            eprintln!("tiaki-shell: unknown mode '{other}' (bar, dock, launcher, menu, control, agents, settings, switcher, chrome, files)");
+            eprintln!("tiaki-shell: unknown mode '{other}' (bar, dock, launcher, menu, control, settings, switcher, chrome, files)");
             return ExitCode::FAILURE;
         }
     }

@@ -127,11 +127,7 @@ pub(crate) fn row_full(
         }
         Some(name) => {
             line.pack_start(
-                &glyphs::status_icon_tinted(
-                    glyphs::settings_icon(name),
-                    22,
-                    (0.902, 0.878, 0.831),
-                ),
+                &glyphs::status_icon_tinted(glyphs::settings_icon(name), 22, (0.902, 0.878, 0.831)),
                 false,
                 false,
                 0,
@@ -233,7 +229,16 @@ pub(crate) fn link_row(row: &gtk::EventBox, nav: &Nav, action: &str) {
 pub(crate) fn chevron_right(right: &gtk::Box) {
     let holder = gtk::Box::new(gtk::Orientation::Horizontal, 0);
     holder.set_margin_end(4);
-    holder.pack_start(&glyphs::status_icon_tinted(glyphs::settings_icon("chevron_right"), 12, (0.56, 0.54, 0.51)), false, false, 0);
+    holder.pack_start(
+        &glyphs::status_icon_tinted(
+            glyphs::settings_icon("chevron_right"),
+            12,
+            (0.56, 0.54, 0.51),
+        ),
+        false,
+        false,
+        0,
+    );
     right.pack_start(&holder, false, false, 0);
 }
 
@@ -279,7 +284,12 @@ pub(crate) fn dropdown(current: &str, options: Vec<(String, Rc<dyn Fn()>)>) -> g
     label.set_hexpand(true);
     theme::class(&label, "settings-dropdown-label");
     line.pack_start(&label, true, true, 0);
-    line.pack_start(&glyphs::status_icon_tinted(glyphs::settings_icon("chevron_down"), 9, (0.56, 0.54, 0.51)), false, false, 0);
+    line.pack_start(
+        &glyphs::status_icon_tinted(glyphs::settings_icon("chevron_down"), 9, (0.56, 0.54, 0.51)),
+        false,
+        false,
+        0,
+    );
     button.add(&line);
 
     let popover = gtk::Popover::new(None::<&gtk::Widget>);
@@ -361,11 +371,7 @@ pub(crate) fn device_row(
     line.set_margin_end(16);
     line.set_valign(gtk::Align::Center);
     line.pack_start(
-        &glyphs::status_icon_tinted(
-            glyphs::settings_icon(icon),
-            30,
-            (0.902, 0.878, 0.831),
-        ),
+        &glyphs::status_icon_tinted(glyphs::settings_icon(icon), 30, (0.902, 0.878, 0.831)),
         false,
         false,
         0,

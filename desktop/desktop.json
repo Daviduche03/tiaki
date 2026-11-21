@@ -426,6 +426,16 @@
           }
         },
         {
+          "id": "bar.agent",
+          "kind": "button",
+          "props": {
+            "label": "",
+            "action": "t3.open",
+            "icon": "spark",
+            "variant": "status"
+          }
+        },
+        {
           "id": "bar.control",
           "kind": "button",
           "props": {
@@ -677,9 +687,9 @@
             "label": "Agents",
             "icon": "system-run-symbolic",
             "art": "agents",
-            "command": "tiaki-shell agents",
+            "command": "tiaki-t3-open",
             "category": "Tiaki",
-            "description": "Agent sessions and what they are allowed to do.",
+            "description": "Your agent app: T3 Code.",
             "color": "pink",
             "running": false,
             "pinned": true
@@ -750,9 +760,9 @@
             "label": "Agent State",
             "icon": "system-run-symbolic",
             "art": "agents",
-            "command": "foot -c /etc/tiaki/foot.ini -e /usr/local/bin/agentd state",
-            "category": "Developer Tools",
-            "description": "Agentic subsystem runtime and model registry.",
+            "command": "tiaki-t3-open",
+            "category": "Tiaki",
+            "description": "Your agent app: T3 Code.",
             "color": "pink"
           }
         },
@@ -884,71 +894,6 @@
             "category": "Utilities",
             "description": "Lock screen or end session.",
             "color": "red"
-          }
-        }
-      ]
-    },
-    {
-      "id": "agents",
-      "kind": "panel",
-      "props": {
-        "layout": "column",
-        "role": "agents"
-      },
-      "children": [
-        {
-          "id": "agents.pair",
-          "kind": "button",
-          "props": {
-            "label": "Pair Programmer",
-            "action": "agents.thread.pair",
-            "icon": "monitor",
-            "variant": "list",
-            "detail": "Code, diffs, worktrees. Speaks in patches."
-          }
-        },
-        {
-          "id": "agents.research",
-          "kind": "button",
-          "props": {
-            "label": "Researcher",
-            "action": "agents.thread.research",
-            "icon": "search",
-            "variant": "list",
-            "detail": "Web research with sources. Summaries you can cite."
-          }
-        },
-        {
-          "id": "agents.writer",
-          "kind": "button",
-          "props": {
-            "label": "Writer",
-            "action": "agents.thread.writer",
-            "icon": "brush",
-            "variant": "list",
-            "detail": "Docs, emails, drafts. Tone on request."
-          }
-        },
-        {
-          "id": "agents.planner",
-          "kind": "button",
-          "props": {
-            "label": "Planner",
-            "action": "agents.thread.planner",
-            "icon": "time",
-            "variant": "list",
-            "detail": "Plans, schedules, reminders. Never drops a task."
-          }
-        },
-        {
-          "id": "agents.helper",
-          "kind": "button",
-          "props": {
-            "label": "Helper",
-            "action": "agents.thread.helper",
-            "icon": "agents",
-            "variant": "list",
-            "detail": "General tasks, file chores, first stop for anything."
           }
         }
       ]
