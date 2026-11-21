@@ -58,6 +58,14 @@ pub fn run() {
     // a toplevel fullscreen() would unmap it instead.
 
     let backdrop = gtk::Overlay::new();
+    // The overlay takes its size from its main child unless told to fill. A
+    // wallpaper pixbuf is a fixed size, so on an output that is wider or
+    // taller than it was at start-up the sign-in screen sat in the middle
+    // with strips of the session wallpaper down both sides.
+    backdrop.set_hexpand(true);
+    backdrop.set_vexpand(true);
+    backdrop.set_halign(gtk::Align::Fill);
+    backdrop.set_valign(gtk::Align::Fill);
     backdrop.add(&wallpaper());
     backdrop.add_overlay(&veil());
 
@@ -274,22 +282,43 @@ fn confirm(state: &State) {
     }
 }
 
-fn wallpaper() -> gtk::Image {
-    let (width, height) = screen_size();
+/// The wallpaper, painted at the size the surface actually has. A pixbuf is a
+/// fixed size and GtkImage does not stretch it, so the picture is scaled in
+/// the draw handler instead of once at start-up.
+fn wallpaper() -> gtk::DrawingArea {
+    let area = gtk::DrawingArea::new();
+    area.set_hexpand(true);
+    area.set_vexpand(true);
+    area.set_halign(gtk::Align::Fill);
+    area.set_valign(gtk::Align::Fill);
     let path = WALLPAPERS
         .iter()
-        .find(|path| std::path::Path::new(path).exists());
-    let image = match path {
-        Some(path) => gtk::gdk_pixbuf::Pixbuf::from_file_at_scale(path, width, height, false)
-            .map(|pixbuf| gtk::Image::from_pixbuf(Some(&pixbuf)))
-            .unwrap_or_else(|_| gtk::Image::new()),
-        None => gtk::Image::new(),
-    };
-    image.set_hexpand(true);
-    image.set_vexpand(true);
-    image.set_halign(gtk::Align::Fill);
-    image.set_valign(gtk::Align::Fill);
-    image
+        .find(|path| std::path::Path::new(path).exists())
+        .map(|path| path.to_string());
+    area.connect_draw(move |widget, cr| {
+        let w = widget.allocated_width() as f64;
+        let h = widget.allocated_height() as f64;
+        let Some(path) = path.as_deref() else {
+            return gtk::glib::Propagation::Proceed;
+        };
+        let Ok(pixbuf) = gtk::gdk_pixbuf::Pixbuf::from_file(path) else {
+            return gtk::glib::Propagation::Proceed;
+        };
+        let pw = pixbuf.width().max(1) as f64;
+        let ph = pixbuf.height().max(1) as f64;
+        // cover: fill the surface, cropping the overhang
+        let scale = (w / pw).max(h / ph);
+        let dw = pw * scale;
+        let dh = ph * scale;
+        cr.save();
+        cr.translate((w - dw) / 2.0, (h - dh) / 2.0);
+        cr.scale(scale, scale);
+        cr.set_source_pixbuf(&pixbuf, 0.0, 0.0);
+        let _ = cr.paint();
+        cr.restore();
+        gtk::glib::Propagation::Proceed
+    });
+    area
 }
 
 fn veil() -> gtk::EventBox {

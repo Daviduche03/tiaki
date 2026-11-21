@@ -14,6 +14,55 @@ set -eu
 runtime="${XDG_RUNTIME_DIR:-/run/tiaki}"
 export XDG_RUNTIME_DIR="$runtime"
 
+start_surfaces() {
+    /usr/local/bin/sched-launch --class foreground -- \
+        /usr/local/bin/tiaki-shell bar || true &
+    /usr/local/bin/sched-launch --class foreground -- \
+        /usr/local/bin/tiaki-shell dock || true &
+    /usr/local/bin/sched-launch --class foreground -- \
+        /usr/local/bin/tiaki-shell chrome || true &
+}
+
+output_size() {
+    # sway sets SWAYSOCK for its own children; this watcher is started by the
+    # session before sway runs, so it finds the socket itself.
+    if [ -z "${SWAYSOCK:-}" ]; then
+        SWAYSOCK=$(ls "$runtime"/sway-ipc.* 2>/dev/null | head -1)
+        [ -n "$SWAYSOCK" ] || return 1
+        export SWAYSOCK
+    fi
+    /usr/bin/swaymsg -t get_outputs -r 2>/dev/null | /usr/bin/python3 -c '
+import json, sys
+try:
+    outputs = json.load(sys.stdin)
+except Exception:
+    sys.exit(1)
+print(" ".join("%s=%sx%s" % (o.get("name"), o["rect"]["width"], o["rect"]["height"])
+               for o in outputs))
+'
+}
+
+watch_output_size() {
+    last=""
+    while :; do
+        size=$(output_size || true)
+        if [ -n "$size" ]; then
+            if [ -n "$last" ] && [ "$size" != "$last" ]; then
+                start_surfaces
+                # greet is the sign-in screen; restart it only while it is
+                # still up, never over a desktop someone is already using.
+                if pgrep -x tiaki-shell >/dev/null && pgrep -af "tiaki-shell greet" >/dev/null; then
+                    pkill -f "tiaki-shell greet" || true
+                    /usr/local/bin/sched-launch --class foreground -- \
+                        /usr/local/bin/tiaki-shell greet || true &
+                fi
+            fi
+            last="$size"
+        fi
+        sleep 4
+    done
+}
+
 start_inside() {
     socket=""
     tries=0
@@ -53,12 +102,16 @@ start_inside() {
     # reaches the sign-in spawn still has chrome: Sway draws no titlebars of
     # its own, so without the overlay every window is borderless and has no
     # traffic lights.
-    /usr/local/bin/sched-launch --class foreground -- \
-        /usr/local/bin/tiaki-shell bar || true &
-    /usr/local/bin/sched-launch --class foreground -- \
-        /usr/local/bin/tiaki-shell dock || true &
-    /usr/local/bin/sched-launch --class foreground -- \
-        /usr/local/bin/tiaki-shell chrome || true &
+    start_surfaces
+
+    # A layer surface keeps the size it was created with when the output is
+    # resized underneath it: the bar stops short of the new edge, the dock is
+    # pushed off the bottom, greet leaves wallpaper strips down the sides.
+    # Remote viewers resize the output whenever the window does, so watch it
+    # and hand the surfaces a fresh geometry. Each is replaced through its
+    # lock, and greet is only restarted while it is still the sign-in screen.
+    watch_output_size &
+
     /usr/local/bin/sched-launch --class foreground -- \
         /usr/local/bin/tiaki-shell greet || true
 }
