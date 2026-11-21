@@ -10,7 +10,8 @@ use std::time::Duration;
 pub struct Instance;
 
 impl Instance {
-    pub fn acquire(name: &str, marker: &str, replace: bool) -> Option<Self> {        let base = std::env::var("XDG_RUNTIME_DIR").unwrap_or_else(|_| "/tmp".to_string());
+    pub fn acquire(name: &str, marker: &str, replace: bool) -> Option<Self> {
+        let base = std::env::var("XDG_RUNTIME_DIR").unwrap_or_else(|_| "/tmp".to_string());
         let path = PathBuf::from(base).join(format!("{name}.lock"));
 
         if Self::create(&path) {
@@ -28,7 +29,18 @@ impl Instance {
                 if !replace {
                     return None;
                 }
-                std::thread::sleep(Duration::from_millis(120));
+                // Wait for the old process to exit and release its Wayland layer surface
+                for _ in 0..10 {
+                    std::thread::sleep(Duration::from_millis(30));
+                    let alive = std::process::Command::new("kill")
+                        .args(["-0", &pid.to_string()])
+                        .status()
+                        .map(|s| s.success())
+                        .unwrap_or(false);
+                    if !alive {
+                        break;
+                    }
+                }
             }
         }
 

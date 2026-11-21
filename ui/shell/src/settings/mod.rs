@@ -21,12 +21,14 @@ use crate::{glyphs, model, single, theme};
 mod about;
 mod accessibility;
 mod accounts;
+mod agents;
 mod apps;
 mod bluetooth;
-mod data;
+pub(crate) mod data;
 mod display;
 mod gaming;
 mod home;
+mod keyboard;
 mod network;
 mod personalization;
 mod power;
@@ -38,6 +40,7 @@ mod system;
 mod time;
 mod update;
 mod widgets;
+mod wifi;
 
 use self::widgets::avatar;
 
@@ -130,7 +133,12 @@ pub fn run(root: &Node, start_page: Option<&str>) {
     search.set_valign(gtk::Align::Center);
     theme::class(&search, "settings-search-entry");
     search_box.pack_start(&search, true, true, 0);
-    search_box.pack_end(&glyphs::status_icon_tinted(glyphs::settings_icon("search"), 15, (0.56, 0.54, 0.51)), false, false, 0);
+    search_box.pack_end(
+        &glyphs::status_icon_tinted(glyphs::settings_icon("search"), 15, (0.56, 0.54, 0.51)),
+        false,
+        false,
+        0,
+    );
     sidebar.pack_start(&search_box, false, false, 0);
 
     let nav_box = gtk::Box::new(gtk::Orientation::Vertical, 2);
@@ -156,7 +164,11 @@ pub fn run(root: &Node, start_page: Option<&str>) {
     back.set_tooltip_text(Some("Back"));
     back.set_sensitive(false);
     theme::class(&back, "settings-back");
-    back.add(&glyphs::status_icon_tinted(glyphs::settings_icon("back"), 15, (0.902, 0.878, 0.831)));
+    back.add(&glyphs::status_icon_tinted(
+        glyphs::settings_icon("back"),
+        15,
+        (0.902, 0.878, 0.831),
+    ));
     header.pack_start(&back, false, false, 0);
     let crumb = gtk::Label::new(None);
     crumb.set_xalign(0.0);
@@ -203,7 +215,16 @@ pub fn run(root: &Node, start_page: Option<&str>) {
         let line = gtk::Box::new(gtk::Orientation::Horizontal, 14);
         line.set_margin_start(14);
         line.set_margin_end(12);
-        line.pack_start(&glyphs::status_icon_tinted(glyphs::settings_icon(&page.icon), 20, (0.902, 0.878, 0.831)), false, false, 0);
+        line.pack_start(
+            &glyphs::status_icon_tinted(
+                glyphs::settings_icon(&page.icon),
+                20,
+                (0.902, 0.878, 0.831),
+            ),
+            false,
+            false,
+            0,
+        );
         let label = gtk::Label::new(Some(&page.label));
         label.set_xalign(0.0);
         label.set_hexpand(true);
@@ -373,127 +394,53 @@ fn pages_from(root: &Node) -> Vec<Page> {
     fallback_pages()
 }
 
-fn default_parent(action: &str) -> Option<String> {
-    match action {
-        "settings.page.display"
-        | "settings.page.sound"
-        | "settings.page.power"
-        | "settings.page.storage"
-        | "settings.page.about" => Some("System".to_string()),
-        _ => None,
-    }
+fn default_parent(_action: &str) -> Option<String> {
+    None
 }
 
 fn fallback_pages() -> Vec<Page> {
-    let page = |label: &str, action: &str, icon: &str, parent: Option<&str>, hidden: bool| Page {
+    let page = |label: &str, action: &str, icon: &str| Page {
         label: label.to_string(),
         action: action.to_string(),
         icon: icon.to_string(),
-        parent: parent.map(str::to_string),
-        hidden,
+        parent: None,
+        hidden: false,
     };
     vec![
-        page("Home", "settings.page.home", "home", None, false),
-        page("System", "settings.page.system", "system", None, false),
+        page("Wi-Fi", "settings.page.wifi", "wifi"),
+        page("Network", "settings.page.network", "network"),
         page(
             "Bluetooth & devices",
             "settings.page.bluetooth",
             "bluetooth",
-            None,
-            false,
         ),
         page(
-            "Network & internet",
-            "settings.page.network",
-            "network",
-            None,
-            false,
-        ),
-        page(
-            "Personalization",
+            "Background & theme",
             "settings.page.personalization",
             "personalization",
-            None,
-            false,
         ),
-        page("Apps", "settings.page.apps", "apps", None, false),
-        page(
-            "Accounts",
-            "settings.page.accounts",
-            "accounts",
-            None,
-            false,
-        ),
-        page("Time & language", "settings.page.time", "time", None, false),
-        page("Gaming", "settings.page.gaming", "gaming", None, false),
-        page(
-            "Accessibility",
-            "settings.page.accessibility",
-            "accessibility",
-            None,
-            false,
-        ),
-        page(
-            "Privacy & security",
-            "settings.page.privacy",
-            "privacy",
-            None,
-            false,
-        ),
-        page(
-            "System update",
-            "settings.page.update",
-            "update",
-            None,
-            false,
-        ),
-        page(
-            "Display",
-            "settings.page.display",
-            "system",
-            Some("System"),
-            true,
-        ),
-        page(
-            "Sound",
-            "settings.page.sound",
-            "system",
-            Some("System"),
-            true,
-        ),
-        page(
-            "Power",
-            "settings.page.power",
-            "system",
-            Some("System"),
-            true,
-        ),
-        page(
-            "Storage",
-            "settings.page.storage",
-            "system",
-            Some("System"),
-            true,
-        ),
-        page(
-            "About",
-            "settings.page.about",
-            "system",
-            Some("System"),
-            true,
-        ),
+        page("Agents & AI", "settings.page.agents", "agents"),
+        page("Keyboard & Shortcuts", "settings.page.keyboard", "keyboard"),
+        page("Displays", "settings.page.display", "display"),
+        page("Sound", "settings.page.sound", "sound"),
+        page("Power & Battery", "settings.page.power", "power"),
+        page("Storage & Disks", "settings.page.storage", "storage"),
+        page("Applications", "settings.page.apps", "apps"),
+        page("Privacy & security", "settings.page.privacy", "privacy"),
+        page("System update", "settings.page.update", "update"),
+        page("Date & time", "settings.page.time", "time"),
+        page("About Tiaki", "settings.page.about", "about"),
     ]
 }
 
 fn page_content(action: &str, root: &Node, nav: &Nav) -> gtk::Widget {
     match action {
+        "settings.page.wifi" => wifi::wifi_page().upcast(),
+        "settings.page.bluetooth" => bluetooth::bluetooth_page().upcast(),
+        "settings.page.network" => network::network_page().upcast(),
+        "settings.page.agents" => agents::agents_page().upcast(),
+        "settings.page.keyboard" => keyboard::keyboard_page().upcast(),
         "settings.page.home" => home::home_page(root, nav).upcast(),
-        "settings.page.bluetooth" => render::render_content(root, nav, action)
-            .unwrap_or_else(bluetooth::bluetooth_page)
-            .upcast(),
-        "settings.page.network" => render::render_content(root, nav, action)
-            .unwrap_or_else(network::network_page)
-            .upcast(),
         "settings.page.personalization" => {
             personalization::personalization_page(root, nav).upcast()
         }
@@ -520,7 +467,7 @@ fn page_content(action: &str, root: &Node, nav: &Nav) -> gtk::Widget {
         "settings.page.sound" => sound::sound_page().upcast(),
         "settings.page.power" => power::power_page().upcast(),
         "settings.page.storage" => storage::storage_page().upcast(),
-        _ => home::home_page(root, nav).upcast(),
+        _ => wifi::wifi_page().upcast(),
     }
 }
 

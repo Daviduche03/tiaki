@@ -11,7 +11,12 @@ pub(crate) fn update_page() -> gtk::Box {
     hero.set_margin_bottom(24);
     hero.set_margin_start(24);
     hero.set_margin_end(24);
-    hero.pack_start(&glyphs::status_icon_tinted(glyphs::settings_icon("update"), 40, (0.902, 0.878, 0.831)), false, false, 0);
+    hero.pack_start(
+        &glyphs::status_icon_tinted(glyphs::settings_icon("update"), 40, (0.902, 0.878, 0.831)),
+        false,
+        false,
+        0,
+    );
     let text = gtk::Box::new(gtk::Orientation::Vertical, 4);
     text.set_valign(gtk::Align::Center);
     let heading = gtk::Label::new(Some("You're up to date"));
@@ -25,8 +30,24 @@ pub(crate) fn update_page() -> gtk::Box {
     hero.pack_start(&text, true, true, 0);
     let check = accent_button("Check for updates");
     let status_clone = status.clone();
+    let check_clone = check.clone();
     check.connect_clicked(move |_| {
-        status_clone.set_text(&format!("Last checked: {} · up to date", now_clock()))
+        check_clone.set_label("Checking…");
+        check_clone.set_sensitive(false);
+        status_clone.set_text("Checking generation status…");
+        crate::system::spawn("/usr/local/bin/agentd generation status");
+
+        let status_timer = status_clone.clone();
+        let check_timer = check_clone.clone();
+        gtk::glib::timeout_add_seconds_local(2, move || {
+            status_timer.set_text(&format!(
+                "Last checked: {} · system is up to date",
+                now_clock()
+            ));
+            check_timer.set_label("Check for updates");
+            check_timer.set_sensitive(true);
+            gtk::glib::ControlFlow::Break
+        });
     });
     hero.pack_start(&check, false, false, 0);
     hero_body.pack_start(&hero, false, false, 0);

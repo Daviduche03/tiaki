@@ -6,12 +6,6 @@ use agentic_ui_tree::Node;
 
 use crate::{model, system};
 
-pub(crate) fn set_theme(mode: &str) {
-    if live_theme() != mode {
-        system::run_action("theme.toggle");
-    }
-}
-
 // ----------------------------------------------------------------- system
 
 pub(crate) fn wallpaper_dir() -> PathBuf {
@@ -52,20 +46,27 @@ pub(crate) fn set_wallpaper(name: &str) {
     system::spawn(&format!("/usr/local/bin/tiaki-wallpaper {name}"));
 }
 
-pub(crate) fn live_theme() -> String {
-    model::http_get(
-        "http://127.0.0.1:8787/tree.json",
-        std::time::Duration::from_millis(700),
-    )
-    .and_then(|body| agentic_json::parse(&body).ok())
-    .and_then(|value| {
-        value
-            .as_object()?
-            .get("theme")?
-            .as_str()
-            .map(str::to_string)
-    })
-    .unwrap_or_else(|| "dark".to_string())
+pub(crate) fn system_fonts() -> Vec<(&'static str, &'static str)> {
+    vec![
+        ("IBM Plex Sans", "Default"),
+        ("Aspekta", "Neo-grotesque"),
+        ("Plus Jakarta Sans", "Geometric"),
+    ]
+}
+
+pub(crate) fn current_font() -> String {
+    let home = std::env::var("HOME").unwrap_or_else(|_| "/home/desktop".to_string());
+    std::fs::read_to_string(format!("{home}/.config/tiaki/font"))
+        .ok()
+        .map(|value| value.trim().to_string())
+        .filter(|value| !value.is_empty())
+        .unwrap_or_else(|| "IBM Plex Sans".to_string())
+}
+
+pub(crate) fn set_font(font: &str) {
+    let home = std::env::var("HOME").unwrap_or_else(|_| "/home/desktop".to_string());
+    let _ = std::fs::create_dir_all(format!("{home}/.config/tiaki"));
+    let _ = std::fs::write(format!("{home}/.config/tiaki/font"), font);
 }
 
 pub(crate) fn live_clock() -> String {

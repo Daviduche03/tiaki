@@ -126,6 +126,12 @@ COPY runtime/skills /usr/share/tiaki/skills
 COPY desktop/desktop.json /usr/share/tiaki/desktop.json
 COPY desktop/icons /usr/share/tiaki/icons
 COPY desktop/wallpapers /usr/share/tiaki/wallpapers
+COPY desktop/fonts /usr/share/fonts/truetype/
+COPY desktop/icons/cursors/macOS /usr/share/icons/macOS
+COPY desktop/icons/cursors/macOS-White /usr/share/icons/macOS-White
+RUN mkdir -p /usr/share/icons/default && \
+    printf '[Icon Theme]\nInherits=macOS\n' > /usr/share/icons/default/index.theme && \
+    fc-cache -f >/dev/null
 COPY desktop/wayland/tiaki-wallpaper.sh /usr/local/bin/tiaki-wallpaper
 COPY desktop/wayland/sway.conf /etc/tiaki/sway.conf
 COPY desktop/wayland/wayvnc.conf /etc/tiaki/wayvnc.conf

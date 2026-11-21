@@ -16,13 +16,15 @@ mod clock;
 mod control;
 mod dock;
 mod files;
-mod greet;
 mod glyphs;
+mod greet;
 mod icons;
 mod launcher;
 mod menu;
 mod model;
+pub mod motion;
 mod notify;
+mod overview;
 mod settings;
 mod setup;
 mod single;
@@ -71,7 +73,10 @@ fn main() -> ExitCode {
         }
         "setup" => setup::run(),
         "notifications" => {
-            let x = args.get(1).and_then(|value| value.parse().ok()).unwrap_or(0);
+            let x = args
+                .get(1)
+                .and_then(|value| value.parse().ok())
+                .unwrap_or(0);
             notify::run(x)
         }
         "control" => {
@@ -92,6 +97,9 @@ fn main() -> ExitCode {
         "switcher" => {
             let rest = args.get(1..).unwrap_or(&[]);
             switcher::run(rest)
+        }
+        "overview" | "mission" => {
+            overview::run();
         }
         "version" => {
             println!("tiaki-shell {}", env!("CARGO_PKG_VERSION"));

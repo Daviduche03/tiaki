@@ -1,58 +1,75 @@
+//! Bluetooth and attached devices, read from the system. No sample devices.
+use std::process::Command;
+
 use super::{data::*, widgets::*};
 
 pub(crate) fn bluetooth_page() -> gtk::Box {
     let page = page_shell();
 
-    section(&page, "Devices");
-    let (_devices_card, devices_body) = card(&page);
-    let devices = usb_devices();
-    if devices.is_empty() {
+    section(&page, "Bluetooth");
+    let (_card, body) = card(&page);
+    if !bluetooth_present() {
         row(
-            &devices_body,
-            Some("fluent:usb"),
-            "No devices",
-            "Nothing is connected right now.",
+            &body,
+            Some("fluent:bluetooth"),
+            "No Bluetooth adapter",
+            "This machine has no Bluetooth radio.",
         );
     } else {
-        for name in devices.iter().take(6) {
-            let (_, right) = row(&devices_body, Some("fluent:usb"), name, "Connected via USB");
-            value_text(&right, "Connected");
+        let devices = paired_devices();
+        if devices.is_empty() {
+            row(
+                &body,
+                Some("fluent:bluetooth"),
+                "No paired devices",
+                "Pair a device with bluetoothctl; it will appear here.",
+            );
+        }
+        for (name, address) in devices {
+            let (_, right) = row(&body, Some("fluent:bluetooth"), &name, "Paired");
+            value_text(&right, &address);
         }
     }
 
-    section(&page, "Bluetooth");
-    let (_bluetooth_card, bluetooth_body) = card(&page);
-    let present = bluetooth_present();
-    let (_, right) = row(
-        &bluetooth_body,
-        Some("fluent:bluetooth"),
-        "Bluetooth",
-        if present {
-            "This machine has a Bluetooth adapter"
-        } else {
-            "No Bluetooth adapter detected"
-        },
-    );
-    value_text(&right, if present { "On" } else { "Unavailable" });
+    let usb = usb_devices();
+    if !usb.is_empty() {
+        section(&page, "USB");
+        let (_card, body) = card(&page);
+        for device in usb.iter().take(8) {
+            row(&body, Some("fluent:usb"), device, "Connected");
+        }
+    }
 
-    section(&page, "Mouse, keyboard & pen");
-    let (_input_card, input_body) = card(&page);
     let inputs = input_devices();
-    if inputs.is_empty() {
-        row(
-            &input_body,
-            Some("fluent:keyboard"),
-            "No input devices",
-            "No keyboards or pointing devices were found.",
-        );
-    } else {
-        for name in inputs.iter().take(8) {
-            let (_, right) = row(&input_body, Some("fluent:keyboard"), name, "");
-            value_text(&right, "Ready");
+    if !inputs.is_empty() {
+        section(&page, "Input devices");
+        let (_card, body) = card(&page);
+        for device in inputs.iter().take(8) {
+            row(
+                &body,
+                Some("fluent:keyboard"),
+                device,
+                "Registered with the kernel",
+            );
         }
     }
 
     page
 }
 
-// ----------------------------------------------------- network & internet
+fn paired_devices() -> Vec<(String, String)> {
+    let Ok(output) = Command::new("bluetoothctl")
+        .args(["devices", "Paired"])
+        .output()
+    else {
+        return Vec::new();
+    };
+    String::from_utf8_lossy(&output.stdout)
+        .lines()
+        .filter_map(|line| {
+            let rest = line.strip_prefix("Device ")?;
+            let (address, name) = rest.split_once(' ')?;
+            Some((name.to_string(), address.to_string()))
+        })
+        .collect()
+}

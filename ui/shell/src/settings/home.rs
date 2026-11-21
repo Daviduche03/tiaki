@@ -9,12 +9,8 @@ pub(crate) fn home_page(root: &Node, nav: &Nav) -> gtk::Box {
 
     let top = gtk::Box::new(gtk::Orientation::Horizontal, 16);
     let (device_card, device_body) = new_card();
-    let (device_row, device_right) = device_row(
-        &device_body,
-        "device",
-        "Tiaki",
-        "Virtual machine · x86_64",
-    );
+    let (device_row, device_right) =
+        device_row(&device_body, "device", "Tiaki", "Virtual machine · x86_64");
     device_row.set_valign(gtk::Align::Center);
     device_right.pack_start(
         &nav_button("Details", nav, "settings.page.about", false),
@@ -100,16 +96,6 @@ pub(crate) fn home_page(root: &Node, nav: &Nav) -> gtk::Box {
     wall_pad.set_margin_end(14);
     wall_pad.pack_start(&grid, false, false, 0);
     wall_body.pack_start(&wall_pad, false, false, 0);
-
-    section(&main, "Color mode");
-    let (_mode_card, mode_body) = card(&main);
-    let (_, mode_right) = row(
-        &mode_body,
-        Some("moon"),
-        "Choose your mode",
-        "Change the colors of the desktop and apps",
-    );
-    mode_right.pack_start(&theme_dropdown(), false, false, 0);
 
     section(&side, "Recommended settings");
     let (_recommended_card, recommended_body) = card(&side);

@@ -114,7 +114,10 @@ pub fn count() -> usize {
 }
 
 pub fn pending_approvals() -> usize {
-    load().iter().filter(|notice| notice.kind == "approval").count()
+    load()
+        .iter()
+        .filter(|notice| notice.kind == "approval")
+        .count()
 }
 
 pub fn clear_all() {
@@ -133,8 +136,7 @@ pub fn clear_all() {
 pub fn run(_x: i32) {
     // Opening one popup closes the other.
     single::Instance::dismiss("tiaki-control", "control");
-    let Some(_instance) = single::Instance::acquire("tiaki-notify", "notifications", false)
-    else {
+    let Some(_instance) = single::Instance::acquire("tiaki-notify", "notifications", false) else {
         return;
     };
 
@@ -179,7 +181,7 @@ pub fn run(_x: i32) {
     // The icon x in bar pixels does not match compositor scale reliably,
     // so derive the position from the screen, not the click point.
     panel.set_margin_end(12);
-    panel.set_margin_top(44);
+    panel.set_margin_top(8);
 
     let content = gtk::Box::new(gtk::Orientation::Vertical, 0);
     content.set_margin_top(14);
@@ -226,9 +228,7 @@ pub fn run(_x: i32) {
         let head = gtk::Label::new(Some("Nothing needs you."));
         head.set_xalign(0.0);
         theme::class(&head, "nt-empty-title");
-        let sub = gtk::Label::new(Some(
-            "Approvals and failed transactions will appear here.",
-        ));
+        let sub = gtk::Label::new(Some("Approvals and failed transactions will appear here."));
         sub.set_xalign(0.0);
         sub.set_line_wrap(true);
         theme::class(&sub, "nt-empty-body");
@@ -283,6 +283,7 @@ pub fn run(_x: i32) {
     window.connect_destroy(|_| gtk::main_quit());
     window.show_all();
     panel.show_all();
+    crate::motion::enter(&panel);
     window.present();
     scrim.grab_focus();
     gtk::main();

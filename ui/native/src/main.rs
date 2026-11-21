@@ -215,10 +215,6 @@ fn handle_key(app: &Rc<RefCell<App>>, event: &gtk::gdk::EventKey) -> gtk::glib::
         open_palette(app);
         return gtk::glib::Propagation::Stop;
     }
-    if sup && key == KEY_T.into() {
-        dispatch(app, "theme.toggle");
-        return gtk::glib::Propagation::Stop;
-    }
     if sup && key == KEY_K.into() {
         dispatch(app, "clock.toggle_format");
         return gtk::glib::Propagation::Stop;

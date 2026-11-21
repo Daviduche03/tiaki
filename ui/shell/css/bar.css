@@ -1,67 +1,41 @@
-/* Top bar. Ink chrome on every wallpaper, one lamp signal.
-   Spec: docs/design/brand/color.md
-   Tokens are repeated here because GTK3 CSS has no custom properties. */
+/* Top bar. The surface itself (ink, one hairline) is painted in bar.rs;
+   this sheet styles what sits on it. Every control is the same shape:
+   22px tall, 6px radius, transparent until touched. */
 
 .bar {
-  background-image: none;
-  background-color: #151413;
-  border-bottom: 1px solid rgba(230, 224, 212, 0.14);
-  padding: 0 12px;
-  color: #e6e0d4;
-  font-size: 12.5px;
+  background: transparent;
+  padding: 0 8px;
+  color: @paper;
 }
 
-/* ---- brand ---- */
-.logo-button {
+.bar button {
   background: transparent;
   background-image: none;
   border: none;
   box-shadow: none;
-  padding: 0 7px;
+  text-shadow: none;
+  -gtk-icon-shadow: none;
   margin: 0;
-  border-radius: 3px;
-  min-height: 26px;
+  min-height: 22px;
+  border-radius: 6px;
+  transition: background-color 150ms ease-out;
 }
-.logo-button:hover {
-  background-color: rgba(230, 224, 212, 0.07);
-}
-.logo-button:active {
-  background-color: rgba(230, 224, 212, 0.11);
-}
+.bar button:hover   { background-color: @hover; }
+.bar button:active,
+.bar button:checked { background-color: @pressed; }
 
-.bar-wordmark {
-  font-size: 13px;
+.brand-button     { padding: 0 8px; }
+.menu-button      { padding: 0 8px; color: @paper_2; font-weight: 400; }
+.menu-button:hover,
+.menu-button:active { color: @paper; }
+.bar-icon-button  { padding: 0 8px; }
+.bar-clock-button { padding: 0 8px; margin-left: 4px; }
+
+/* The focused app's name: medium, never bold. */
+.bar-app-title {
   font-weight: 500;
-  letter-spacing: -0.01em;
-  color: #e6e0d4;
-}
-
-.bar-divider {
-  background-color: rgba(230, 224, 212, 0.14);
-  margin: 0 10px;
-}
-
-/* ---- menus ---- */
-.menu-button {
-  background: transparent;
-  background-image: none;
-  border: none;
-  box-shadow: none;
-  padding: 0 9px;
-  margin: 0 1px;
-  border-radius: 3px;
-  color: rgba(230, 224, 212, 0.78);
-  font-size: 12.5px;
-  min-height: 26px;
-}
-.menu-button:hover {
-  background-color: rgba(230, 224, 212, 0.07);
-  color: #e6e0d4;
-}
-.menu-button:active,
-.menu-button:checked {
-  background-color: rgba(230, 224, 212, 0.11);
-  color: #e6e0d4;
+  color: @paper;
+  padding: 0 8px 0 4px;
 }
 
 .menu-button popover,
@@ -70,76 +44,30 @@ popover.background {
   border: none;
   box-shadow: none;
   padding: 0;
-  margin-right: 12px;
 }
 
-/* ---- approval chip: the only colour in the bar ---- */
-.bar-chip {
-  background-color: rgba(208, 138, 44, 0.14);
-  background-image: none;
-  border: none;
-  box-shadow: none;
-  border-radius: 2px;
+/* Pending approvals: the one lit thing on the bar. */
+.bar button.bar-chip {
+  background-color: @lamp;
   padding: 0 8px;
-  min-height: 22px;
-  margin: 0 10px 0 0;
+  min-height: 20px;
+  margin-right: 8px;
 }
-.bar-chip:hover {
-  background-color: rgba(208, 138, 44, 0.22);
-}
-.bar-chip-dot {
-  background-color: #d08a2c;
-  border-radius: 1px;
-}
+.bar button.bar-chip:hover { background-color: shade(@lamp, 1.08); }
 .bar-chip-label {
-  color: #d08a2c;
-  font-size: 11.5px;
+  color: @ink;
+  font-size: 11px;
   font-weight: 500;
 }
 
-/* ---- machine facts ---- */
-.bar-meta {
-  font-family: "IBM Plex Mono", monospace;
-  font-size: 10.5px;
-  color: rgba(230, 224, 212, 0.55);
-  padding: 0 2px;
-}
-
-/* ---- status ---- */
-.status-item {
-  padding: 0 6px;
-}
-.status-glyph {
-  color: #e6e0d4;
-}
-.status-label {
-  font-size: 11px;
-  color: rgba(230, 224, 212, 0.7);
-  padding: 0 0 0 3px;
-}
-
-.bar-icon-button {
-  background: transparent;
-  background-image: none;
-  border: none;
-  box-shadow: none;
-  padding: 0 7px;
-  margin: 0;
-  border-radius: 3px;
-  min-height: 26px;
-}
-.bar-icon-button:hover {
-  background-color: rgba(230, 224, 212, 0.07);
-}
-
-.bar-badge-dot {
-  background-color: #d08a2c;
-  border-radius: 3px;
-}
-
+.bar-battery-box { padding: 0 8px; }
+.bar-battery-pct,
 .bar-clock {
-  color: rgba(230, 224, 212, 0.92);
-  font-size: 12.5px;
-  padding: 0;
-  margin-right: 12px;
+  font-family: "IBM Plex Mono", monospace;
+  font-size: 12px;
+  color: @paper;
 }
+.bar-battery-pct { margin-right: 4px; }
+
+.status-item  { padding: 0 4px; }
+.status-glyph { color: @paper; }

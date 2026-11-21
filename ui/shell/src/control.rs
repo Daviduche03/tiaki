@@ -65,7 +65,7 @@ pub fn run(_x: i32) {
     // The icon x in bar pixels does not match compositor scale reliably,
     // so derive the position from the screen, not the click point.
     panel.set_margin_end(12);
-    panel.set_margin_top(44);
+    panel.set_margin_top(8);
 
     let content = gtk::Box::new(gtk::Orientation::Vertical, 0);
     content.set_margin_top(14);
@@ -104,15 +104,62 @@ pub fn run(_x: i32) {
     grid.set_column_homogeneous(true);
     grid.set_margin_top(12);
 
-    grid.attach(&tile(&window, "wifi", true, "Wi-Fi", "connected", "settings.page.network"), 0, 0, 1, 1);
-    grid.attach(&tile(&window, "bluetooth", true, "Bluetooth", "on", "settings.page.bluetooth"), 1, 0, 1, 1);
-    grid.attach(&tile(&window, "spark", true, "Inference", "local broker", "settings.open"), 0, 1, 1, 1);
-    grid.attach(&tile(&window, "lock", true, "Sandbox", "guarded", "tiaki:mode.guarded"), 1, 1, 1, 1);
+    // Tiles and sliders exist only for hardware this machine has, and show
+    // what it reports.
+    use crate::settings::data;
+    let mut tiles: Vec<gtk::EventBox> = Vec::new();
+    let interfaces = data::network_interfaces();
+    if let Some(wifi) = interfaces.iter().find(|interface| interface.wireless) {
+        tiles.push(tile(
+            &window,
+            "wifi",
+            wifi.connected,
+            "Wi-Fi",
+            &wifi.state.to_lowercase(),
+            "settings.page.wifi",
+        ));
+    } else if let Some(wired) = interfaces.first() {
+        tiles.push(tile(
+            &window,
+            "ethernet",
+            wired.connected,
+            "Network",
+            &wired.state.to_lowercase(),
+            "settings.page.network",
+        ));
+    }
+    if data::bluetooth_present() {
+        tiles.push(tile(
+            &window,
+            "bluetooth",
+            true,
+            "Bluetooth",
+            "available",
+            "settings.page.bluetooth",
+        ));
+    }
+    tiles.push(tile(
+        &window, "spark", true, "Agents", "sessions", "t3.open",
+    ));
+    for (index, tile) in tiles.iter().enumerate() {
+        grid.attach(tile, (index % 2) as i32, (index / 2) as i32, 1, 1);
+    }
 
     content.pack_start(&grid, false, false, 0);
-    content.pack_start(&slider("brightness", "Display", 82.0), false, false, 8);
-    content.pack_start(&slider("audio", "Sound", 64.0), false, false, 0);
-    content.pack_start(&power(&window), false, false, 8);
+    if let Some((_, current, max)) = data::backlight() {
+        let percent = if max > 0.0 {
+            current / max * 100.0
+        } else {
+            0.0
+        };
+        content.pack_start(&slider("brightness", "Display", percent), false, false, 8);
+    }
+    if let Some(volume) = data::output_volume() {
+        content.pack_start(&slider("audio", "Sound", volume), false, false, 8);
+    }
+    if let Some(battery) = battery_percent() {
+        content.pack_start(&power(&window, battery), false, false, 8);
+    }
     content.pack_start(&footer(), false, false, 0);
 
     panel.add(&content);
@@ -143,12 +190,20 @@ pub fn run(_x: i32) {
     window.connect_destroy(|_| gtk::main_quit());
     window.show_all();
     panel.show_all();
+    crate::motion::enter(&panel);
     window.present();
     scrim.grab_focus();
     gtk::main();
 }
 
-fn tile(window: &gtk::Window, icon: &str, active: bool, title: &str, subtitle: &str, action: &str) -> gtk::EventBox {
+fn tile(
+    window: &gtk::Window,
+    icon: &str,
+    active: bool,
+    title: &str,
+    subtitle: &str,
+    action: &str,
+) -> gtk::EventBox {
     let card = gtk::EventBox::new();
     card.set_visible_window(true);
     theme::class(&card, "cc-tile");
@@ -172,7 +227,12 @@ fn tile(window: &gtk::Window, icon: &str, active: bool, title: &str, subtitle: &
     row.set_valign(gtk::Align::Center);
 
     let color = if active { PAPER } else { PAPER_DIM };
-    row.pack_start(&glyphs::status_icon_tinted(icon, 17, color), false, false, 0);
+    row.pack_start(
+        &glyphs::status_icon_tinted(icon, 17, color),
+        false,
+        false,
+        0,
+    );
 
     let text = gtk::Box::new(gtk::Orientation::Vertical, 1);
     text.set_valign(gtk::Align::Center);
@@ -203,7 +263,12 @@ fn slider(icon: &str, label: &str, value: f64) -> gtk::EventBox {
     body.set_margin_end(12);
 
     let row = gtk::Box::new(gtk::Orientation::Horizontal, 8);
-    row.pack_start(&glyphs::status_icon_tinted(icon, 15, PAPER_DIM), false, false, 0);
+    row.pack_start(
+        &glyphs::status_icon_tinted(icon, 15, PAPER_DIM),
+        false,
+        false,
+        0,
+    );
     let label_widget = gtk::Label::new(Some(label));
     label_widget.set_xalign(0.0);
     label_widget.set_hexpand(true);
@@ -239,7 +304,20 @@ fn slider(icon: &str, label: &str, value: f64) -> gtk::EventBox {
     card
 }
 
-fn power(window: &gtk::Window) -> gtk::EventBox {
+fn battery_percent() -> Option<u32> {
+    for entry in std::fs::read_dir("/sys/class/power_supply").ok()?.flatten() {
+        let path = entry.path();
+        let kind = std::fs::read_to_string(path.join("type")).unwrap_or_default();
+        if kind.trim() == "Battery" {
+            if let Ok(text) = std::fs::read_to_string(path.join("capacity")) {
+                return text.trim().parse().ok();
+            }
+        }
+    }
+    None
+}
+
+fn power(window: &gtk::Window, battery: u32) -> gtk::EventBox {
     let card = gtk::EventBox::new();
     card.set_visible_window(true);
     theme::class(&card, "cc-card");
@@ -250,13 +328,18 @@ fn power(window: &gtk::Window) -> gtk::EventBox {
     row.set_margin_bottom(12);
     row.set_margin_start(12);
     row.set_margin_end(12);
-    row.pack_start(&glyphs::status_icon_tinted("battery", 17, PAPER_DIM), false, false, 0);
+    row.pack_start(
+        &glyphs::status_icon_tinted("battery", 17, PAPER_DIM),
+        false,
+        false,
+        0,
+    );
     let label = gtk::Label::new(Some("Power"));
     label.set_xalign(0.0);
     label.set_hexpand(true);
     theme::class(&label, "cc-slider-title");
     row.pack_start(&label, true, true, 0);
-    let value = gtk::Label::new(Some("AC · 100%"));
+    let value = gtk::Label::new(Some(&format!("{battery}%")));
     value.set_xalign(1.0);
     theme::class(&value, "cc-value");
     row.pack_end(&value, false, false, 0);

@@ -1,0 +1,31 @@
+/* Mission Control. Near-opaque ink so windows behind never ghost through the
+   cards; the cards carry their own pictures of the windows. */
+
+.overview-scrim {
+  background-color: rgba(21, 20, 19, 0.985);
+}
+
+/* A card is only its selection ring: the picture and name are the content. */
+.overview-card {
+  background-color: transparent;
+  border: 2px solid transparent;
+  border-radius: 14px;
+  padding: 6px;
+  transition: border-color 150ms ease-out;
+}
+.overview-card:hover {
+  border-color: rgba(230, 224, 212, 0.20);
+}
+.overview-card.selected {
+  border-color: @lamp;
+}
+
+.overview-card-label {
+  margin-top: 10px;
+}
+
+.overview-card-title {
+  color: @paper;
+  font-size: 13px;
+  font-weight: 500;
+}

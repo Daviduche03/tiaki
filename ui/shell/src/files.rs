@@ -22,8 +22,8 @@ use std::cell::RefCell;
 use std::path::{Path, PathBuf};
 use std::rc::Rc;
 use std::sync::{
-    Arc,
     atomic::{AtomicBool, Ordering},
+    Arc,
 };
 
 use gtk::gdk;
@@ -160,9 +160,9 @@ fn fmt_free(path: &Path) -> String {
 }
 
 const TEXT_EXTS: &[&str] = &[
-    "txt", "md", "markdown", "rs", "toml", "json", "log", "sh", "py", "js", "ts",
-    "tsx", "css", "html", "xml", "ini", "conf", "cfg", "yaml", "yml", "c", "h",
-    "cpp", "go", "java", "csv", "srt", "tex", "diff", "patch",
+    "txt", "md", "markdown", "rs", "toml", "json", "log", "sh", "py", "js", "ts", "tsx", "css",
+    "html", "xml", "ini", "conf", "cfg", "yaml", "yml", "c", "h", "cpp", "go", "java", "csv",
+    "srt", "tex", "diff", "patch",
 ];
 
 const IMAGE_EXTS: &[&str] = &["png", "jpg", "jpeg", "gif", "bmp", "svg", "webp"];
@@ -626,7 +626,10 @@ fn entry_from_path(path: &Path) -> Option<Entry> {
         .unwrap_or_else(|_| "—".to_string());
     let mtime_secs = meta
         .modified()
-        .and_then(|t| t.duration_since(std::time::UNIX_EPOCH).map_err(|_| std::io::Error::new(std::io::ErrorKind::Other, "time")))
+        .and_then(|t| {
+            t.duration_since(std::time::UNIX_EPOCH)
+                .map_err(|_| std::io::Error::new(std::io::ErrorKind::Other, "time"))
+        })
         .map(|d| d.as_secs())
         .unwrap_or(0);
     Some(Entry {
@@ -916,12 +919,7 @@ impl Browser {
         rows.iter()
             .filter_map(|row| model.iter(row))
             .map(|iter| {
-                let get = |col: i32| {
-                    model
-                        .value(&iter, col)
-                        .get::<String>()
-                        .unwrap_or_default()
-                };
+                let get = |col: i32| model.value(&iter, col).get::<String>().unwrap_or_default();
                 Entry {
                     name: get(COL_NAME),
                     path: PathBuf::from(get(COL_PATH)),
@@ -930,15 +928,9 @@ impl Browser {
                         .get::<bool>()
                         .unwrap_or(false),
                     is_link: false,
-                    len: model
-                        .value(&iter, COL_SIZE_BYTES)
-                        .get::<u64>()
-                        .unwrap_or(0),
+                    len: model.value(&iter, COL_SIZE_BYTES).get::<u64>().unwrap_or(0),
                     mtime: get(COL_MTIME_TEXT),
-                    mtime_secs: model
-                        .value(&iter, COL_MTIME_SECS)
-                        .get::<u64>()
-                        .unwrap_or(0),
+                    mtime_secs: model.value(&iter, COL_MTIME_SECS).get::<u64>().unwrap_or(0),
                     origin: get(COL_ORIGIN),
                 }
             })
@@ -1026,7 +1018,12 @@ impl Browser {
         }
         for (index, tab) in self.tabs.iter().enumerate() {
             self.tab_strip.pack_start(
-                &new_tab_button(&self_rc_placeholder(), index, &tab.current().title(), index == self.active),
+                &new_tab_button(
+                    &self_rc_placeholder(),
+                    index,
+                    &tab.current().title(),
+                    index == self.active,
+                ),
                 false,
                 false,
                 0,
@@ -1050,9 +1047,7 @@ impl Browser {
                     use std::path::Component;
                     match component {
                         Component::RootDir => {}
-                        Component::Normal(part) => {
-                            parts.push(part.to_string_lossy().into_owned())
-                        }
+                        Component::Normal(part) => parts.push(part.to_string_lossy().into_owned()),
                         _ => {}
                     }
                 }
@@ -1111,7 +1106,8 @@ impl Browser {
                 self.search.set_text(query);
             }
         }
-        if !matches!(self.location(), Location::Search { .. }) && self.search.text().as_str() != "" {
+        if !matches!(self.location(), Location::Search { .. }) && self.search.text().as_str() != ""
+        {
             // Search text belongs to a previous search; clear it.
             self.search.set_text("");
         }
@@ -1136,10 +1132,7 @@ impl Browser {
                     (COL_SIZE_BYTES as u32, &entry.len),
                     (COL_MTIME_TEXT as u32, &entry.mtime),
                     (COL_MTIME_SECS as u32, &entry.mtime_secs),
-                    (
-                        COL_PATH as u32,
-                        &entry.path.to_string_lossy().into_owned(),
-                    ),
+                    (COL_PATH as u32, &entry.path.to_string_lossy().into_owned()),
                     (COL_IS_DIR as u32, &entry.is_dir),
                     (COL_ORIGIN as u32, &entry.origin),
                 ],
@@ -1202,10 +1195,8 @@ impl Browser {
         self.refresh_sidebar();
         self.update_status();
         self.update_preview();
-        self.window.set_title(&format!(
-            "{} — Tiaki Files",
-            self.location().title()
-        ));
+        self.window
+            .set_title(&format!("{} — Tiaki Files", self.location().title()));
     }
 
     fn refresh_sidebar(&mut self) {
@@ -1578,9 +1569,9 @@ fn build_window(start: Location) -> Shared {
     let store = gtk::ListStore::new(&[
         String::static_type(), // name
         String::static_type(), // size text
-        u64::static_type(),     // size bytes
+        u64::static_type(),    // size bytes
         String::static_type(), // mtime text
-        u64::static_type(),     // mtime secs
+        u64::static_type(),    // mtime secs
         String::static_type(), // path
         bool::static_type(),   // is dir
         String::static_type(), // origin (trash)
@@ -1724,7 +1715,8 @@ fn build_window(start: Location) -> Shared {
     preview_text.set_right_margin(10);
     preview_text.set_top_margin(8);
     theme::class(&preview_text, "files-previewtext");
-    let preview_scroll = gtk::ScrolledWindow::new(None::<&gtk::Adjustment>, None::<&gtk::Adjustment>);
+    let preview_scroll =
+        gtk::ScrolledWindow::new(None::<&gtk::Adjustment>, None::<&gtk::Adjustment>);
     preview_scroll.set_policy(gtk::PolicyType::Automatic, gtk::PolicyType::Automatic);
     preview_scroll.set_vexpand(true);
     preview_scroll.set_margin_start(12);
@@ -1834,12 +1826,17 @@ fn install_rc(browser: &Shared) {
 
 fn open_entry(browser: &Shared, entry: &Entry) {
     if entry.is_dir {
-        browser.borrow_mut().navigate(Location::Dir(entry.path.clone()));
+        browser
+            .borrow_mut()
+            .navigate(Location::Dir(entry.path.clone()));
         return;
     }
     let name = entry.name.clone();
     if is_text_file(&entry.path) || TEXT_EXTS.contains(&ext_of(&name).as_str()) {
-        system::spawn_app(&format!("mousepad {}", entry.path.to_string_lossy()), "foreground");
+        system::spawn_app(
+            &format!("mousepad {}", entry.path.to_string_lossy()),
+            "foreground",
+        );
         return;
     }
     match ext_of(&name).as_str() {
@@ -2015,7 +2012,12 @@ fn extract_archive(browser: &Shared, path: &Path) {
         .unwrap_or_else(home_dir);
     let dest = unique_path(&parent, stem);
     let status = std::process::Command::new("tar")
-        .args(["xf", &path.to_string_lossy(), "-C", &parent.to_string_lossy()])
+        .args([
+            "xf",
+            &path.to_string_lossy(),
+            "-C",
+            &parent.to_string_lossy(),
+        ])
         .arg("--one-top-level")
         .arg(&dest)
         .status();
@@ -2025,7 +2027,12 @@ fn extract_archive(browser: &Shared, path: &Path) {
         _ => {
             let _ = std::fs::create_dir_all(&dest);
             std::process::Command::new("tar")
-                .args(["-xf", &path.to_string_lossy(), "-C", &dest.to_string_lossy()])
+                .args([
+                    "-xf",
+                    &path.to_string_lossy(),
+                    "-C",
+                    &dest.to_string_lossy(),
+                ])
                 .status()
         }
     };
@@ -2126,7 +2133,10 @@ fn open_terminal_here(browser: &Shared) {
         .drop_dir()
         .unwrap_or_else(home_dir);
     system::spawn_app(
-        &format!("sh -c 'cd {} && exec foot -c /etc/tiaki/foot.ini'", dir.to_string_lossy()),
+        &format!(
+            "sh -c 'cd {} && exec foot -c /etc/tiaki/foot.ini'",
+            dir.to_string_lossy()
+        ),
         "foreground",
     );
 }
@@ -2149,7 +2159,11 @@ fn popup_menu(browser: &Shared, entries: &[Entry]) {
         let capture = browser.clone();
         item("New File", true, Box::new(move || new_file(&capture)));
         let capture = browser.clone();
-        item("Paste", read_clipboard().is_some(), Box::new(move || do_paste(&capture)));
+        item(
+            "Paste",
+            read_clipboard().is_some(),
+            Box::new(move || do_paste(&capture)),
+        );
         let capture = browser.clone();
         item(
             "Open Terminal Here",
@@ -2157,7 +2171,11 @@ fn popup_menu(browser: &Shared, entries: &[Entry]) {
             Box::new(move || open_terminal_here(&capture)),
         );
         let capture = browser.clone();
-        item("Select All", true, Box::new(move || capture.borrow().tree.selection().select_all()));
+        item(
+            "Select All",
+            true,
+            Box::new(move || capture.borrow().tree.selection().select_all()),
+        );
     } else if in_trash {
         let capture = browser.clone();
         item(
@@ -2183,11 +2201,23 @@ fn popup_menu(browser: &Shared, entries: &[Entry]) {
             }),
         );
         let capture = browser.clone();
-        item("Copy", !entries.is_empty(), Box::new(move || copy_selected(&capture, false)));
+        item(
+            "Copy",
+            !entries.is_empty(),
+            Box::new(move || copy_selected(&capture, false)),
+        );
         let capture = browser.clone();
-        item("Cut", !entries.is_empty(), Box::new(move || copy_selected(&capture, true)));
+        item(
+            "Cut",
+            !entries.is_empty(),
+            Box::new(move || copy_selected(&capture, true)),
+        );
         let capture = browser.clone();
-        item("Rename", entries.len() == 1, Box::new(move || rename_selected(&capture)));
+        item(
+            "Rename",
+            entries.len() == 1,
+            Box::new(move || rename_selected(&capture)),
+        );
         let capture = browser.clone();
         item(
             "Bulk Rename…",
@@ -2205,7 +2235,11 @@ fn popup_menu(browser: &Shared, entries: &[Entry]) {
             }),
         );
         let capture = browser.clone();
-        item("Compress…", !entries.is_empty(), Box::new(move || compress_selection(&capture)));
+        item(
+            "Compress…",
+            !entries.is_empty(),
+            Box::new(move || compress_selection(&capture)),
+        );
         let capture = browser.clone();
         item(
             "Move to Trash",
@@ -2244,7 +2278,10 @@ fn copy_selected(browser: &Shared, cut: bool) {
     if paths.is_empty() {
         return;
     }
-    write_clipboard(&FileClipboard { cut, paths: paths.clone() });
+    write_clipboard(&FileClipboard {
+        cut,
+        paths: paths.clone(),
+    });
     let note = if cut {
         format!("Cut {} item(s) — paste to move", paths.len())
     } else {
@@ -2252,7 +2289,9 @@ fn copy_selected(browser: &Shared, cut: bool) {
     };
     let mut current = browser.borrow_mut();
     current.set_note(note);
-    current.paste_btn.set_sensitive(current.location().drop_dir().is_some());
+    current
+        .paste_btn
+        .set_sensitive(current.location().drop_dir().is_some());
 }
 
 fn rename_selected(browser: &Shared) {
@@ -2297,7 +2336,8 @@ fn new_folder(browser: &Shared) {
         return;
     };
     let window = browser.borrow().window.clone();
-    let Some(name) = text_dialog(&window, "New Folder", "Name:", "Untitled Folder", "Create") else {
+    let Some(name) = text_dialog(&window, "New Folder", "Name:", "Untitled Folder", "Create")
+    else {
         return;
     };
     let dest = unique_path(&dir, &name);
@@ -2345,12 +2385,7 @@ fn text_dialog(
     initial: &str,
     ok_label: &str,
 ) -> Option<String> {
-    let dialog = gtk::Dialog::with_buttons(
-        Some(title),
-        Some(parent),
-        gtk::DialogFlags::MODAL,
-        &[],
-    );
+    let dialog = gtk::Dialog::with_buttons(Some(title), Some(parent), gtk::DialogFlags::MODAL, &[]);
     dialog.set_default_size(420, 0);
     dialog.set_resizable(false);
     theme::class(&dialog, "files-dialog");
@@ -2390,12 +2425,7 @@ fn text_dialog(
 }
 
 fn confirm_dialog(parent: &gtk::Window, title: &str, body: &str, action: &str) -> bool {
-    let dialog = gtk::Dialog::with_buttons(
-        Some(title),
-        Some(parent),
-        gtk::DialogFlags::MODAL,
-        &[],
-    );
+    let dialog = gtk::Dialog::with_buttons(Some(title), Some(parent), gtk::DialogFlags::MODAL, &[]);
     dialog.set_default_size(420, 0);
     dialog.set_resizable(false);
     theme::class(&dialog, "files-dialog");
@@ -2469,7 +2499,10 @@ fn properties_dialog(browser: &Shared, path: &Path) {
             } else {
                 fmt_size(meta.len())
             };
-            let mtime = meta.modified().map(fmt_time).unwrap_or_else(|_| "—".to_string());
+            let mtime = meta
+                .modified()
+                .map(fmt_time)
+                .unwrap_or_else(|_| "—".to_string());
             (kind.to_string(), size, mtime)
         }
         Err(_) => ("Unknown".to_string(), "—".to_string(), "—".to_string()),
@@ -2596,7 +2629,9 @@ fn bulk_rename_dialog(browser: &Shared, names: &[String]) -> Option<(String, u32
     heading.set_xalign(0.0);
     theme::class(&heading, "files-dlg-title");
     area.pack_start(&heading, false, false, 0);
-    let hint = gtk::Label::new(Some("Use # for the counter: photo-### keeps each extension."));
+    let hint = gtk::Label::new(Some(
+        "Use # for the counter: photo-### keeps each extension.",
+    ));
     hint.set_xalign(0.0);
     hint.set_line_wrap(true);
     theme::class(&hint, "files-dim");
@@ -2656,7 +2691,12 @@ fn apply_bulk_rename(browser: &Shared, pattern: &str, mut counter: u32) {
         let numbered = pattern.replace(&"#".repeat(pad), &format!("{:01$}", counter, pad));
         counter += 1;
         let new_name = match old_name.rfind('.') {
-            Some(dot) if dot > 0 && !std::fs::symlink_metadata(&path).map(|m| m.is_dir()).unwrap_or(false) => {
+            Some(dot)
+                if dot > 0
+                    && !std::fs::symlink_metadata(&path)
+                        .map(|m| m.is_dir())
+                        .unwrap_or(false) =>
+            {
                 format!("{}{}", numbered, &old_name[dot..])
             }
             _ => numbered,
@@ -2693,8 +2733,18 @@ fn apply_bulk_rename(browser: &Shared, pattern: &str, mut counter: u32) {
 // Transfers with progress. Small jobs run inline; big ones get a worker.
 
 enum WorkerMsg {
-    Progress { done: u64, total: u64, current: String },
-    Done { created: Vec<PathBuf>, moved: Vec<(PathBuf, PathBuf)>, renames: usize, error: Option<String>, is_move: bool },
+    Progress {
+        done: u64,
+        total: u64,
+        current: String,
+    },
+    Done {
+        created: Vec<PathBuf>,
+        moved: Vec<(PathBuf, PathBuf)>,
+        renames: usize,
+        error: Option<String>,
+        is_move: bool,
+    },
 }
 
 fn copy_file_chunked(
@@ -2710,7 +2760,10 @@ fn copy_file_chunked(
     loop {
         if cancel.load(Ordering::Relaxed) {
             let _ = std::fs::remove_file(dest);
-            return Err(std::io::Error::new(std::io::ErrorKind::Interrupted, "cancelled"));
+            return Err(std::io::Error::new(
+                std::io::ErrorKind::Interrupted,
+                "cancelled",
+            ));
         }
         let count = input.read(&mut buffer)?;
         if count == 0 {
@@ -2722,7 +2775,10 @@ fn copy_file_chunked(
     // Keep the source's permissions on the copy.
     if let Ok(meta) = std::fs::symlink_metadata(source) {
         use std::os::unix::fs::PermissionsExt;
-        let _ = std::fs::set_permissions(dest, std::fs::Permissions::from_mode(meta.permissions().mode()));
+        let _ = std::fs::set_permissions(
+            dest,
+            std::fs::Permissions::from_mode(meta.permissions().mode()),
+        );
     }
     Ok(())
 }
@@ -2795,7 +2851,11 @@ fn run_transfer(browser: &Shared, is_move: bool, sources: Vec<PathBuf>, dest_dir
             current.journal.push(Op::Create { paths: created });
             current.redo.clear();
         }
-        let mut note = if is_move { "Moved".to_string() } else { "Copied".to_string() };
+        let mut note = if is_move {
+            "Moved".to_string()
+        } else {
+            "Copied".to_string()
+        };
         if renames > 0 {
             note = format!("{note} ({renames} renamed to avoid a clash)");
         }
@@ -2813,7 +2873,11 @@ fn run_transfer(browser: &Shared, is_move: bool, sources: Vec<PathBuf>, dest_dir
     cancel.store(false, Ordering::Relaxed);
     let progress_sender = sender.clone();
     let report = move |done: u64, total: u64, current: String| {
-        let _ = progress_sender.send(WorkerMsg::Progress { done, total, current });
+        let _ = progress_sender.send(WorkerMsg::Progress {
+            done,
+            total,
+            current,
+        });
     };
     {
         let current = browser.borrow();
@@ -2842,7 +2906,9 @@ fn run_transfer(browser: &Shared, is_move: bool, sources: Vec<PathBuf>, dest_dir
             // live mid-file; everything else copies whole.
             let big_file = !is_move
                 && std::fs::symlink_metadata(source)
-                    .map(|m| !m.is_dir() && !m.file_type().is_symlink() && m.len() > 4 * 1024 * 1024)
+                    .map(|m| {
+                        !m.is_dir() && !m.file_type().is_symlink() && m.len() > 4 * 1024 * 1024
+                    })
                     .unwrap_or(false);
             let result = if is_move {
                 match std::fs::rename(source, &dest) {
@@ -2868,11 +2934,7 @@ fn run_transfer(browser: &Shared, is_move: bool, sources: Vec<PathBuf>, dest_dir
                     let mut written = 0u64;
                     copy_file_chunked(source, &dest, &cancel_flag, &mut |count| {
                         written += count;
-                        report(
-                            done_bytes + written,
-                            total_bytes.max(1),
-                            name_of(&dest),
-                        );
+                        report(done_bytes + written, total_bytes.max(1), name_of(&dest));
                         if cancel_flag.load(Ordering::Relaxed) {
                             // Bail out of the chunk loop early.
                         }
@@ -2927,12 +2989,24 @@ fn run_transfer(browser: &Shared, is_move: bool, sources: Vec<PathBuf>, dest_dir
     receiver.attach(None, move |message| {
         let mut current = capture.borrow_mut();
         match message {
-            WorkerMsg::Progress { done, total, current: name } => {
-                current.progress.set_fraction(done as f64 / total.max(1) as f64);
+            WorkerMsg::Progress {
+                done,
+                total,
+                current: name,
+            } => {
+                current
+                    .progress
+                    .set_fraction(done as f64 / total.max(1) as f64);
                 current.progress.set_text(Some(&name));
                 current.set_note(&format!("Copying {name}"));
             }
-            WorkerMsg::Done { created, moved, renames, error, is_move } => {
+            WorkerMsg::Done {
+                created,
+                moved,
+                renames,
+                error,
+                is_move,
+            } => {
                 current.progress.hide();
                 current.progress_cancel.hide();
                 if let Some(problem) = error {
@@ -2948,7 +3022,11 @@ fn run_transfer(browser: &Shared, is_move: bool, sources: Vec<PathBuf>, dest_dir
                         current.journal.push(Op::Create { paths: created });
                         current.redo.clear();
                     }
-                    let mut note = if is_move { "Moved".to_string() } else { "Copied".to_string() };
+                    let mut note = if is_move {
+                        "Moved".to_string()
+                    } else {
+                        "Copied".to_string()
+                    };
                     if renames > 0 {
                         note = format!("{note} ({renames} renamed to avoid a clash)");
                     }
@@ -3004,15 +3082,30 @@ fn wire(browser: &Shared) {
         capture.borrow_mut().new_tab(location);
     });
     let capture = browser.clone();
-    browser.borrow().new_folder_btn.connect_clicked(move |_| new_folder(&capture));
+    browser
+        .borrow()
+        .new_folder_btn
+        .connect_clicked(move |_| new_folder(&capture));
     let capture = browser.clone();
-    browser.borrow().new_file_btn.connect_clicked(move |_| new_file(&capture));
+    browser
+        .borrow()
+        .new_file_btn
+        .connect_clicked(move |_| new_file(&capture));
     let capture = browser.clone();
-    browser.borrow().paste_btn.connect_clicked(move |_| do_paste(&capture));
+    browser
+        .borrow()
+        .paste_btn
+        .connect_clicked(move |_| do_paste(&capture));
     let capture = browser.clone();
-    browser.borrow().undo_btn.connect_clicked(move |_| capture.borrow_mut().do_undo());
+    browser
+        .borrow()
+        .undo_btn
+        .connect_clicked(move |_| capture.borrow_mut().do_undo());
     let capture = browser.clone();
-    browser.borrow().redo_btn.connect_clicked(move |_| capture.borrow_mut().do_redo());
+    browser
+        .borrow()
+        .redo_btn
+        .connect_clicked(move |_| capture.borrow_mut().do_redo());
     let capture = browser.clone();
     browser.borrow().hidden_btn.connect_toggled(move |button| {
         let show = button.is_active();
@@ -3026,9 +3119,15 @@ fn wire(browser: &Shared) {
         capture.borrow().preview_box.set_visible(button.is_active());
     });
     let capture = browser.clone();
-    browser.borrow().empty_trash_btn.connect_clicked(move |_| empty_trash(&capture));
+    browser
+        .borrow()
+        .empty_trash_btn
+        .connect_clicked(move |_| empty_trash(&capture));
     let capture = browser.clone();
-    browser.borrow().restore_btn.connect_clicked(move |_| restore_selected(&capture));
+    browser
+        .borrow()
+        .restore_btn
+        .connect_clicked(move |_| restore_selected(&capture));
     let capture = browser.clone();
     on_nav(&browser.borrow().path_toggle, move || {
         let current = capture.borrow();
@@ -3066,8 +3165,12 @@ fn wire(browser: &Shared) {
         if target.is_dir() {
             capture.borrow_mut().navigate(Location::Dir(target));
         } else if let Some(parent) = target.parent().filter(|p| p.is_dir()) {
-            capture.borrow_mut().navigate(Location::Dir(parent.to_path_buf()));
-            capture.borrow_mut().set_note("Not a folder — showing its parent");
+            capture
+                .borrow_mut()
+                .navigate(Location::Dir(parent.to_path_buf()));
+            capture
+                .borrow_mut()
+                .set_note("Not a folder — showing its parent");
         } else {
             capture.borrow_mut().set_note("No such folder");
         }
@@ -3106,7 +3209,9 @@ fn wire(browser: &Shared) {
         current.update_preview();
         current.update_status();
         if matches!(current.location(), Location::Trash) {
-            current.restore_btn.set_sensitive(!current.selected_paths().is_empty());
+            current
+                .restore_btn
+                .set_sensitive(!current.selected_paths().is_empty());
         }
     });
     let capture = browser.clone();
@@ -3120,24 +3225,26 @@ fn wire(browser: &Shared) {
         }
     });
     let capture = browser.clone();
-    browser.borrow().tree.connect_button_press_event(move |tree, event| {
-        if event.button() == 3 {
-            if let Some((Some(path), ..)) = tree.path_at_pos(
-                event.position().0 as i32,
-                event.position().1 as i32,
-            ) {
-                let selection = tree.selection();
-                if !selection.path_is_selected(&path) {
-                    selection.unselect_all();
-                    selection.select_path(&path);
+    browser
+        .borrow()
+        .tree
+        .connect_button_press_event(move |tree, event| {
+            if event.button() == 3 {
+                if let Some((Some(path), ..)) =
+                    tree.path_at_pos(event.position().0 as i32, event.position().1 as i32)
+                {
+                    let selection = tree.selection();
+                    if !selection.path_is_selected(&path) {
+                        selection.unselect_all();
+                        selection.select_path(&path);
+                    }
                 }
+                let entries = capture.borrow().selected_entries();
+                popup_menu(&capture, &entries);
+                return glib::Propagation::Stop;
             }
-            let entries = capture.borrow().selected_entries();
-            popup_menu(&capture, &entries);
-            return glib::Propagation::Stop;
-        }
-        glib::Propagation::Proceed
-    });
+            glib::Propagation::Proceed
+        });
 
     let capture = browser.clone();
     browser.borrow().progress_cancel.connect_clicked(move |_| {
@@ -3146,112 +3253,115 @@ fn wire(browser: &Shared) {
 
     // Keyboard.
     let capture = browser.clone();
-    browser.borrow().window.connect_key_press_event(move |_, event| {
-        use gdk::keys::constants as key;
-        use gtk::gdk::ModifierType;
-        let state = event.state();
-        let ctrl = state.contains(ModifierType::CONTROL_MASK);
-        let shift = state.contains(ModifierType::SHIFT_MASK);
-        let keyval = event.keyval();
-        // Typing in the search or path fields belongs to them — except
-        // Escape, which always backs out first.
-        let in_field = {
-            let current = capture.borrow();
-            current.search.has_focus() || current.path_entry.has_focus()
-        };
-        if in_field && keyval != key::Escape {
-            return glib::Propagation::Proceed;
-        }
-        let mut current = capture.borrow_mut();
-        if ctrl && keyval == key::z && !shift {
-            current.do_undo();
-        } else if ctrl && (keyval == key::Z || (keyval == key::z && shift)) {
-            current.do_redo();
-        } else if ctrl && keyval == key::c {
-            let paths = current.selected_paths();
-            drop(current);
-            if !paths.is_empty() {
-                write_clipboard(&FileClipboard { cut: false, paths });
-                let mut current = capture.borrow_mut();
-                current.set_note("Copied");
-                current.refresh();
-            }
-        } else if ctrl && keyval == key::x {
-            let paths = current.selected_paths();
-            drop(current);
-            if !paths.is_empty() {
-                write_clipboard(&FileClipboard { cut: true, paths });
-                let mut current = capture.borrow_mut();
-                current.set_note("Cut — paste to move");
-                current.refresh();
-            }
-        } else if ctrl && keyval == key::v {
-            drop(current);
-            do_paste(&capture);
-        } else if ctrl && keyval == key::a {
-            current.tree.selection().select_all();
-        } else if keyval == key::Delete {
-            let permanent = state.contains(ModifierType::SHIFT_MASK);
-            drop(current);
-            delete_selected(&capture, permanent);
-        } else if keyval == key::F2 {
-            drop(current);
-            rename_selected(&capture);
-        } else if keyval == key::Return || keyval == key::KP_Enter {
-            let selected = current.selected_entries().into_iter().next();
-            drop(current);
-            if let Some(entry) = selected {
-                open_entry(&capture, &entry);
-            }
-        } else if keyval == key::BackSpace
-            || (event.state().contains(ModifierType::MOD1_MASK) && keyval == key::Up)
-        {
-            let parent = match current.location() {
-                Location::Dir(path) => path.parent().map(Path::to_path_buf),
-                Location::Search { root, .. } => Some(root),
-                Location::Trash => None,
+    browser
+        .borrow()
+        .window
+        .connect_key_press_event(move |_, event| {
+            use gdk::keys::constants as key;
+            use gtk::gdk::ModifierType;
+            let state = event.state();
+            let ctrl = state.contains(ModifierType::CONTROL_MASK);
+            let shift = state.contains(ModifierType::SHIFT_MASK);
+            let keyval = event.keyval();
+            // Typing in the search or path fields belongs to them — except
+            // Escape, which always backs out first.
+            let in_field = {
+                let current = capture.borrow();
+                current.search.has_focus() || current.path_entry.has_focus()
             };
-            if let Some(dir) = parent {
-                current.navigate(Location::Dir(dir));
+            if in_field && keyval != key::Escape {
+                return glib::Propagation::Proceed;
             }
-        } else if ctrl && keyval == key::t {
-            let location = current.location();
-            current.new_tab(location);
-        } else if ctrl && keyval == key::w {
-            let active = current.active;
-            current.close_tab(active);
-        } else if ctrl && keyval == key::h {
-            let show = !current.show_hidden;
-            drop(current);
-            // The toggle's own handler persists, applies and refreshes.
-            capture.borrow().hidden_btn.set_active(show);
-        } else if ctrl && keyval == key::l {
-            let editing = current.path_entry.get_visible();
-            if editing {
-                current.path_entry.hide();
-                current.crumb_box.show();
+            let mut current = capture.borrow_mut();
+            if ctrl && keyval == key::z && !shift {
+                current.do_undo();
+            } else if ctrl && (keyval == key::Z || (keyval == key::z && shift)) {
+                current.do_redo();
+            } else if ctrl && keyval == key::c {
+                let paths = current.selected_paths();
+                drop(current);
+                if !paths.is_empty() {
+                    write_clipboard(&FileClipboard { cut: false, paths });
+                    let mut current = capture.borrow_mut();
+                    current.set_note("Copied");
+                    current.refresh();
+                }
+            } else if ctrl && keyval == key::x {
+                let paths = current.selected_paths();
+                drop(current);
+                if !paths.is_empty() {
+                    write_clipboard(&FileClipboard { cut: true, paths });
+                    let mut current = capture.borrow_mut();
+                    current.set_note("Cut — paste to move");
+                    current.refresh();
+                }
+            } else if ctrl && keyval == key::v {
+                drop(current);
+                do_paste(&capture);
+            } else if ctrl && keyval == key::a {
+                current.tree.selection().select_all();
+            } else if keyval == key::Delete {
+                let permanent = state.contains(ModifierType::SHIFT_MASK);
+                drop(current);
+                delete_selected(&capture, permanent);
+            } else if keyval == key::F2 {
+                drop(current);
+                rename_selected(&capture);
+            } else if keyval == key::Return || keyval == key::KP_Enter {
+                let selected = current.selected_entries().into_iter().next();
+                drop(current);
+                if let Some(entry) = selected {
+                    open_entry(&capture, &entry);
+                }
+            } else if keyval == key::BackSpace
+                || (event.state().contains(ModifierType::MOD1_MASK) && keyval == key::Up)
+            {
+                let parent = match current.location() {
+                    Location::Dir(path) => path.parent().map(Path::to_path_buf),
+                    Location::Search { root, .. } => Some(root),
+                    Location::Trash => None,
+                };
+                if let Some(dir) = parent {
+                    current.navigate(Location::Dir(dir));
+                }
+            } else if ctrl && keyval == key::t {
+                let location = current.location();
+                current.new_tab(location);
+            } else if ctrl && keyval == key::w {
+                let active = current.active;
+                current.close_tab(active);
+            } else if ctrl && keyval == key::h {
+                let show = !current.show_hidden;
+                drop(current);
+                // The toggle's own handler persists, applies and refreshes.
+                capture.borrow().hidden_btn.set_active(show);
+            } else if ctrl && keyval == key::l {
+                let editing = current.path_entry.get_visible();
+                if editing {
+                    current.path_entry.hide();
+                    current.crumb_box.show();
+                } else {
+                    current.crumb_box.hide();
+                    current.path_entry.show();
+                    current.path_entry.grab_focus();
+                }
+            } else if ctrl && keyval == key::f {
+                current.search.grab_focus();
+            } else if keyval == key::space {
+                let visible = current.preview_box.get_visible();
+                current.preview_box.set_visible(!visible);
+                current.preview_btn.set_active(!visible);
+            } else if keyval == key::Escape {
+                if !current.search.text().is_empty() {
+                    current.search.set_text("");
+                } else if !matches!(current.location(), Location::Trash) {
+                    current.window.close();
+                }
             } else {
-                current.crumb_box.hide();
-                current.path_entry.show();
-                current.path_entry.grab_focus();
+                return glib::Propagation::Proceed;
             }
-        } else if ctrl && keyval == key::f {
-            current.search.grab_focus();
-        } else if keyval == key::space {
-            let visible = current.preview_box.get_visible();
-            current.preview_box.set_visible(!visible);
-            current.preview_btn.set_active(!visible);
-        } else if keyval == key::Escape {
-            if !current.search.text().is_empty() {
-                current.search.set_text("");
-            } else if !matches!(current.location(), Location::Trash) {
-                current.window.close();
-            }
-        } else {
-            return glib::Propagation::Proceed;
-        }
-        glib::Propagation::Stop
-    });
+            glib::Propagation::Stop
+        });
 
     browser
         .borrow()
@@ -3311,7 +3421,8 @@ mod tests {
 
     /// A scratch HOME so trash/prefs never touch the real machine.
     fn scratch_home(tag: &str) -> PathBuf {
-        let dir = std::env::temp_dir().join(format!("tiaki-files-test-{tag}-{}", std::process::id()));
+        let dir =
+            std::env::temp_dir().join(format!("tiaki-files-test-{tag}-{}", std::process::id()));
         let _ = std::fs::remove_dir_all(&dir);
         std::fs::create_dir_all(&dir).unwrap();
         std::env::set_var("HOME", &dir);
@@ -3342,7 +3453,10 @@ mod tests {
             assert_eq!(percent_decode(&percent_encode(path)), path);
         }
         // Trash paths stay readable by other implementations.
-        assert_eq!(percent_encode("/home/desktop/a b.txt"), "/home/desktop/a%20b.txt");
+        assert_eq!(
+            percent_encode("/home/desktop/a b.txt"),
+            "/home/desktop/a%20b.txt"
+        );
     }
 
     #[test]
@@ -3397,7 +3511,10 @@ mod tests {
         Op::Mkfile { path: file.clone() }.redo().unwrap();
         assert!(file.exists());
         let renamed = home.join("b.txt");
-        let rename = Op::Rename { from: file.clone(), to: renamed.clone() };
+        let rename = Op::Rename {
+            from: file.clone(),
+            to: renamed.clone(),
+        };
         rename.redo().unwrap();
         assert!(!file.exists() && renamed.exists());
         rename.undo().unwrap();
@@ -3405,11 +3522,21 @@ mod tests {
 
         use std::os::unix::fs::PermissionsExt;
         let before = std::fs::metadata(&file).unwrap().permissions().mode() & 0o777;
-        let perm = Op::Perm { path: file.clone(), old: before, new: 0o600 };
+        let perm = Op::Perm {
+            path: file.clone(),
+            old: before,
+            new: 0o600,
+        };
         perm.redo().unwrap();
-        assert_eq!(std::fs::metadata(&file).unwrap().permissions().mode() & 0o777, 0o600);
+        assert_eq!(
+            std::fs::metadata(&file).unwrap().permissions().mode() & 0o777,
+            0o600
+        );
         perm.undo().unwrap();
-        assert_eq!(std::fs::metadata(&file).unwrap().permissions().mode() & 0o777, before);
+        assert_eq!(
+            std::fs::metadata(&file).unwrap().permissions().mode() & 0o777,
+            before
+        );
         let _ = std::fs::remove_dir_all(&home);
     }
 
@@ -3419,7 +3546,10 @@ mod tests {
         let dir = std::env::temp_dir();
         let file = dir.join(format!("tiaki-clip-{}.txt", std::process::id()));
         std::fs::write(&file, b"x").unwrap();
-        write_clipboard(&FileClipboard { cut: true, paths: vec![file.clone()] });
+        write_clipboard(&FileClipboard {
+            cut: true,
+            paths: vec![file.clone()],
+        });
         let back = read_clipboard().unwrap();
         assert!(back.cut && back.paths == vec![file.clone()]);
         clear_clipboard();

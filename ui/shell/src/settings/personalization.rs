@@ -36,19 +36,22 @@ pub(crate) fn personalization_page(root: &Node, nav: &Nav) -> gtk::Box {
     holder.pack_start(&caption, false, false, 0);
     background_body.pack_start(&holder, false, false, 0);
 
-    section(&page, "Colors");
-    let (_colors_card, colors_body) = card(&page);
-    let (_, mode_right) = row(
-        &colors_body,
-        Some("moon"),
-        "Choose your mode",
-        "Change the colors that appear in the desktop and apps",
+    section(&page, "Typography");
+    let (_typo_card, typo_body) = card(&page);
+    let cur_font = current_font();
+    let (_, typo_right) = row(
+        &typo_body,
+        Some("settings"),
+        "Typeface",
+        "Font used by application windows",
     );
-    mode_right.pack_start(&theme_dropdown(), false, false, 0);
+    typo_right.pack_start(&font_dropdown(&cur_font), false, false, 0);
 
+    section(&page, "Time");
+    let (_time_card, time_body) = card(&page);
     let format = clock_format(root);
     let (_, clock_right) = row(
-        &colors_body,
+        &time_body,
         Some("clock"),
         "Menu bar clock",
         "Switch between 12-hour and 24-hour time",

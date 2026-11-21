@@ -33,7 +33,7 @@ const CASCADE_Y: i32 = 90;
 const CASCADE_STEP: i32 = 26;
 const CASCADE_WRAP: u32 = 4;
 const MARGIN: i32 = 16;
-const BAR: i32 = 30;
+const BAR: i32 = theme::BAR_HEIGHT;
 
 struct Chrome {
     window: gtk::Window,
@@ -93,7 +93,7 @@ pub fn run() {
 
     let windows_for_timer = windows.clone();
     let placement_for_timer = placement.clone();
-    gtk::glib::timeout_add_local(Duration::from_millis(100), move || {
+    gtk::glib::timeout_add_local(Duration::from_millis(500), move || {
         refresh(&windows_for_timer, &placement_for_timer);
         gtk::glib::ControlFlow::Continue
     });
@@ -200,9 +200,9 @@ fn create(view: &View) -> Chrome {
     bar.set_visible_window(true);
     theme::class(&bar, "chrome-bar");
 
-    let row = gtk::Box::new(gtk::Orientation::Horizontal, 6);
-    row.set_margin_start(8);
-    row.set_margin_end(10);
+    let row = gtk::Box::new(gtk::Orientation::Horizontal, 8);
+    row.set_margin_start(12);
+    row.set_margin_end(12);
     row.set_valign(gtk::Align::Center);
     row.pack_start(
         &traffic_button("red", &format!("[con_id={}] kill", view.id), "Close"),
@@ -327,7 +327,7 @@ fn update(chrome: &mut Chrome, view: &View) {
 
 fn update_geometry(chrome: &Chrome, view: &View) {
     // Layer surfaces are positioned below the bar's exclusive zone, so the
-    // margin is relative to y=30, not the output origin.
+    // margin is relative to the bar height, not the output origin.
     let top = (view.y - HEIGHT - BAR).max(0);
     chrome.window.set_layer_shell_margin(Edge::Left, view.x);
     chrome.window.set_layer_shell_margin(Edge::Top, top);
@@ -339,9 +339,19 @@ fn traffic_button(color: &str, command: &str, tooltip: &str) -> gtk::Button {
     let button = gtk::Button::new();
     button.set_relief(gtk::ReliefStyle::None);
     button.set_size_request(12, 12);
+    button.set_valign(gtk::Align::Center);
     button.set_tooltip_text(Some(tooltip));
     theme::class(&button, "traffic");
     theme::class(&button, color);
+
+    let dot = gtk::Box::new(gtk::Orientation::Horizontal, 0);
+    dot.set_size_request(12, 12);
+    dot.set_valign(gtk::Align::Center);
+    dot.set_halign(gtk::Align::Center);
+    theme::class(&dot, "traffic-dot");
+    theme::class(&dot, color);
+    button.add(&dot);
+
     let command = command.to_string();
     button.connect_clicked(move |_| windows::sway_plain(&command));
     button

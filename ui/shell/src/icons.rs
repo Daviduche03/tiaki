@@ -16,8 +16,8 @@ pub fn logo_mark(size: i32) -> gtk::DrawingArea {
         }
         let _ = cr.save();
         cr.scale(side / 100.0, side / 100.0);
-        // paper #E6E0D4
-        cr.set_source_rgb(0.902, 0.878, 0.831);
+        let (r, g, b) = theme::PAPER;
+        cr.set_source_rgb(r, g, b);
 
         // roof, lantern, gallery
         cr.move_to(50.0, 7.0);
@@ -54,15 +54,32 @@ pub fn logo_mark(size: i32) -> gtk::DrawingArea {
     area
 }
 
+/// An app's icon as a pixbuf, or None when the file is missing.
+pub fn app_icon_pixbuf(art: &str, size: i32) -> Option<gtk::gdk_pixbuf::Pixbuf> {
+    let primary = format!("/usr/share/tiaki/icons/{art}.svg");
+    let path = if std::path::Path::new(&primary).exists() {
+        primary
+    } else {
+        format!("desktop/icons/{art}.svg")
+    };
+    gtk::gdk_pixbuf::Pixbuf::from_file_at_scale(&path, size, size, true).ok()
+}
+
 pub fn app_icon(art: &str, size: i32) -> gtk::Widget {
-    // No fallback: the 14 SVGs ship with the image. A missing one is a
-    // packaging bug, not something to paper over with drawn tiles.
-    let path = format!("/usr/share/tiaki/icons/{art}.svg");
-    let pixbuf = gtk::gdk_pixbuf::Pixbuf::from_file_at_scale(&path, size, size, true)
-        .unwrap_or_else(|_| {
-            panic!("tiaki-shell: missing app icon {path}; the image must ship desktop/icons/")
-        });
-    let image = gtk::Image::from_pixbuf(Some(&pixbuf));
+    let primary = format!("/usr/share/tiaki/icons/{art}.svg");
+    let fallback = format!("desktop/icons/{art}.svg");
+    let path = if std::path::Path::new(&primary).exists() {
+        primary
+    } else {
+        fallback
+    };
+    // A missing icon must never take the shell down: the dock, switcher and
+    // overview all draw icons for windows whose apps they have never heard of.
+    let pixbuf = gtk::gdk_pixbuf::Pixbuf::from_file_at_scale(&path, size, size, true).ok();
+    if pixbuf.is_none() {
+        eprintln!("tiaki-shell: missing app icon {path}");
+    }
+    let image = gtk::Image::from_pixbuf(pixbuf.as_ref());
     theme::class(&image, "app-icon-image");
     image.upcast()
 }

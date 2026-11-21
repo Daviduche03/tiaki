@@ -9,16 +9,22 @@
 use gtk::prelude::*;
 use gtk_layer_shell::LayerShell;
 
-use crate::{bar, chrome, control, dock, files, greet, launcher, menu, notify, settings, setup, switcher};
+use crate::{
+    bar, chrome, control, dock, files, greet, launcher, menu, notify, overview, settings, setup,
+    switcher,
+};
 
-#[allow(dead_code)]
-pub const BG: &str = "#16161e";
-#[allow(dead_code)]
-pub const FG: &str = "#eef2ff";
-#[allow(dead_code)]
-pub const FG_DIM: &str = "#8a93b8";
-#[allow(dead_code)]
-pub const ACCENT: &str = "#7aa2f7";
+/// Height of the top bar and its exclusive zone. The titlebar overlay and
+/// window zoom position themselves against this, so it lives in one place.
+pub const BAR_HEIGHT: i32 = 28;
+
+/// Brand colours as cairo RGB, for the few surfaces painted in code rather
+/// than CSS. Values mirror `css/tokens.css`.
+pub const INK: (f64, f64, f64) = (0.082, 0.078, 0.075);
+pub const PAPER: (f64, f64, f64) = (0.902, 0.878, 0.831);
+
+/// Colour names, the type ramp, spacing and radius steps. Loaded first.
+const TOKENS_CSS: &str = include_str!("../css/tokens.css");
 
 /// The shared foundation every module's sheets layer on top of.
 const BASE_CSS: &str = include_str!("../css/base.css");
@@ -27,7 +33,7 @@ const BASE_CSS: &str = include_str!("../css/base.css");
 /// old monolithic blob had: base, bar, menu, dock, launcher, chrome,
 /// settings, control.
 fn all_sheets() -> Vec<&'static str> {
-    let mut sheets = vec![BASE_CSS];
+    let mut sheets = vec![TOKENS_CSS, BASE_CSS];
     sheets.extend_from_slice(bar::STYLE_SHEETS);
     sheets.extend_from_slice(menu::STYLE_SHEETS);
     sheets.extend_from_slice(dock::STYLE_SHEETS);
@@ -40,6 +46,7 @@ fn all_sheets() -> Vec<&'static str> {
     sheets.extend_from_slice(notify::STYLE_SHEETS);
     sheets.extend_from_slice(setup::STYLE_SHEETS);
     sheets.extend_from_slice(switcher::STYLE_SHEETS);
+    sheets.extend_from_slice(overview::STYLE_SHEETS);
     sheets
 }
 
@@ -53,7 +60,9 @@ pub fn install() {
         gtk::StyleContext::add_provider_for_screen(
             &screen,
             &provider,
-            gtk::STYLE_PROVIDER_PRIORITY_APPLICATION,
+            // Above the user sheet: ~/.config/gtk-3.0/gtk.css themes
+            // third-party apps and must not restyle shell controls.
+            gtk::STYLE_PROVIDER_PRIORITY_USER + 1,
         );
     }
 }

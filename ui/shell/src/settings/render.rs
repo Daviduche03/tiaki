@@ -335,7 +335,11 @@ fn render_hero(page: &gtk::Box, node: &Node) {
     hero.set_margin_start(24);
     hero.set_margin_end(24);
     hero.pack_start(
-        &glyphs::status_icon_tinted(glyphs::settings_icon(node.prop_str("icon").unwrap_or("")), 40, (0.902, 0.878, 0.831)),
+        &glyphs::status_icon_tinted(
+            glyphs::settings_icon(node.prop_str("icon").unwrap_or("")),
+            40,
+            (0.902, 0.878, 0.831),
+        ),
         false,
         false,
         0,
@@ -354,8 +358,9 @@ fn render_hero(page: &gtk::Box, node: &Node) {
     let button = accent_button(node.prop_str("button").unwrap_or(""));
     let action = node.prop_str("action").unwrap_or("").to_string();
     let status_clone = status.clone();
+    let button_clone = button.clone();
     button.connect_clicked(move |_| {
-        run_hero_action(&action, &status_clone);
+        run_hero_action(&action, &status_clone, &button_clone);
     });
     hero.pack_start(&button, false, false, 0);
     body.pack_start(&hero, false, false, 0);
@@ -363,8 +368,23 @@ fn render_hero(page: &gtk::Box, node: &Node) {
 
 /// Registry: hero button behavior. Actions that report back rewrite the
 /// hero's own status line; new reporting buttons add one arm here.
-fn run_hero_action(action: &str, status: &gtk::Label) {
+fn run_hero_action(action: &str, status: &gtk::Label, button: &gtk::Button) {
     if action == "update.check" {
-        status.set_text(&format!("Last checked: {} · up to date", now_clock()));
+        button.set_label("Checking…");
+        button.set_sensitive(false);
+        status.set_text("Checking generation status…");
+        crate::system::spawn("/usr/local/bin/agentd generation status");
+
+        let status_timer = status.clone();
+        let button_timer = button.clone();
+        gtk::glib::timeout_add_seconds_local(2, move || {
+            status_timer.set_text(&format!(
+                "Last checked: {} · system is up to date",
+                now_clock()
+            ));
+            button_timer.set_label("Check for updates");
+            button_timer.set_sensitive(true);
+            gtk::glib::ControlFlow::Break
+        });
     }
 }

@@ -165,6 +165,7 @@ pub fn run(args: &[String]) {
 
     window.connect_destroy(|_| gtk::main_quit());
     window.show_all();
+    crate::motion::enter(&panel);
     window.present();
     scrim.grab_focus();
     gtk::main();
@@ -199,7 +200,10 @@ fn art_for(view: &View) -> String {
         if title.contains("agents") {
             return "agents".to_string();
         }
-        return "app".to_string();
+        if title.contains("files") || title.contains("trash") {
+            return "files".to_string();
+        }
+        return "launcher".to_string();
     }
     match view.app_id.as_str() {
         "foot" => "terminal".to_string(),
