@@ -23,6 +23,10 @@ const MARGIN_SIDE: i32 = 64;
 const MARGIN_TOP: i32 = theme::BAR_HEIGHT + 40;
 const MARGIN_BOTTOM: i32 = 130;
 const GAP: i32 = 28;
+/// A tile's ceiling. One row on a tall screen would otherwise make each card
+/// a full-height panel with a small picture floating in it.
+const CARD_MAX_W: i32 = 420;
+const CARD_MAX_H: i32 = 280;
 /// Height of the icon and title row under each thumbnail.
 const LABEL_HEIGHT: i32 = 32;
 
@@ -67,14 +71,10 @@ pub fn run() {
     let rows = ((count + cols - 1) / cols).max(1);
     let cell_w = (screen_w - 2 * MARGIN_SIDE - (cols - 1) * GAP) / cols;
     let cell_h = (screen_h - MARGIN_TOP - MARGIN_BOTTOM - (rows - 1) * GAP) / rows - LABEL_HEIGHT;
-    let scale = all_windows
-        .iter()
-        .map(|view| {
-            (cell_w as f64 / view.width.max(1) as f64)
-                .min(cell_h as f64 / view.height.max(1) as f64)
-        })
-        .fold(1.0_f64, f64::min)
-        .max(0.05);
+    // One tile size for every window, capped so a single row stays a row of
+    // tiles rather than a wall of empty panels.
+    let card_w = cell_w.min(CARD_MAX_W).max(180);
+    let card_h = cell_h.min(CARD_MAX_H).max(120);
 
     let grid = gtk::Grid::new();
     grid.set_column_spacing(GAP as u32);
@@ -101,12 +101,16 @@ pub fn run() {
         crate::motion::enter_after(&card, crate::motion::stagger_ms(index.min(12), 25));
 
         let card_box = gtk::Box::new(gtk::Orientation::Vertical, 0);
+        card_box.set_halign(gtk::Align::Center);
+        card_box.set_valign(gtk::Align::Center);
 
-        let thumb_w = ((view.width as f64 * scale).round() as i32).max(120);
-        let thumb_h = ((view.height as f64 * scale).round() as i32).max(80);
-        let covered = !view.focused && covered_fraction(view, &all_windows) > 0.08;
+        // Every card occupies the same grid cell and every picture the same
+        // box: the window then keeps its own shape inside it (letterboxed),
+        // so the row reads as a row and relative sizes stay honest.
+        card.set_size_request(card_w, card_h + LABEL_HEIGHT);
+        let covered = !view.focused && covered_by_focused(view, &all_windows) > 0.08;
         card_box.pack_start(
-            &thumbnail(&screen, view, thumb_w, thumb_h, covered),
+            &thumbnail(&screen, view, card_w, card_h, covered),
             false,
             false,
             0,
@@ -118,7 +122,7 @@ pub fn run() {
         theme::class(&label_row, "overview-card-label");
         label_row.pack_start(&icons::app_icon(&art_for(view), 16), false, false, 0);
         let win_title = gtk::Label::new(Some(&windows::title(view)));
-        win_title.set_max_width_chars(((thumb_w - 40) / 8).max(10));
+        win_title.set_max_width_chars(((card_w - 40) / 8).max(10));
         win_title.set_ellipsize(gtk::pango::EllipsizeMode::End);
         theme::class(&win_title, "overview-card-title");
         label_row.pack_start(&win_title, false, false, 0);
@@ -271,9 +275,15 @@ fn thumbnail(
         let _ = cr.paint();
         match &crop {
             Some(pixbuf) => {
-                let sx = w / pixbuf.width() as f64;
-                let sy = h / pixbuf.height() as f64;
-                cr.scale(sx, sy);
+                // Letterbox: one shared scale, centred in an even box. Stretching
+                // to fill would make every window look the same shape.
+                let pw = pixbuf.width().max(1) as f64;
+                let ph = pixbuf.height().max(1) as f64;
+                let fit = (w / pw).min(h / ph);
+                let dw = pw * fit;
+                let dh = ph * fit;
+                cr.translate((w - dw) / 2.0, (h - dh) / 2.0);
+                cr.scale(fit, fit);
                 cr.set_source_pixbuf(pixbuf, 0.0, 0.0);
                 let _ = cr.paint();
             }
@@ -281,6 +291,29 @@ fn thumbnail(
                 if let Some(icon) = crate::icons::app_icon_pixbuf(&art, 64) {
                     cr.set_source_pixbuf(&icon, (w - 64.0) / 2.0, (h - 64.0) / 2.0);
                     let _ = cr.paint();
+                } else {
+                    // A window whose app has no art must still say something:
+                    // a blank card reads as a rendering bug, not as a window.
+                    let initial = art
+                        .chars()
+                        .next()
+                        .unwrap_or('?')
+                        .to_uppercase()
+                        .to_string();
+                    cr.select_font_face(
+                        "IBM Plex Sans",
+                        gtk::cairo::FontSlant::Normal,
+                        gtk::cairo::FontWeight::Normal,
+                    );
+                    cr.set_font_size(32.0);
+                    if let Ok(extents) = cr.text_extents(&initial) {
+                        cr.move_to(
+                            (w - extents.width()) / 2.0 - extents.x_bearing(),
+                            (h - extents.height()) / 2.0 - extents.y_bearing(),
+                        );
+                    }
+                    cr.set_source_rgba(pr, pg, pb, 0.5);
+                    let _ = cr.show_text(&initial);
                 }
             }
         }
@@ -295,18 +328,25 @@ fn thumbnail(
     area
 }
 
-/// How much of `view` other windows overlap, as a fraction of its area.
-fn covered_fraction(view: &View, all: &[View]) -> f64 {
-    let area = (view.width.max(1) as f64) * (view.height.max(1) as f64);
-    let mut covered = 0.0;
-    for other in all.iter().filter(|other| other.id != view.id) {
-        let w = (view.x + view.width).min(other.x + other.width) - view.x.max(other.x);
-        let h = (view.y + view.height).min(other.y + other.height) - view.y.max(other.y);
-        if w > 0 && h > 0 {
-            covered += w as f64 * h as f64;
-        }
+/// How much of `view` the focused window covers, as a fraction of its area.
+///
+/// Only the focused window is drawn above the others, so it is the only one
+/// that can hide `view`. Counting every neighbour marked two overlapping
+/// floating windows as both hidden, and took away both pictures.
+fn covered_by_focused(view: &View, all: &[View]) -> f64 {
+    let Some(top) = all.iter().find(|view| view.focused) else {
+        return 0.0;
+    };
+    if top.id == view.id {
+        return 0.0;
     }
-    (covered / area).min(1.0)
+    let area = (view.width.max(1) as f64) * (view.height.max(1) as f64);
+    let w = (view.x + view.width).min(top.x + top.width) - view.x.max(top.x);
+    let h = (view.y + view.height).min(top.y + top.height) - view.y.max(top.y);
+    if w <= 0 || h <= 0 {
+        return 0.0;
+    }
+    ((w as f64 * h as f64) / area).min(1.0)
 }
 
 fn focus(id: i64) {
