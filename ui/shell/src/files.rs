@@ -1442,12 +1442,6 @@ fn build_window(start: Location) -> Shared {
     let shell = gtk::Box::new(gtk::Orientation::Vertical, 0);
     panel.add(&shell);
 
-    // The chrome overlay reserves the top 30 px; keep content clear of it.
-    // (No extra air here: the toolbar below already carries its own padding.)
-    let chrome_spacer = gtk::Box::new(gtk::Orientation::Horizontal, 0);
-    chrome_spacer.set_size_request(-1, 30);
-    shell.pack_start(&chrome_spacer, false, false, 0);
-
     // ---------------------------------------------------------------- header
     // One row, one job each: navigate, show where we are, search. Nothing
     // else competes for this space.

@@ -90,10 +90,6 @@ pub fn run(root: &Node, start_page: Option<&str>) {
     // of every app window. Reserve that space so no Settings content hides
     // underneath it. (Terminals get away with it through internal padding;
     // Settings has rows at y=0, so it spacers explicitly.)
-    let chrome_spacer = gtk::Box::new(gtk::Orientation::Horizontal, 0);
-    chrome_spacer.set_size_request(-1, 34);
-    shell.pack_start(&chrome_spacer, false, false, 0);
-
     // ------------------------------------------------------------- body
     let body = gtk::Box::new(gtk::Orientation::Horizontal, 0);
     body.set_vexpand(true);
