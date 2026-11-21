@@ -7,9 +7,9 @@
 
 use gtk::gdk;
 use gtk::prelude::*;
-use gtk_layer_shell::{Edge, KeyboardMode, Layer};
 
 use crate::{icons, single, theme};
+use gtk_layer_shell::{Edge, KeyboardMode, Layer};
 
 /// Stylesheets owned by this module, in cascade order.
 pub const STYLE_SHEETS: &[&str] = &[include_str!("../css/setup.css")];
@@ -261,6 +261,20 @@ fn on_key(ui: &std::rc::Rc<std::cell::RefCell<Ui>>, key: gdk::keys::Key) {
     let mut borrowed = ui.borrow_mut();
     let screen = borrowed.screen;
     if key == Return || key == KP_Enter {
+        let entry_focused = borrowed
+            .name_entry
+            .as_ref()
+            .map(|entry| entry.has_focus())
+            .unwrap_or(false)
+            || borrowed
+                .url_entry
+                .as_ref()
+                .map(|entry| entry.has_focus())
+                .unwrap_or(false);
+        if entry_focused {
+            // The entry's own activate handler runs the step.
+            return;
+        }
         if screen == Screen::Done {
             borrowed.window.close();
             return;
@@ -277,6 +291,19 @@ fn on_key(ui: &std::rc::Rc<std::cell::RefCell<Ui>>, key: gdk::keys::Key) {
             draw(ui);
         }
         return;
+    }
+    // The wizard's fields take keys here, not through widget focus. On a
+    // layer-shell surface GTK never marks a widget focused, so a focused
+    // GtkEntry silently drops letters while the window still gets Return.
+    if let Some(entry) = borrowed.name_entry.clone() {
+        if !entry.has_focus() && text_key(&entry, key, KeyTarget::Name) {
+            return;
+        }
+    }
+    if let Some(entry) = borrowed.url_entry.clone() {
+        if !entry.has_focus() && text_key(&entry, key, KeyTarget::Url) {
+            return;
+        }
     }
     if screen == Screen::Mode || screen == Screen::Inference {
         let count = if screen == Screen::Mode { 2 } else { 3 };
@@ -636,6 +663,45 @@ fn draw(ui: &std::rc::Rc<std::cell::RefCell<Ui>>) {
 
     draw_contents(ui, screen);
     ui.borrow().window.show_all();
+}
+
+#[derive(Clone, Copy)]
+enum KeyTarget {
+    Name,
+    Url,
+}
+
+/// Type into the step's field from the window handler.
+///
+/// Returns true when the key was consumed, so Return and the like still reach
+/// the step logic. This exists because a layer-shell surface here never marks
+/// a widget focused: letters sent through widget focus are silently dropped,
+/// while the window itself does receive every key.
+fn text_key(entry: &gtk::Entry, key: gdk::keys::Key, target: KeyTarget) -> bool {
+    let limit = match target {
+        KeyTarget::Name => 24,
+        KeyTarget::Url => 200,
+    };
+    let mut text = entry.text().to_string();
+
+    if key == gdk::keys::constants::BackSpace {
+        if text.pop().is_some() {
+            entry.set_text(&text);
+            entry.set_position(-1);
+        }
+        return true;
+    }
+
+    let Some(character) = key.to_unicode() else {
+        return false;
+    };
+    if character.is_control() || text.chars().count() >= limit {
+        return false;
+    }
+    text.push(character);
+    entry.set_text(&text);
+    entry.set_position(-1);
+    true
 }
 
 fn draw_contents(ui: &std::rc::Rc<std::cell::RefCell<Ui>>, screen: Screen) {
