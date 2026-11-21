@@ -46,13 +46,19 @@ start_inside() {
     # wayvnc runs forever and would block greet without the &.
     /usr/local/bin/sched-launch --class background -- \
         wayvnc -C /etc/tiaki/wayvnc.conf || true &
-    # The bar and dock are surfaces of the shell, and nothing else starts
-    # them: without these two lines a fresh boot lands on greet with no
-    # chrome, which is what the rig showed before this was wired.
+    # The bar, dock and chrome are surfaces of the shell. greet spawns them
+    # again at sign-in (it opens a few welcome windows too), and each surface
+    # replaces its predecessor through its runtime lock — one quick relaunch,
+    # then stable. Starting them here as well means a session that never
+    # reaches the sign-in spawn still has chrome: Sway draws no titlebars of
+    # its own, so without the overlay every window is borderless and has no
+    # traffic lights.
     /usr/local/bin/sched-launch --class foreground -- \
         /usr/local/bin/tiaki-shell bar || true &
     /usr/local/bin/sched-launch --class foreground -- \
         /usr/local/bin/tiaki-shell dock || true &
+    /usr/local/bin/sched-launch --class foreground -- \
+        /usr/local/bin/tiaki-shell chrome || true &
     /usr/local/bin/sched-launch --class foreground -- \
         /usr/local/bin/tiaki-shell greet || true
 }
