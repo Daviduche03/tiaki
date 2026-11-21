@@ -513,6 +513,10 @@ fn draw(ui: &std::rc::Rc<std::cell::RefCell<Ui>>) {
             title(&body, "Who owns\nthis machine?");
             lede(&body, "This principal signs every transaction. Others can be added later, each with their own authority.");
             let entry = field(&body, "Name", &name);
+            // A focused GtkEntry consumes Return, so Enter inside the field
+            // would otherwise do nothing; every field submits the step.
+            let ui_for_enter = ui.clone();
+            entry.connect_activate(move |_| primary(&ui_for_enter));
             ui.borrow_mut().name_entry = Some(entry);
             action_row(ui, "Continue", "the name becomes user:<name> · owner");
         }
@@ -572,6 +576,8 @@ fn draw(ui: &std::rc::Rc<std::cell::RefCell<Ui>>) {
             let _ = remote_url;
             if selected == 1 {
                 let entry = field(&body, "Endpoint URL", "");
+                let ui_for_enter = ui.clone();
+                entry.connect_activate(move |_| primary(&ui_for_enter));
                 ui.borrow_mut().url_entry = Some(entry);
             }
             action_row(
