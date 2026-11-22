@@ -18,10 +18,10 @@
 //! calls sway's `move position` as the pointer travels. Edge resizing is
 //! still sway's own border grab.
 
-use std::cell::RefCell;
+use std::cell::{Cell, RefCell};
 use std::collections::{BTreeMap, BTreeSet};
 use std::rc::Rc;
-use std::time::Duration;
+use std::time::{Duration, Instant};
 
 use gtk::prelude::*;
 use gtk_layer_shell::{Edge, KeyboardMode, Layer, LayerShell};
@@ -107,16 +107,43 @@ pub fn run() {
 
     let windows_for_timer = windows.clone();
     let placement_for_timer = placement.clone();
-    gtk::glib::timeout_add_local(Duration::from_millis(150), move || {
-        refresh(&windows_for_timer, &placement_for_timer);
+    // Idle polling can be lazy, but a titlebar is a separate surface from the
+    // window it decorates: while that window is being moved or resized the
+    // titlebar has to keep up frame by frame, or the two visibly come apart.
+    // So poll slowly when nothing moves and at 60Hz for a moment after a
+    // change, over one kept-open IPC connection (a forked swaymsg per poll
+    // would cost ~4ms and make this unaffordable).
+    let snapshot: Rc<RefCell<Vec<(i64, i32, i32, i32, i32)>>> = Rc::new(RefCell::new(Vec::new()));
+    let hot_until = Rc::new(Cell::new(Instant::now()));
+    let next_due = Rc::new(Cell::new(Instant::now()));
+    gtk::glib::timeout_add_local(Duration::from_millis(8), move || {
+        let now = Instant::now();
+        if now < next_due.get() {
+            return gtk::glib::ControlFlow::Continue;
+        }
+        let current = refresh(&windows_for_timer, &placement_for_timer);
+        let moved = *snapshot.borrow() != current;
+        if moved {
+            *snapshot.borrow_mut() = current;
+            hot_until.set(now + Duration::from_millis(600));
+        }
+        let hot = now < hot_until.get();
+        next_due.set(now + if hot {
+            Duration::from_millis(16)
+        } else {
+            Duration::from_millis(120)
+        });
         gtk::glib::ControlFlow::Continue
     });
 
     gtk::main();
 }
 
-fn refresh(windows: &Rc<RefCell<BTreeMap<i64, Chrome>>>, placement: &Rc<RefCell<Placement>>) {
-    let views = windows::views();
+fn refresh(
+    windows: &Rc<RefCell<BTreeMap<i64, Chrome>>>,
+    placement: &Rc<RefCell<Placement>>,
+) -> Vec<(i64, i32, i32, i32, i32)> {
+    let views = windows::views_fast();
     let ids: BTreeSet<i64> = views.iter().map(|view| view.id).collect();
 
     let mut windows = windows.borrow_mut();
@@ -162,6 +189,10 @@ fn refresh(windows: &Rc<RefCell<BTreeMap<i64, Chrome>>>, placement: &Rc<RefCell<
             windows.insert(view.id, chrome);
         }
     }
+    views
+        .iter()
+        .map(|view| (view.id, view.x, view.y, view.width, view.height))
+        .collect()
 }
 
 /// Float and cascade a window the first time it is seen.
