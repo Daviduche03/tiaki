@@ -4,7 +4,11 @@
 //! Everything here is read-only observation plus a small set of `swaymsg`
 //! commands. No compositor state is cached beyond what a caller asks for.
 
+use std::cell::RefCell;
+use std::io::{Read, Write};
+use std::os::unix::net::UnixStream;
 use std::process::Command;
+use std::time::Duration;
 
 use agentic_json::Json;
 
@@ -170,6 +174,72 @@ pub fn views() -> Vec<View> {
     let mut views = Vec::new();
     collect(&value, &mut views);
     views
+}
+
+thread_local! {
+    static IPC: RefCell<Option<UnixStream>> = const { RefCell::new(None) };
+}
+
+/// The tree, over a connection kept open.
+///
+/// `swaymsg` costs about 4ms because every call forks and execs; a titlebar
+/// that has to keep up with a window being resized needs to poll far more
+/// often than that allows. One persistent socket makes a poll a write and a
+/// read instead of a process launch.
+pub fn tree_fast() -> Option<Json> {
+    IPC.with(|slot| {
+        let mut slot = slot.borrow_mut();
+        for _ in 0..2 {
+            if slot.is_none() {
+                *slot = resolve_socket().and_then(|path| UnixStream::connect(path).ok());
+            }
+            let stream = slot.as_mut()?;
+            if let Some(tree) = ipc_get_tree(stream) {
+                return Some(tree);
+            }
+            // A socket that rotated (compositor restart) reads as a failure
+            // once; drop it and reconnect on the next pass.
+            *slot = None;
+        }
+        None
+    })
+}
+
+/// Same views as `views()`, over the kept-open connection. Falls back to the
+/// forking path when the socket is not usable yet.
+pub fn views_fast() -> Vec<View> {
+    let value = tree_fast().or_else(tree);
+    let Some(value) = value else {
+        return Vec::new();
+    };
+    let mut views = Vec::new();
+    collect(&value, &mut views);
+    views
+}
+
+const IPC_MAGIC: &[u8; 6] = b"i3-ipc";
+const IPC_GET_TREE: u32 = 4;
+
+fn ipc_get_tree(stream: &mut UnixStream) -> Option<Json> {
+    let mut message = Vec::with_capacity(14);
+    message.extend_from_slice(IPC_MAGIC);
+    message.extend_from_slice(&0u32.to_le_bytes());
+    message.extend_from_slice(&IPC_GET_TREE.to_le_bytes());
+    stream.set_read_timeout(Some(Duration::from_millis(400))).ok()?;
+    stream.write_all(&message).ok()?;
+
+    let mut header = [0u8; 14];
+    stream.read_exact(&mut header).ok()?;
+    if &header[0..6] != IPC_MAGIC {
+        return None;
+    }
+    let length = u32::from_le_bytes([header[6], header[7], header[8], header[9]]) as usize;
+    if length > 16 * 1024 * 1024 {
+        return None;
+    }
+    let mut body = vec![0u8; length];
+    stream.read_exact(&mut body).ok()?;
+    agentic_json::parse(&String::from_utf8_lossy(&body)).ok()
 }
 
 /// Output size, so the window manager can compute zoom targets without
