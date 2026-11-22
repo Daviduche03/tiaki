@@ -127,12 +127,10 @@ pub fn run() {
             *snapshot.borrow_mut() = current;
             hot_until.set(now + Duration::from_millis(600));
         }
-        let hot = now < hot_until.get();
-        next_due.set(now + if hot {
-            Duration::from_millis(16)
-        } else {
-            Duration::from_millis(120)
-        });
+        // A window can be resized by the compositor at any moment and sway
+        // sends no event for it, so the only way to stay a frame behind at
+        // worst is to look every frame. The socket makes that cheap enough.
+        next_due.set(now + Duration::from_millis(16));
         gtk::glib::ControlFlow::Continue
     });
 
