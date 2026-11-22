@@ -13,6 +13,10 @@
 //! Visibility rule: the focused window always carries its bar. An unfocused
 //! window keeps its bar only while no other window overlaps its band, so a
 //! titlebar never paints on top of a window above it.
+//!
+//! Dragging a titlebar moves the window, with no modifier to hold: the grab
+//! calls sway's `move position` as the pointer travels. Edge resizing is
+//! still sway's own border grab.
 
 use std::cell::RefCell;
 use std::collections::{BTreeMap, BTreeSet};
@@ -40,6 +44,16 @@ struct Chrome {
     bar: gtk::EventBox,
     title: gtk::Label,
     visible: bool,
+    drag: Rc<RefCell<Option<Drag>>>,
+}
+
+/// One titlebar drag in flight: where the pointer went down, and the window
+/// origin it started from.
+#[derive(Clone, Copy)]
+struct Drag {
+    pointer: (f64, f64),
+    origin: (i32, i32),
+    applied: (i32, i32),
 }
 
 struct Placement {
@@ -93,7 +107,7 @@ pub fn run() {
 
     let windows_for_timer = windows.clone();
     let placement_for_timer = placement.clone();
-    gtk::glib::timeout_add_local(Duration::from_millis(500), move || {
+    gtk::glib::timeout_add_local(Duration::from_millis(150), move || {
         refresh(&windows_for_timer, &placement_for_timer);
         gtk::glib::ControlFlow::Continue
     });
@@ -243,12 +257,72 @@ fn create(view: &View) -> Chrome {
     window.add(&bar);
 
     let id = view.id;
+    let drag: Rc<RefCell<Option<Drag>>> = Rc::new(RefCell::new(None));
+    bar.add_events(
+        gtk::gdk::EventMask::BUTTON_PRESS_MASK
+            | gtk::gdk::EventMask::BUTTON_RELEASE_MASK
+            | gtk::gdk::EventMask::POINTER_MOTION_MASK,
+    );
+
+    let drag_press = drag.clone();
     bar.connect_button_press_event(move |_, event| {
         // A double click on the titlebar zooms the window, like macOS.
         if event.event_type() == gtk::gdk::EventType::DoubleButtonPress && event.button() == 1 {
             zoom(id);
         } else if event.button() == 1 {
             windows::sway_plain(&format!("[con_id={id}] focus"));
+            // Start a move: Sway's own drag needs the floating modifier held,
+            // and a titlebar that does nothing unless you also hold ⌘ is not
+            // how a titlebar behaves anywhere else.
+            if let Some(view) = windows::views().into_iter().find(|view| view.id == id) {
+                let (x, y) = event.root();
+                *drag_press.borrow_mut() = Some(Drag {
+                    pointer: (x, y),
+                    origin: (view.x, view.y),
+                    applied: (view.x, view.y),
+                });
+            }
+        }
+        gtk::glib::Propagation::Proceed
+    });
+
+    let drag_motion = drag.clone();
+    let bar_window = window.clone();
+    bar.connect_motion_notify_event(move |_, event| {
+        let mut state = drag_motion.borrow_mut();
+        let Some(drag) = state.as_mut() else {
+            return gtk::glib::Propagation::Proceed;
+        };
+        let (x, y) = event.root();
+        let nx = drag.origin.0 + (x - drag.pointer.0).round() as i32;
+        let ny = drag.origin.1 + (y - drag.pointer.1).round() as i32;
+        // Every motion is one sway command; skip the ones that would move the
+        // window less than a pixel, and the ones arriving faster than the
+        // compositor can place them.
+        if (nx - drag.applied.0).abs() < 1 && (ny - drag.applied.1).abs() < 1 {
+            return gtk::glib::Propagation::Proceed;
+        }
+        drag.applied = (nx, ny);
+        windows::move_absolute(id, nx, ny);
+        // The polling loop would leave the titlebar behind the window it
+        // belongs to; the bar follows the pointer with it instead.
+        bar_window.set_layer_shell_margin(Edge::Left, nx);
+        bar_window.set_layer_shell_margin(Edge::Top, (ny - HEIGHT - BAR).max(0));
+        gtk::glib::Propagation::Proceed
+    });
+
+    let drag_release = drag.clone();
+    bar.connect_button_release_event(move |_, event| {
+        // The last motion before the release is often coalesced away, which
+        // left the window short of where the pointer was let go. Place it
+        // from the release coordinates, then stop dragging.
+        if let Some(drag) = drag_release.borrow_mut().take() {
+            let (x, y) = event.root();
+            let nx = drag.origin.0 + (x - drag.pointer.0).round() as i32;
+            let ny = drag.origin.1 + (y - drag.pointer.1).round() as i32;
+            if (nx - drag.applied.0).abs() >= 1 || (ny - drag.applied.1).abs() >= 1 {
+                windows::move_absolute(id, nx, ny);
+            }
         }
         gtk::glib::Propagation::Proceed
     });
@@ -258,6 +332,7 @@ fn create(view: &View) -> Chrome {
         bar,
         title,
         visible: true,
+        drag,
     };
     update_geometry(&chrome, view);
     chrome.window.show_all();
@@ -326,6 +401,13 @@ fn update(chrome: &mut Chrome, view: &View) {
 }
 
 fn update_geometry(chrome: &Chrome, view: &View) {
+    // A resize while the pointer is held on this titlebar drops the implicit
+    // grab: the last motion and the release then never arrive, and the window
+    // ends up short of where it was let go. While dragging, the motion
+    // handler owns the geometry.
+    if chrome.drag.borrow().is_some() {
+        return;
+    }
     // Layer surfaces are positioned below the bar's exclusive zone, so the
     // margin is relative to the bar height, not the output origin.
     let top = (view.y - HEIGHT - BAR).max(0);
