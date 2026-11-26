@@ -28,6 +28,16 @@ RUN set -eu; \
 
 COPY . .
 
+# Docker's COPY keeps the build context's mtimes, while the cached
+# target/ directories hold artifacts newer than those sources. Cargo compares
+# mtimes, concludes everything is fresh, and ships a binary that predates the
+# change — which is exactly how a session came up without the fast IPC path
+# it was built from. Stamping every source makes the cache a cache, not a
+# source of stale binaries.
+RUN find . -path ./target -prune -o -path '*/target' -prune -o -path '*/node_modules' -prune -o \
+        -type f \( -name '*.rs' -o -name 'Cargo.toml' -o -name 'Cargo.lock' -o -name '*.toml' \) \
+        -exec touch {} +
+
 # Cache the cargo registry and every workspace's target directory, so editing
 # one source file does not recompile the whole dependency graph. A cache mount
 # is not part of the image layer, so the five binaries are copied to /out for

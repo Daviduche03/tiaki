@@ -45,6 +45,18 @@ struct Chrome {
     title: gtk::Label,
     visible: bool,
     drag: Rc<RefCell<Option<Drag>>>,
+    /// What this titlebar last painted. The overlay looks at the tree every
+    /// frame, but a window is static almost all of that time: re-setting the
+    /// same text, classes and layer margins at 60Hz is pure GTK work for no
+    /// visible change, and it showed up as several percent of a core.
+    painted: Painted,
+}
+
+#[derive(Default)]
+struct Painted {
+    rect: Option<(i32, i32, i32, i32)>,
+    title: String,
+    focused: Option<bool>,
 }
 
 /// One titlebar drag in flight: where the pointer went down, and the window
@@ -127,10 +139,19 @@ pub fn run() {
             *snapshot.borrow_mut() = current;
             hot_until.set(now + Duration::from_millis(600));
         }
-        // A window can be resized by the compositor at any moment and sway
-        // sends no event for it, so the only way to stay a frame behind at
-        // worst is to look every frame. The socket makes that cheap enough.
-        next_due.set(now + Duration::from_millis(16));
+        // With windows on screen, look every frame: a window can be resized
+        // by the compositor at any moment and sway sends no event for it, so
+        // this is the only way to stay one frame behind at worst. With no
+        // windows there is nothing to keep up with, so pay almost nothing.
+        // 30Hz while windows are on screen: one frame of extra jitter, half
+        // the polling cost of 60Hz. Nothing to keep up with when the screen is
+        // empty, so that path stays lazy.
+        let has_windows = !snapshot.borrow().is_empty();
+        next_due.set(now + if has_windows {
+            Duration::from_millis(32)
+        } else {
+            Duration::from_millis(150)
+        });
         gtk::glib::ControlFlow::Continue
     });
 
@@ -362,6 +383,7 @@ fn create(view: &View) -> Chrome {
         title,
         visible: true,
         drag,
+        painted: Painted::default(),
     };
     update_geometry(&chrome, view);
     chrome.window.show_all();
@@ -418,14 +440,29 @@ fn zoom(id: i64) {
 }
 
 fn update(chrome: &mut Chrome, view: &View) {
-    update_geometry(chrome, view);
-    chrome.title.set_text(&windows::title(view));
-    if view.focused {
-        chrome.bar.style_context().add_class("focused");
-        chrome.bar.style_context().remove_class("inactive");
-    } else {
-        chrome.bar.style_context().add_class("inactive");
-        chrome.bar.style_context().remove_class("focused");
+    let rect = (view.x, view.y, view.width, view.height);
+    if chrome.painted.rect != Some(rect) {
+        update_geometry(chrome, view);
+        if chrome.drag.borrow().is_none() {
+            chrome.painted.rect = Some(rect);
+        }
+    }
+
+    let title = windows::title(view);
+    if chrome.painted.title != title {
+        chrome.title.set_text(&title);
+        chrome.painted.title = title;
+    }
+
+    if chrome.painted.focused != Some(view.focused) {
+        if view.focused {
+            chrome.bar.style_context().add_class("focused");
+            chrome.bar.style_context().remove_class("inactive");
+        } else {
+            chrome.bar.style_context().add_class("inactive");
+            chrome.bar.style_context().remove_class("focused");
+        }
+        chrome.painted.focused = Some(view.focused);
     }
 }
 
